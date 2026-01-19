@@ -3,6 +3,8 @@ package frc.robot.subsystems.vision.photon;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Transform3d;
+
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -34,6 +36,9 @@ public class Camera {
      */
     public EstimatedRobotPose getEstimatedRobotPose() {
         List<PhotonPipelineResult> results = photonCamera.getAllUnreadResults();
+        // PhotonPipelineResult result = photonCamera.getLatestResult();
+        // System.out.println("Pose from camera " + this.id + " " + result);
+        
         Optional<EstimatedRobotPose> bestPose = Optional.empty();
         double bestTimestamp = Double.NEGATIVE_INFINITY;
 
@@ -49,6 +54,12 @@ public class Camera {
         }
 
         return bestPose.orElse(null);
+
+        // var estimatedPose = poseEstimator.update(result).orElse(null);
+        
+        // Logger.recordOutput("EstimatedPose/" + this.id, estimatedPose.estimatedPose);  
+
+        // return estimatedPose;
     }
 
     public PhotonCamera getPhotonCamera() {
