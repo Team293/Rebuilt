@@ -4,27 +4,30 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.DataUtils;
 import frc.lib.LoggedTracer;
 
-public abstract class SpikeSystem extends SubsystemBase {
+public abstract class SpikeSystem<I extends BaseInputClass> extends SubsystemBase {
     private final Runnable dataRefreshTask;
-
-    public SpikeSystem(String name) {
+    protected final I io;
+    
+    public SpikeSystem(String name, I io) {
         super(name);
+        this.io = io;
         this.dataRefreshTask = setupDataRefresher();
     }
 
     protected abstract Runnable setupDataRefresher();
 
-    protected <I extends BaseInputClass, T extends BaseIO<I> & IORefresher> Runnable useAsyncDataRefresher(
-            I inputs, T baseIO
+    protected <T extends BaseIO<I> & IORefresher> Runnable useAsyncDataRefresher(
+        T baseIO
     ) {
-        DataUtils.createDataLogger(inputs, baseIO);
+        System.out.println("Inputs: " + io);
+        DataUtils.createDataLogger(io, baseIO);
         return () -> {};
     }
 
-    protected <I extends BaseInputClass, T extends BaseIO<I>> Runnable useDataRefresher(
-            I inputs, T baseIO
+    protected <T extends BaseIO<I>> Runnable useDataRefresher(
+        T baseIO
     ) {
-        return () -> baseIO.updateInputs(inputs);
+        return () -> baseIO.updateInputs(io);
     }
 
     public void onPeriodic() {}

@@ -19,6 +19,7 @@ public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     @Override
     public void refreshData() {
+        System.out.println("Refreshing data");
         var newPoses = CameraManager.getCameras().stream()
                 .map(Camera::getEstimatedRobotPose)
                 .filter(Objects::nonNull)
