@@ -302,39 +302,39 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     private void configureAutoBuilder() {
-        try {
-            RobotConfig config = RobotConfig.fromGUISettings();
-            AutoBuilder.configure(
-                    () -> getState().Pose,
-                    this::resetPose,
-                    () -> getState().Speeds,
-                    (speeds, feedForwards) -> setControl(
-                            m_pathApplyRobotSpeeds.withSpeeds(speeds)
-                                    .withWheelForceFeedforwardsX(feedForwards.robotRelativeForcesXNewtons())
-                                    .withWheelForceFeedforwardsY(feedForwards.robotRelativeForcesYNewtons())
-                    ),
-                    new PPHolonomicDriveController(
-                            new PIDConstants(5.0, 0, 0, 0),
-                            new PIDConstants(5.0, 0, 0, 0)
-                    ),
-                    config,
-                    () -> false,
-                    this
-            );
-            Pathfinding.setPathfinder(new LocalADStarAK());
-
-            PathPlannerLogging.setLogActivePathCallback(
-                    (activePath) -> {
-                        Logger.recordOutput(
-                                "Odometry/Trajectory", activePath.toArray(new Pose2d[0]));
-                    });
-            PathPlannerLogging.setLogTargetPoseCallback(
-                    (targetPose) -> {
-                        Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
-                    });
-        } catch (Exception e) {
-            DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", e.getStackTrace());
-        }
+//        try {
+//            RobotConfig config = RobotConfig.fromGUISettings();
+//            AutoBuilder.configure(
+//                    () -> getState().Pose,
+//                    this::resetPose,
+//                    () -> getState().Speeds,
+//                    (speeds, feedForwards) -> setControl(
+//                            m_pathApplyRobotSpeeds.withSpeeds(speeds)
+//                                    .withWheelForceFeedforwardsX(feedForwards.robotRelativeForcesXNewtons())
+//                                    .withWheelForceFeedforwardsY(feedForwards.robotRelativeForcesYNewtons())
+//                    ),
+//                    new PPHolonomicDriveController(
+//                            new PIDConstants(5.0, 0, 0, 0),
+//                            new PIDConstants(5.0, 0, 0, 0)
+//                    ),
+//                    config,
+//                    () -> false,
+//                    this
+//            );
+//            Pathfinding.setPathfinder(new LocalADStarAK());
+//
+//            PathPlannerLogging.setLogActivePathCallback(
+//                    (activePath) -> {
+//                        Logger.recordOutput(
+//                                "Odometry/Trajectory", activePath.toArray(new Pose2d[0]));
+//                    });
+//            PathPlannerLogging.setLogTargetPoseCallback(
+//                    (targetPose) -> {
+//                        Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+//                    });
+//        } catch (Exception e) {
+//            DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", e.getStackTrace());
+//        }
 
     }
 

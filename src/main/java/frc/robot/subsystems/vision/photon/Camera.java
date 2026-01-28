@@ -1,13 +1,14 @@
 package frc.robot.subsystems.vision.photon;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.wpilibj.Filesystem;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.targeting.PhotonPipelineResult;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,12 +18,12 @@ public class Camera {
     private transient final PhotonPoseEstimator poseEstimator;
     private final Transform3d cameraToRobot;
 
-    public Camera(String id, Transform3d cameraToRobot) {
+    public Camera(String id, Transform3d cameraToRobot) throws IOException {
         this.cameraToRobot = cameraToRobot;
         this.id = id;
         this.photonCamera = new PhotonCamera(id);
         this.poseEstimator = new PhotonPoseEstimator(
-                AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField),
+                AprilTagFieldLayout.loadFromResource(Filesystem.getDeployDirectory().toPath().resolve("FRC2026_WELDED.fmap").toString()),
                 PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 cameraToRobot
         );
