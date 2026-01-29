@@ -9,6 +9,7 @@ package frc.lib;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -332,7 +333,7 @@ public class FieldConstants {
                 synchronized (this) {
                     if (layout == null) {
                         try {
-                            layout = AprilTagFieldLayout.loadFromResource(Filesystem.getDeployDirectory().toPath().resolve("FRC2026_WELDED.fmap").toString());
+                            layout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
                             layoutString = new ObjectMapper().writeValueAsString(layout);
                         } catch (IOException e) {
                             throw new RuntimeException(e);

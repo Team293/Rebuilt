@@ -1,12 +1,21 @@
 package frc.robot.subsystems.turret;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 import frc.robot.subsystems.vision.photon.Camera;
+import org.photonvision.targeting.PhotonPipelineResult;
+
+import java.util.List;
+import java.util.Optional;
 
 public class TurretIOSensorInputs implements TurretIO, IORefresher {
     private final CANcoder turretEncoder;
@@ -15,31 +24,99 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
 
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
 
-    private static final double kTurretGearRatio = 100.0; // 100:1, this isn't the real value
-
+    private static final double kTurretGearRatio = 100.0; // 100:1, replace with real value
     private static final double kTurretMinAngleDegrees = -180.0;
     private static final double kTurretMaxAngleDegrees = 180.0;
+
+    private static final int[] kValidTargetIDs = {9, 10, 23, 26};
+
+    private final StatusSignal<Angle> turretAngleSignal;
+
+    private Optional<Double> cachedYawErrorDeg = Optional.empty();
+    private double cachedYawTimestampSec = Double.NEGATIVE_INFINITY;
 
     public TurretIOSensorInputs(Camera camera) {
         this.turretEncoder = new CANcoder(CanID.TURRET_ENCODER.getID());
         this.turretMotor = new TalonFX(CanID.TURRET_MOTOR.getID());
         this.turretCamera = camera;
+
+        this.turretAngleSignal = turretEncoder.getPosition();
     }
 
-    public void setTurretAngle(double angle) {
-        double clamped = Math.max(kTurretMinAngleDegrees, Math.min(kTurretMaxAngleDegrees, angle));
-        double motorRotations = (clamped / 360.0) * kTurretGearRatio;
-
+    public void setTurretAngle(double angleDeg) {
+        double clampedDeg = Math.max(kTurretMinAngleDegrees, Math.min(kTurretMaxAngleDegrees, angleDeg));
+        double motorRotations = (clampedDeg / 360.0) * kTurretGearRatio;
         turretMotor.setControl(mmRequest.withPosition(motorRotations));
     }
 
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        inputs.turretAngleDegrees  = turretEncoder.getPosition().getValue().in(Units.Degree);
+        inputs.turretAngleDegrees = turretAngleSignal.getValue().in(Units.Degree);
     }
 
     @Override
     public void refreshData() {
+        BaseStatusSignal.refreshAll(turretAngleSignal);
 
+        cachedYawErrorDeg = Optional.empty();
+
+        if (turretCamera == null || turretCamera.getPhotonCamera() == null) return;
+
+        List<PhotonPipelineResult> unread = turretCamera.getPhotonCamera().getAllUnreadResults();
+        if (unread.isEmpty()) return;
+
+        PhotonPipelineResult latest = null;
+        double latestTs = cachedYawTimestampSec;
+
+        for (PhotonPipelineResult r : unread) {
+            double ts = r.getTimestampSeconds();
+            if (ts > latestTs) {
+                latestTs = ts;
+                latest = r;
+            }
+        }
+
+        if (latest == null || !latest.hasTargets()) return;
+
+        var validTargets = latest.getTargets().stream()
+                .filter(t -> {
+                    int id = t.getFiducialId();
+                    for (int valid : kValidTargetIDs) {
+                        if (id == valid) return true;
+                    }
+                    return false;
+                })
+                .toList();
+        if (validTargets.isEmpty()) return;
+
+        double lowestAmbiguity = Double.MAX_VALUE;
+        double yawDeg = 0.0;
+
+        for (var t : validTargets) {
+            double amb = t.getPoseAmbiguity();
+            if (amb < lowestAmbiguity) {
+                lowestAmbiguity = amb;
+                yawDeg = t.getYaw();
+            }
+        }
+
+        cachedYawErrorDeg = Optional.of(yawDeg);
+        cachedYawTimestampSec = latestTs;
+    }
+
+    @Override
+    public double getAngleOffsetFromPose(Translation2d robotPose, Translation2d target) {
+        double angleToTargetDeg = Math.toDegrees(
+                Math.atan2(target.getY() - robotPose.getY(), target.getX() - robotPose.getX())
+        );
+
+        double turretDeg = turretAngleSignal.getValue().in(Units.Degree);
+
+        return MathUtil.inputModulus(angleToTargetDeg - turretDeg, -180.0, 180.0);
+    }
+
+    @Override
+    public Optional<Double> getErrorFromCamera() {
+        return cachedYawErrorDeg;
     }
 }

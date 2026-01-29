@@ -1,6 +1,7 @@
 package frc.robot.subsystems.vision.photon;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.Filesystem;
 import org.photonvision.EstimatedRobotPose;
@@ -18,12 +19,12 @@ public class Camera {
     private transient final PhotonPoseEstimator poseEstimator;
     private final Transform3d cameraToRobot;
 
-    public Camera(String id, Transform3d cameraToRobot) throws IOException {
+    public Camera(String id, Transform3d cameraToRobot) {
         this.cameraToRobot = cameraToRobot;
         this.id = id;
         this.photonCamera = new PhotonCamera(id);
         this.poseEstimator = new PhotonPoseEstimator(
-                AprilTagFieldLayout.loadFromResource(Filesystem.getDeployDirectory().toPath().resolve("FRC2026_WELDED.fmap").toString()),
+                AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded),
                 PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 cameraToRobot
         );

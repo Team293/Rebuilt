@@ -17,18 +17,13 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
         super("Vision", new VisionIO.VisionIOInputs());
 
         this.drive = drive;
-
-        System.out.println("IO!!!!!!!!!!!!!!!!!!!!: " + io.estimatedRobotPoses + "\n\n\n\n");
     }
 
     @Override
     public void onPeriodic() {
         int index = 0;
-        System.out.println("Camera sizes " + CameraManager.getCameras().size());
-
-        System.out.println("Poses " + io.estimatedRobotPoses.size());
         for (EstimatedRobotPose pose : io.estimatedRobotPoses) {
-            Logger.recordOutput("EstimatedPose/" + String.valueOf(index), pose.estimatedPose.toPose2d());
+            Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
             drive.addVisionMeasurement(
                     pose.estimatedPose.toPose2d(),
                     pose.timestampSeconds
@@ -39,7 +34,6 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        System.out.println("IO!!!!!!!!!!!!!!!!!!!!: " + io.estimatedRobotPoses + "\n\n\n\n");
         photonCameras = new VisionIOPhotonCamera();
         return useAsyncDataRefresher(photonCameras);
     }

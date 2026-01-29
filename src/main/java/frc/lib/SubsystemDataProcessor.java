@@ -48,7 +48,6 @@ public class SubsystemDataProcessor implements Runnable {
     public void run() {
         while (true) {
             timestamp = System.currentTimeMillis();
-            System.out.println(IODataRefreshers.size());
             for (IODataRefresher IODataRefresher : IODataRefreshers) {
                 IODataRefresher.refreshData();
             }
