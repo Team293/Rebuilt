@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.vision.Vision;
 
 public class RobotContainer {
@@ -42,6 +43,7 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain;
     private final Vision vision;
+    private final Intake intake;
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
@@ -49,6 +51,7 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
         
         this.vision = new Vision(drivetrain);
+        this.intake = new Intake(drivetrain);
         configureBindings();
     }
 
