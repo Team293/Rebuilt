@@ -1,14 +1,10 @@
 package frc.robot.subsystems.turret;
 
-import com.ctre.phoenix6.BaseStatusSignal;
-import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.Units;
-import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 import frc.robot.subsystems.vision.photon.Camera;
@@ -18,9 +14,10 @@ import java.util.List;
 import java.util.Optional;
 
 public class TurretIOSensorInputs implements TurretIO, IORefresher {
-    private final CANcoder turretEncoder;
     private final Camera turretCamera;
     private final TalonFX turretMotor;
+    private final DutyCycleEncoder enc11;
+    private final DutyCycleEncoder enc13;
 
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
 
@@ -30,17 +27,14 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
 
     private static final int[] kValidTargetIDs = {9, 10, 23, 26};
 
-    private final StatusSignal<Angle> turretAngleSignal;
-
     private Optional<Double> cachedYawErrorDeg = Optional.empty();
     private double cachedYawTimestampSec = Double.NEGATIVE_INFINITY;
 
     public TurretIOSensorInputs(Camera camera) {
-        this.turretEncoder = new CANcoder(CanID.TURRET_ENCODER.getID());
         this.turretMotor = new TalonFX(CanID.TURRET_MOTOR.getID());
         this.turretCamera = camera;
-
-        this.turretAngleSignal = turretEncoder.getPosition();
+        this.enc11 = new DutyCycleEncoder(0);
+        this.enc13 = new DutyCycleEncoder(1);
     }
 
     public void setTurretAngle(double angleDeg) {
@@ -51,13 +45,14 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
 
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        inputs.turretAngleDegrees = turretAngleSignal.getValue().in(Units.Degree);
+        inputs.enc11 = enc11.get();
+        inputs.enc13 = enc13.get();
+        double turretRotations = TurretMath.getTurretPosition(inputs.enc13, inputs.enc11);
+        inputs.turretAngleDegrees = TurretMath.positionToDegrees(turretRotations);
     }
 
     @Override
     public void refreshData() {
-        BaseStatusSignal.refreshAll(turretAngleSignal);
-
         cachedYawErrorDeg = Optional.empty();
 
         if (turretCamera == null || turretCamera.getPhotonCamera() == null) return;
@@ -110,9 +105,7 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
                 Math.atan2(target.getY() - robotPose.getY(), target.getX() - robotPose.getX())
         );
 
-        double turretDeg = turretAngleSignal.getValue().in(Units.Degree);
-
-        return MathUtil.inputModulus(angleToTargetDeg - turretDeg, -180.0, 180.0);
+        return MathUtil.inputModulus(angleToTargetDeg, -180.0, 180.0);
     }
 
     @Override

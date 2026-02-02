@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
+import frc.lib.SpikeController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.Turret;
@@ -40,6 +41,7 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
+    private final SpikeController operator = new SpikeController(1, 0.05);
 
     public final CommandSwerveDrivetrain drivetrain;
     private final Vision vision;
@@ -56,6 +58,34 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        operator.y()
+                .onTrue(Commands.runOnce(() -> {
+                    Turret.TurretRequest request = new Turret.TurretRequest();
+                    request.targetAngleDegrees = 0.0;
+                    turret.runRequest(request);
+                }));
+
+        operator.b()
+                .onTrue(Commands.runOnce(() -> {
+                    Turret.TurretRequest request = new Turret.TurretRequest();
+                    request.targetAngleDegrees = 90.0;
+                    turret.runRequest(request);
+                }));
+
+        operator.a()
+                .onTrue(Commands.runOnce(() -> {
+                    Turret.TurretRequest request = new Turret.TurretRequest();
+                    request.targetAngleDegrees = 180.0;
+                    turret.runRequest(request);
+                }));
+
+        operator.x()
+                .onTrue(Commands.runOnce(() -> {
+                    Turret.TurretRequest request = new Turret.TurretRequest();
+                    request.targetAngleDegrees = -90.0;
+                    turret.runRequest(request);
+                }));
+
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(

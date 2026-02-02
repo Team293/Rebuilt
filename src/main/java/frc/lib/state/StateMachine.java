@@ -17,7 +17,7 @@ public class StateMachine <E extends Enum<E>> {
         stateNodes.get(currentState).onEnter.run();
     }
 
-    public static <E extends Enum<E>> Builder<E> forEnum(Class<E> enumClass) {
+    public static <E extends Enum<E>> Builder<E> forEnum() {
         return new Builder<>();
     }
 

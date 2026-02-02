@@ -13,8 +13,10 @@ public interface TurretIO extends BaseIO<TurretIO.TurretIOInputs> {
     public static class TurretIOInputs extends BaseInputClass {
         public double turretAngleDegrees = 0.0;
         public double offsetError = 0.0; // feed from camera, raw error value
+        public double enc11 = 0.0;
+        public double enc13 = 0.0;
     }
 
-    abstract Optional<Double> getErrorFromCamera();
-    abstract double getAngleOffsetFromPose(Translation2d robotPose, Translation2d target);
+    Optional<Double> getErrorFromCamera();
+    double getAngleOffsetFromPose(Translation2d robotPose, Translation2d target);
 }
