@@ -8,16 +8,16 @@ import edu.wpi.first.wpilibj.DigitalInput;
 public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
     private final static double indexerSpeed = 10.0;
     private final IndexerIOTalonFX indexerIO = new IndexerIOTalonFX();
-    private DigitalInput m_beamBreak;
+    private DigitalInput beamBreak;
 
     public Indexer() {
         super("Indexer", new IndexerIO.IndexerIOInputs());
-        m_beamBreak = new DigitalInput(2);
+        beamBreak = new DigitalInput(2);
     }
 
     @Override
     public void onPeriodic() {
-        if (m_beamBreak.get()) {
+        if (beamBreak.get()) {
             indexerIO.setSpeed(0.0); 
         } else {
             indexerIO.setSpeed(indexerSpeed);

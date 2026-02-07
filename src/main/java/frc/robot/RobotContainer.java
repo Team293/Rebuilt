@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.vision.Vision;
 
 public class RobotContainer {
@@ -37,9 +38,11 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final Vision vision;
+    private final Indexer indexer;
 
     public RobotContainer() {
         this.vision = new Vision(drivetrain);
+        this.indexer = new Indexer();
         configureBindings();
     }
 
