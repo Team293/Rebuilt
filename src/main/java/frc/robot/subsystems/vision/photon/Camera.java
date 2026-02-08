@@ -3,6 +3,8 @@ package frc.robot.subsystems.vision.photon;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Transform3d;
+
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -34,6 +36,7 @@ public class Camera {
      */
     public EstimatedRobotPose getEstimatedRobotPose() {
         List<PhotonPipelineResult> results = photonCamera.getAllUnreadResults();
+        // get the best estimated pose from the results (using the most recent timestamp)
         Optional<EstimatedRobotPose> bestPose = Optional.empty();
         double bestTimestamp = Double.NEGATIVE_INFINITY;
 
