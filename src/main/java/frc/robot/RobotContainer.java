@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -49,7 +51,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
-        turret = new Turret(drivetrain);
+        turret = new Turret(drivetrain, operator);
 //        autoChooser = drivetrain.getAutoChooser();
 //        SmartDashboard.putData("Auto Path", autoChooser);
         
@@ -62,6 +64,8 @@ public class RobotContainer {
                 .onTrue(Commands.runOnce(() -> {
                     Turret.TurretRequest request = new Turret.TurretRequest();
                     request.targetAngleDegrees = 0.0;
+                    Logger.recordOutput("Turret/Request", request.targetAngleDegrees);
+
                     turret.runRequest(request);
                 }));
 
@@ -69,6 +73,7 @@ public class RobotContainer {
                 .onTrue(Commands.runOnce(() -> {
                     Turret.TurretRequest request = new Turret.TurretRequest();
                     request.targetAngleDegrees = 90.0;
+                    Logger.recordOutput("Turret/Request", request.targetAngleDegrees);
                     turret.runRequest(request);
                 }));
 
@@ -76,13 +81,17 @@ public class RobotContainer {
                 .onTrue(Commands.runOnce(() -> {
                     Turret.TurretRequest request = new Turret.TurretRequest();
                     request.targetAngleDegrees = 180.0;
+                    Logger.recordOutput("Turret/Request", request.targetAngleDegrees);
+
                     turret.runRequest(request);
                 }));
 
         operator.x()
                 .onTrue(Commands.runOnce(() -> {
                     Turret.TurretRequest request = new Turret.TurretRequest();
-                    request.targetAngleDegrees = -90.0;
+                    request.targetAngleDegrees = 270;
+                    Logger.recordOutput("Turret/Request", request.targetAngleDegrees);
+
                     turret.runRequest(request);
                 }));
 
