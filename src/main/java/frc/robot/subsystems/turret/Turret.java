@@ -1,9 +1,13 @@
 package frc.robot.subsystems.turret;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import frc.lib.FieldConstants;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.turret.calc.ShotCompensation;
 import org.littletonrobotics.junction.Logger;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
@@ -13,6 +17,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     private final CommandSwerveDrivetrain drive;
 
     private enum State { IDLE, TARGETING_HUB, TARGETING_SHUTTLE, ZEROING, MANUAL_CONTROL }
+
+    private Translation2d target = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
 //    private final StateMachine<State> tsm;
 
@@ -29,6 +35,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     @Override
     public void onPeriodic() {
 //        tsm.tick();
+        ShotCompensation.AdjustedShot shot = ShotCompensation.compensateForMovement(drive.getPose(), drive.getState().Speeds, new Pose2d(target, new Rotation2d()), 0.6);
     }
 
     public void runRequest(TurretRequest request) {

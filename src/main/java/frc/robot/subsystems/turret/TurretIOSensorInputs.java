@@ -1,10 +1,15 @@
 package frc.robot.subsystems.turret;
 
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
+import frc.lib.AngleLowPassFilter;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 import frc.robot.subsystems.vision.photon.Camera;
@@ -19,6 +24,9 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
     private final DutyCycleEncoder enc11;
     private final DutyCycleEncoder enc13;
 
+    private final AngleLowPassFilter turretAngleFilter =
+            new AngleLowPassFilter(0.15);
+
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
 
     private static final double kTurretGearRatio = 100.0; // 100:1, replace with real value
@@ -32,6 +40,18 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
 
     public TurretIOSensorInputs(Camera camera) {
         this.turretMotor = new TalonFX(CanID.TURRET_MOTOR.getID());
+        MotionMagicConfigs mm = new MotionMagicConfigs();
+        mm.MotionMagicCruiseVelocity = 20;
+        mm.MotionMagicAcceleration = 60;
+        mm.MotionMagicJerk = 0;
+
+        this.turretMotor.getConfigurator().apply(mm);
+
+        MotorOutputConfigs motorOutput = new MotorOutputConfigs();
+        motorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        turretMotor.getConfigurator().apply(motorOutput);
+
         this.turretCamera = camera;
         this.enc11 = new DutyCycleEncoder(0);
         this.enc13 = new DutyCycleEncoder(1);
@@ -48,7 +68,9 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
         inputs.enc11 = enc11.get();
         inputs.enc13 = enc13.get();
         double turretRotations = TurretMath.getTurretPosition(inputs.enc13, inputs.enc11);
-        inputs.turretAngleDegrees = TurretMath.positionToDegrees(turretRotations);
+        double rawAngle = TurretMath.positionToDegrees(turretRotations);
+        inputs.turretAngleDegrees =
+                turretAngleFilter.calculate(rawAngle);
     }
 
     @Override
