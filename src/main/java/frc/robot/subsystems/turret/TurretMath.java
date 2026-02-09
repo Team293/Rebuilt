@@ -130,6 +130,20 @@ public class TurretMath {
         return mod(turretRevs, 1.0) * 2.0 * Math.PI;
     }
 
+    public static double degreesToMotorPosition(double turretDegrees) {
+        return (turretDegrees * 14) / 360;
+    }
+
+    public static double normalizeTurretHeading(double turretHeading, double zeroDegrees) {
+        double newHeading = turretHeading - zeroDegrees;
+
+        if (newHeading < 0) {
+            newHeading = 360 - Math.abs(newHeading);
+        } 
+
+        return newHeading;
+    }
+
     /**
      * Convert turret revolutions to total accumulated degrees (can be >360 or <0).
      * Use this when you want continuous angle for PID or motion profiling.

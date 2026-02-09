@@ -12,6 +12,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.vision.photon.Camera;
 
 import org.littletonrobotics.junction.Logger;
@@ -30,7 +31,8 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
     private final StatusSignal<Angle> encoderSignal;
 
     private static final double kTurretGearRatio = 140/10;
-    private static final double turretRotationOffset = -6.32;
+    private final double turretRotationOffset;
+    private final double turretDegreesOffset = 246.7;
 
     private static final int[] kValidTargetIDs = {9, 10, 23, 26};
 
@@ -48,37 +50,92 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
         
         MotionMagicConfigs mm = new MotionMagicConfigs();
         mm.MotionMagicAcceleration = 60;
-        mm.MotionMagicCruiseVelocity = 20;
+        mm.MotionMagicCruiseVelocity = 30;
         mm.MotionMagicJerk = 0;
 
         this.turretMotor.getConfigurator().apply(mm);
-        this.turretMotor.getConfigurator().apply(config);
+        // this.turretMotor.getConfigurator().apply(config);
         this.turretCamera = camera;
         this.enc11 = new DutyCycleEncoder(0);
         this.enc13 = new DutyCycleEncoder(1);
 
         this.encoderSignal = turretMotor.getPosition();
-    }
 
-    public void setTurretAngle(double angleDeg) {
-        double rotations = (angleDeg / 360) * kTurretGearRatio;
+        double enc11InitialValue = enc11.get();
+        double enc13InitialValue = enc13.get();
+
+        double turretRotations = TurretMath.getTurretAngleRevs(enc13InitialValue, enc11InitialValue);
+    
+        double turretDegrees = TurretMath.normalizeTurretHeading(
+            TurretMath.toDegreesWrapped(turretRotations),
+            turretDegreesOffset
+        );
+
+        Logger.recordOutput("Turret/InitialHeading", turretDegrees);
+
+        double currentMotorRevs = turretMotor.getPosition().getValueAsDouble();
+        double toZeroRevs = TurretMath.degreesToMotorPosition(turretDegrees);
+
+        turretRotationOffset = currentMotorRevs + toZeroRevs;
+
+        Logger.recordOutput("Turret/ToZeroRevs", toZeroRevs);
+        Logger.recordOutput("Turret/TurretRotationOffset", turretRotationOffset);
+    }   
+
+    public void setTurretAngle(double fieldAngleDeg) {
+        fieldAngleDeg = MathUtil.inputModulus(fieldAngleDeg, 0.0, 360.0);
+
+        var drive = RobotContainer.getDrive();
+
+        double robotHeadingDeg =
+            MathUtil.inputModulus(
+                drive.getPose().getRotation().getDegrees(),
+                0.0, 360.0
+            );
+
+        double robotOmegaDegPerSec =
+            drive.getState().Speeds.omegaRadiansPerSecond
+                * 180.0 / Math.PI;
+
+        double dt = 0.025;
+        double predictedHeadingDeg =
+            robotHeadingDeg + robotOmegaDegPerSec * dt;
+
+        double turretAngleDeg =
+            MathUtil.inputModulus(
+                fieldAngleDeg + predictedHeadingDeg,
+                -180.0, 180.0
+            );
+
+        double rotations = (turretAngleDeg / 360.0) * kTurretGearRatio;
         rotations = -rotations + turretRotationOffset;
 
-        turretMotor.setControl(mmVoltage.withPosition(rotations));
+        double motorRps =
+            -(robotOmegaDegPerSec / 360.0) * kTurretGearRatio;
 
-        Logger.recordOutput("Turret/TargetRotations", rotations);
+        turretMotor.setControl(
+            mmVoltage
+                .withPosition(rotations)
+                .withFeedForward(motorRps * 0.1167)
+        );
+
+        Logger.recordOutput("Turret/CommandedRotations", rotations);
+
+        Logger.recordOutput("Turret/RobotOmegaDegPerSec", robotOmegaDegPerSec);
     }
-
+    
     @Override
     public void updateInputs(TurretIOInputs inputs) {
         inputs.enc11 = enc11.get();
         inputs.enc13 = enc13.get();
         double turretRotations = TurretMath.getTurretAngleRevs(inputs.enc13, inputs.enc11);
     
-        inputs.turretAngleDegrees = TurretMath.toDegreesContinuous(turretRotations) - ((turretRotationOffset /14) * 360);
+        inputs.turretAngleDegrees = TurretMath.normalizeTurretHeading(
+            TurretMath.toDegreesWrapped(turretRotations),
+            turretDegreesOffset
+        );
         
         Logger.recordOutput("Turret/CRTRevs", turretRotations);
-        Logger.recordOutput("Turret/EncoderRevs", -((encoderSignal.getValueAsDouble() - turretRotationOffset) / 14) * 360);
     }
 
     @Override
@@ -131,12 +188,17 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
     }
 
     @Override
-    public double getAngleOffsetFromPose(Translation2d robotPose, Translation2d target) {
-        double angleToTargetDeg = Math.toDegrees(
-                Math.atan2(target.getY() - robotPose.getY(), target.getX() - robotPose.getX())
+    public double getAngleOffsetFromPose(
+            Translation2d robotPose,
+            Translation2d target
+    ) {
+        double fieldAngleDeg = Math.toDegrees(
+            Math.atan2(
+                target.getY() - robotPose.getY(),
+                target.getX() - robotPose.getX()
+            )
         );
-
-        return MathUtil.inputModulus(angleToTargetDeg, -180.0, 180.0);
+        return MathUtil.inputModulus(-fieldAngleDeg, -180, 180);
     }
 
     @Override
