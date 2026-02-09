@@ -38,6 +38,7 @@ public class Camera {
         List<PhotonPipelineResult> results = photonCamera.getAllUnreadResults();
         // get the best estimated pose from the results (using the most recent timestamp)
         Optional<EstimatedRobotPose> bestPose = Optional.empty();
+        // smallest possible timestamp, so any real timestamp will be greater than this
         double bestTimestamp = Double.NEGATIVE_INFINITY;
 
         for (PhotonPipelineResult result : results) {
