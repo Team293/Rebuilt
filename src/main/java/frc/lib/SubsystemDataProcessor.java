@@ -29,16 +29,22 @@ public class SubsystemDataProcessor implements Runnable {
 
     public SubsystemDataProcessor(DataReaderAndLogger dataReaderAndLogger, IODataRefresher IODataRefresher) {
         this.dataReaderAndLogger = dataReaderAndLogger;
-        IODataRefreshers = List.of(IODataRefresher);
+
+        if (IODataRefresher == null) {
+            IODataRefreshers = List.of();
+        } else {
+            IODataRefreshers = List.of(IODataRefresher);
+        }
     }
 
     public SubsystemDataProcessor(
             DataReaderAndLogger dataReaderAndLogger,
-            IODataRefresher... refreshers) {
+            IODataRefresher... refreshers) {                 
         this.dataReaderAndLogger = dataReaderAndLogger;
         IODataRefreshers = List.of(refreshers);
     }
 
+    @Override
     public void run() {
         while (true) {
             timestamp = System.currentTimeMillis();
