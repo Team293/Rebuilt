@@ -6,14 +6,15 @@ import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
 public class IndexerIOTalonFX implements IORefresher, IndexerIO {
-    private final TalonFX motor;
-    private final BaseStatusSignal motorRps;
+    private final TalonFX motor;             // Motor object
+    private final BaseStatusSignal motorRps; // Rotations per second
 
     public IndexerIOTalonFX() {
         this.motor = new TalonFX(CanID.INDEXER.getID());
         this.motorRps = motor.getRotorVelocity();
     }
 
+    // Refresh all signals
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(motorRps);

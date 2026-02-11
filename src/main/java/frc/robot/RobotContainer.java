@@ -51,7 +51,7 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
         
         this.vision = new Vision(drivetrain);
-        this.indexer = new Indexer();
+        this.indexer = new Indexer(2);
         configureBindings();
     }
 

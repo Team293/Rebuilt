@@ -6,18 +6,19 @@ import frc.robot.subsystems.indexer.IndexerIOTalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 
 public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
-    private final static double indexerSpeed = 10.0;
+    private final static double indexerSpeed = 10.0; // Rotations per second
     private final IndexerIOTalonFX indexerIO = new IndexerIOTalonFX();
-    private DigitalInput beamBreak;
+    private DigitalInput proximitySensor;
 
-    public Indexer() {
+    public Indexer(int channel) {
         super("Indexer", new IndexerIO.IndexerIOInputs());
-        beamBreak = new DigitalInput(2);
+        proximitySensor = new DigitalInput(channel);
     }
 
+    // Activate motor if proximity sensor detects a ball in the indexer
     @Override
     public void onPeriodic() {
-        if (beamBreak.get()) {
+        if (proximitySensor.get()) {
             indexerIO.setSpeed(0.0); 
         } else {
             indexerIO.setSpeed(indexerSpeed);
