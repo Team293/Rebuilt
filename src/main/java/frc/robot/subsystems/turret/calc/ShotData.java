@@ -7,6 +7,6 @@ public class ShotData {
     public static final InterpolatingDoubleTreeMap distanceToHoodAngle = new InterpolatingDoubleTreeMap();
 
     static {
-
+        // TODO: get data and fill these in
     }
 }

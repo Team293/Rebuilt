@@ -52,7 +52,7 @@ public class RobotContainer {
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
-        turret = new Turret(drivetrain, operator);
+        turret = new Turret(drivetrain);
 //        autoChooser = drivetrain.getAutoChooser();
 //        SmartDashboard.putData("Auto Path", autoChooser);
         

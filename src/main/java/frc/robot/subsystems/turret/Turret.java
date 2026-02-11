@@ -1,11 +1,8 @@
 package frc.robot.subsystems.turret;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.measure.Angle;
 import frc.lib.Elastic;
 import frc.lib.FieldConstants;
 import frc.lib.SpikeController;
@@ -15,54 +12,45 @@ import frc.lib.state.StateMachine;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
+import frc.robot.subsystems.turret.calc.ShotCompensation;
+import frc.robot.subsystems.turret.calc.TurretMath;
 import org.littletonrobotics.junction.Logger;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    private static final double turretDeadbandDeg = 2.5; // degrees the turret must be within to be "on target"
-
     private TurretIOSensorInputs sensorData;
     private final CommandSwerveDrivetrain drive;
-    private final SpikeController controller;
 
-    public enum State { IDLE, TARGETING_HUB, TARGETING_SHUTTLE, ZEROING, MANUAL_CONTROL }
+    public enum State { TARGETING_HUB, TARGETING_SHUTTLE, MANUAL_CONTROL }
 
     private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
     private final StateMachine<State> tsm;
 
-    public static class TurretRequest {
-        public double targetAngleDegrees;
-    }
-
     public void switchState(State state) {
         tsm.transitionTo(state);
     }
 
-    public Turret(CommandSwerveDrivetrain drive, SpikeController controller) {
+    public Turret(CommandSwerveDrivetrain drive) {
         super("Turret", new TurretIO.TurretIOInputs());
         Logger.recordOutput("Hub/Center", FieldConstants.Hub.innerCenterPoint);
         this.drive = drive;
-        this.controller = controller;
         this.tsm = StateMachine.<State>forEnum()
             .initial(State.TARGETING_HUB)
-            .state(State.TARGETING_HUB, cfg -> {
-                cfg.onEnter(() -> {
+            .state(State.TARGETING_HUB, cfg -> cfg
+                .onEnter(() -> {
                     Elastic.sendNotification(
                         new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
                     );
                     Elastic.selectTab("Scoring Mode");
                     targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
-                });
-            })
-            .state(State.TARGETING_SHUTTLE, cfg -> {
-                cfg.onEnter(() -> {
-                      Elastic.sendNotification(
-                        new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
-                    );
-                    Elastic.selectTab("Shuttling Mode");
-                    targetPos = new Translation2d(); // 0,0
-                });
-            })
+                }))
+            .state(State.TARGETING_SHUTTLE, cfg -> cfg.onEnter(() -> {
+                  Elastic.sendNotification(
+                    new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
+                );
+                Elastic.selectTab("Shuttling Mode");
+                targetPos = new Translation2d(); // 0,0 I think
+            }))
             .build();
     }
 
@@ -72,43 +60,19 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         Logger.recordOutput("Turret/enc11", io.enc11);
         Logger.recordOutput("Turret/enc13", io.enc13);
         Logger.recordOutput("Turret/Angle", io.turretAngleDegrees);
-        // double angleDiff = sensorData.getAngleOffsetFromPose(drive.getPose().getTranslation(), FieldConstants.Hub.innerCenterPoint.toTranslation2d());
-        // Logger.recordOutput("Turret/AngleDiff", angleDiff);
         double turretFieldAngleDeg = io.turretAngleDegrees;
         Pose2d turretPose = new Pose2d(drive.getPose().getTranslation(), new Rotation2d(TurretMath.toRad(turretFieldAngleDeg)));
         Logger.recordOutput("Turret/TurretPose", turretPose);
-        // sensorData.setTurretAngle(angleDiff);
-        // double x = controller.getLeftX();
-        // double y = -controller.getLeftY();
 
-        // double angleDeg = Math.toDegrees(Math.atan2(y, x));
+        ShotCompensation.AdjustedShot targetAngleCompensated = ShotCompensation.compensateForMovement(
+                drive.getPose(),
+                drive.getState().Speeds,
+                new Pose2d(targetPos, new Rotation2d()),
+                0.3 // TODO: tune
+        );
 
-        // if (angleDeg < 0) {
-        //     angleDeg += 360;
-        // }
-
-        // Logger.recordOutput("Turret/RequestedAngle", angleDeg);
-
-        // LocalTime now = LocalTime.now();
-        // int seconds = now.getSecond();
-        // Logger.recordOutput("Turret/TimeSec", seconds);
-        // double angle = seconds * 6;
-
-        // Logger.recordOutput("Turret/RequestedAngle", angle);
-
-        // TurretRequest req = new TurretRequest();
-        // req.targetAngleDegrees = angleDeg;
-        // runRequest(req);
-
-        double target = sensorData.getAngleOffsetFromPose(drive.getPose().getTranslation(), targetPos);
-        sensorData.setTurretAngle(target);
-        Logger.recordOutput("Turret/TargetOffset", target);
-
-        // sensorData.setTurretAngle(0);
-    }
-
-    public void runRequest(TurretRequest request) {
-        sensorData.setTurretAngle(request.targetAngleDegrees);
+        sensorData.setTurretAngle(targetAngleCompensated.turretAngleDeg());
+        Logger.recordOutput("Turret/TargetOffset", targetAngleCompensated.turretAngleDeg());
     }
 
     @Override

@@ -1,8 +1,4 @@
-package frc.robot.subsystems.turret;
-
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.units.measure.Angle;
+package frc.robot.subsystems.turret.calc;
 
 /**
  * Utility class for computing absolute turret position using two geared absolute encoders
@@ -36,7 +32,7 @@ public class TurretMath {
      * Computes the raw absolute turret position in revolutions of the 13-tooth gear
      * (i.e. position in "13-gear equivalent revolutions").
      * Range is approximately 0 to (143/13) ≈ 11.0 revolutions of the 13-gear.
-     * 
+     * <p>
      * This uses a search-based CRT solution (most reliable for real hardware).
      *
      * @param enc13  Absolute encoder on 13-tooth gear, normalized [0, 1)
@@ -70,9 +66,6 @@ public class TurretMath {
                 bestPosition = assumed13Revs;
             }
         }
-
-        // You can add a sanity check here if desired
-        // if (bestError > 0.015) { /* signal invalid reading */ }
 
         return bestPosition;
     }

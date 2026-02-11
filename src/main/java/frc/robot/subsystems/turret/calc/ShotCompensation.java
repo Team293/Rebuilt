@@ -14,7 +14,8 @@ public class ShotCompensation {
             Pose2d robotPose,
             ChassisSpeeds fieldRelVel,
             Pose2d targetPose,
-            double nominalShotTimeS) {
+            double nominalShotTimeS
+    ) {
 
         Translation2d toTarget = targetPose.getTranslation().minus(robotPose.getTranslation());
         double rangeM = toTarget.getNorm();
