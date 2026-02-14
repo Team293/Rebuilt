@@ -7,9 +7,16 @@ import org.littletonrobotics.junction.AutoLog;
 public interface IntakeIO extends BaseIO<IntakeIO.IntakeIOInputs> {
 
     @AutoLog
-    public static class IntakeIOInputs extends BaseInputClass {
-        public double motorRps = 0.0;
+    class IntakeIOInputs extends BaseInputClass {
+        public double intakeVelocityRPS = 0.0;
+        public double intakeCurrentAmps = 0.0; // add in values
+        public double deployVelocityRPS = 0.0;
+        public double deployCurrentAmps = 0.0;
+        public boolean deployed = false;
     }
 
-    abstract void setSpeed(double rps);
+    void on(double speed);
+    void off();
+    void deploy();
+    void retract();
 }
