@@ -5,7 +5,6 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import frc.robot.CanID;
@@ -30,13 +29,7 @@ public class IntakeIOTalonFX implements IntakeIO {
         intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID()); // get can ID for motors
         deployMotor = new TalonFX(CanID.INTAKE_DEPLOY_MOTOR.getID());
 
-        var intakeConfig = new TalonFXConfiguration();
-        intakeConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; // might wanna coast?
-        intakeConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        intakeMotor.getConfigurator().apply(intakeConfig);
-
         var deployConfig = new TalonFXConfiguration();
-        deployConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         deployConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         deployMotor.getConfigurator().apply(deployConfig);
 
@@ -45,7 +38,7 @@ public class IntakeIOTalonFX implements IntakeIO {
         deployVelocity = deployMotor.getVelocity();
         deployCurrent = deployMotor.getStatorCurrent();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(50.0,
+        BaseStatusSignal.setUpdateFrequencyForAll(50.0, 
                 intakeVelocity, intakeCurrent, deployVelocity, deployCurrent);
 
         intakeMotor.optimizeBusUtilization();
