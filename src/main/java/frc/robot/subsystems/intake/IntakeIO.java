@@ -9,9 +9,9 @@ public interface IntakeIO extends BaseIO<IntakeIO.IntakeIOInputs> {
     @AutoLog
     class IntakeIOInputs extends BaseInputClass {
         public double intakeVelocityRPS = 0.0; // Rotations per second
-  //      public double intakeCurrentAmps = 0.0; // Amps
+          public double intakeCurrentAmps = 0.0; // Amps
         public double deployVelocityRPS = 0.0; // Rotations per second
-  //      public double deployCurrentAmps = 0.0;
+          public double deployCurrentAmps = 0.0;
         public boolean deployed = false; // whether the intake is deployed
     }
 
