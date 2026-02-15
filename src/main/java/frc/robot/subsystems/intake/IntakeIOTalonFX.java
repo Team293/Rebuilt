@@ -7,6 +7,9 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+
 import frc.robot.CanID;
 
 public class IntakeIOTalonFX implements IntakeIO {
@@ -18,10 +21,10 @@ public class IntakeIOTalonFX implements IntakeIO {
 
     private final DutyCycleOut dutyCycle = new DutyCycleOut(0.0);
 
-    private final StatusSignal<Double> intakeVelocity;
-    private final StatusSignal<Double> intakeCurrent;
-    private final StatusSignal<Double> deployVelocity;
-    private final StatusSignal<Double> deployCurrent;
+    private final StatusSignal<AngularVelocity> intakeVelocity;
+    private final StatusSignal<Current> intakeCurrent;
+    private final StatusSignal<AngularVelocity> deployVelocity;
+    private final StatusSignal<Current> deployCurrent;
 
     private boolean deployed = false;
 
@@ -38,7 +41,7 @@ public class IntakeIOTalonFX implements IntakeIO {
         deployVelocity = deployMotor.getVelocity();
         deployCurrent = deployMotor.getStatorCurrent();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(50.0, 
+        BaseStatusSignal.setUpdateFrequencyForAll(50.0,
                 intakeVelocity, intakeCurrent, deployVelocity, deployCurrent);
 
         intakeMotor.optimizeBusUtilization();
