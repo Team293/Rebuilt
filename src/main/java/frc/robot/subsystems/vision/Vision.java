@@ -25,9 +25,22 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
         // update drive with vision measurements
         for (EstimatedRobotPose pose : io.estimatedRobotPoses) {
             Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
+            double avgDist = 0;
+
+            if (!pose.targetsUsed.isEmpty()) {
+                double totalDist = 0;
+                for (var target : pose.targetsUsed) {
+                    totalDist += target.getBestCameraToTarget().getTranslation().getNorm();
+                }
+
+                avgDist = totalDist / pose.targetsUsed.size();
+                Logger.recordOutput("EstimatedPose/" + index + "/AvgTargetDist", avgDist);
+            }
+
             drive.addVisionMeasurement(
                     pose.estimatedPose.toPose2d(),
-                    pose.timestampSeconds
+                    pose.timestampSeconds,
+                    CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30)) // scale the std devs based on the average distance to the targets (farther targets are less accurate)
             );
             index++;
         }

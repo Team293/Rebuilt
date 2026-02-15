@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class Camera {
+    private static final double AMBIGUITY_THRESHOLD = 0.2;
+
     private transient final PhotonCamera photonCamera;
     private final String id;
     private transient final PhotonPoseEstimator poseEstimator;
@@ -42,6 +44,11 @@ public class Camera {
         double bestTimestamp = Double.NEGATIVE_INFINITY;
 
         for (PhotonPipelineResult result : results) {
+            // check if the pose is within ambiguity threshold
+            if (result.hasTargets() && isAmbiguous(result)) {
+                continue;
+            }
+
             Optional<EstimatedRobotPose> estimatedPose = poseEstimator.update(result);
             if (estimatedPose.isPresent()) {
                 double timestamp = result.getTimestampSeconds();
@@ -53,6 +60,14 @@ public class Camera {
         }
 
         return bestPose.orElse(null);
+    }
+
+    private boolean isAmbiguous(PhotonPipelineResult result) {
+        var bestTarget = result.getBestTarget();
+        if (bestTarget == null) return false;
+
+        double ambiguity = bestTarget.getPoseAmbiguity();
+        return ambiguity > AMBIGUITY_THRESHOLD;
     }
 
     public PhotonCamera getPhotonCamera() {
