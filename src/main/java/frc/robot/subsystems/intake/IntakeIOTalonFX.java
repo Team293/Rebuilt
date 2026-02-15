@@ -3,36 +3,39 @@ package frc.robot.subsystems.intake;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
+// import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 
+import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
-public class IntakeIOTalonFX implements IntakeIO {
-    private static final double DEPLOY_SPEED = 1.0; //these values are placeholders, will need to be tuned once we have the prototype built
+public class IntakeIOTalonFX implements IntakeIO, IORefresher {
+    private static final double DEPLOY_SPEED = 1.0; //placeholder values 
     private static final double RETRACT_SPEED = -1.0;
 
     private final TalonFX intakeMotor;
     private final TalonFX deployMotor;
 
-    private final DutyCycleOut dutyCycle = new DutyCycleOut(0.0);
+    // private final DutyCycleOut dutyCycle = new DutyCycleOut(0.0);
 
-    private final StatusSignal<AngularVelocity> intakeVelocity;
+    private final StatusSignal<AngularVelocity> intakeVelocity; // Status Signal Fixed
     private final StatusSignal<Current> intakeCurrent;
     private final StatusSignal<AngularVelocity> deployVelocity;
     private final StatusSignal<Current> deployCurrent;
 
-    private boolean deployed = false;
+    private IntakeIOInputs latestInputs;
 
-    public IntakeIOTalonFX() {
-        intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID()); // get can ID for motors
-        deployMotor = new TalonFX(CanID.INTAKE_DEPLOY_MOTOR.getID());
+    public IntakeIOTalonFX() { 
+        intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID()); // get intake canID
+        deployMotor = new TalonFX(CanID.INTAKE_DEPLOY_MOTOR.getID()); // get deploy canID
 
-        var deployConfig = new TalonFXConfiguration();
+         // Configure motors
+
+        var deployConfig = new TalonFXConfiguration(); // Deploy Motor to break mode when no power
         deployConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         deployMotor.getConfigurator().apply(deployConfig);
 
@@ -41,43 +44,57 @@ public class IntakeIOTalonFX implements IntakeIO {
         deployVelocity = deployMotor.getVelocity();
         deployCurrent = deployMotor.getStatorCurrent();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(50.0,
+        BaseStatusSignal.setUpdateFrequencyForAll(50.0, // set to 50hz to match robot loop and avoid stale data issues
                 intakeVelocity, intakeCurrent, deployVelocity, deployCurrent);
 
         intakeMotor.optimizeBusUtilization();
         deployMotor.optimizeBusUtilization();
     }
 
+    // Fetches data from the motors
+    @Override
+    public void refreshData() {
+        BaseStatusSignal.refreshAll(intakeVelocity, intakeCurrent, deployVelocity, deployCurrent);
+    }
+
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        BaseStatusSignal.refreshAll(intakeVelocity, intakeCurrent, deployVelocity, deployCurrent);
-
+        latestInputs = inputs;
         inputs.intakeVelocityRPS = intakeVelocity.getValueAsDouble();
         inputs.intakeCurrentAmps = intakeCurrent.getValueAsDouble();
         inputs.deployVelocityRPS = deployVelocity.getValueAsDouble();
         inputs.deployCurrentAmps = deployCurrent.getValueAsDouble();
-        inputs.deployed = deployed;
     }
 
     @Override
     public void on(double speed) {
-        intakeMotor.setControl(dutyCycle.withOutput(speed));
+        // intakeMotor.setControl(dutyCycle.withOutput(speed));
+        intakeMotor.set(speed);
     }
 
     @Override
     public void off() {
-        intakeMotor.setControl(dutyCycle.withOutput(0.0));
+        // intakeMotor.setControl(dutyCycle.withOutput(0.0));
+        intakeMotor.set(0.0);
     }
 
+    // Extends the intake out
     @Override
     public void deploy() {
-        deployed = true;
-        deployMotor.setControl(dutyCycle.withOutput(DEPLOY_SPEED));
+        if (latestInputs != null) {
+            latestInputs.deployed = true; //mark as deployed 
+        }
+        // deployMotor.setControl(dutyCycle.withOutput(DEPLOY_SPEED));
+        deployMotor.set(DEPLOY_SPEED);
     }
 
+    // Pulls the intake back in
     @Override
     public void retract() {
-        deployed = false;
-        deployMotor.setControl(dutyCycle.withOutput(RETRACT_SPEED));
+        if (latestInputs != null) {
+            latestInputs.deployed = false; //mark as retracted  w
+        }
+        // deployMotor.setControl(dutyCycle.withOutput(RETRACT_SPEED));
+        deployMotor.set(RETRACT_SPEED);
     }
 }
