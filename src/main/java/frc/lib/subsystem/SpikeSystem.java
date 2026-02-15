@@ -19,7 +19,6 @@ public abstract class SpikeSystem<I extends BaseInputClass> extends SubsystemBas
     protected <T extends BaseIO<I> & IORefresher> Runnable useAsyncDataRefresher(
         T baseIO
     ) {
-        System.out.println("Inputs: " + io);
         DataUtils.createDataLogger(io, baseIO);
         return () -> {};
     }
