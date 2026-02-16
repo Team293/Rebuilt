@@ -3,7 +3,6 @@ package frc.robot.subsystems.intake;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-// import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -19,8 +18,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
 
     private final TalonFX intakeMotor;
     private final TalonFX deployMotor;
-
-    // private final DutyCycleOut dutyCycle = new DutyCycleOut(0.0);
 
     private final StatusSignal<AngularVelocity> intakeVelocity; // Status Signal Fixed
     private final StatusSignal<Current> intakeCurrent;
@@ -68,13 +65,11 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
 
     @Override
     public void on(double speed) {
-        // intakeMotor.setControl(dutyCycle.withOutput(speed));
         intakeMotor.set(speed);
     }
 
     @Override
     public void off() {
-        // intakeMotor.setControl(dutyCycle.withOutput(0.0));
         intakeMotor.set(0.0);
     }
 
@@ -84,7 +79,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         if (latestInputs != null) {
             latestInputs.deployed = true; //mark as deployed 
         }
-        // deployMotor.setControl(dutyCycle.withOutput(DEPLOY_SPEED));
         deployMotor.set(DEPLOY_SPEED);
     }
 
@@ -94,7 +88,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         if (latestInputs != null) {
             latestInputs.deployed = false; //mark as retracted  w
         }
-        // deployMotor.setControl(dutyCycle.withOutput(RETRACT_SPEED));
         deployMotor.set(RETRACT_SPEED);
     }
 }
