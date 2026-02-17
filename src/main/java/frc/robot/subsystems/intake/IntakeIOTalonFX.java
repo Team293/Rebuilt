@@ -89,5 +89,7 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
             latestInputs.deployed = false; //mark as retracted  w
         }
         deployMotor.set(RETRACT_SPEED);
+        intakeMotor.set(0.0); 
+
     }
 }
