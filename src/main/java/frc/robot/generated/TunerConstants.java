@@ -197,7 +197,12 @@ public class TunerConstants {
      */
     public static CommandSwerveDrivetrain createDrivetrain() {
         return new CommandSwerveDrivetrain(
-            DrivetrainConstants, 250.0, FrontLeft, FrontRight, BackLeft, BackRight
+            DrivetrainConstants,
+                250.0, // Run at 250 Hz for Canivore
+                FrontLeft,
+                FrontRight,
+                BackLeft,
+                BackRight
         );
     }
 
