@@ -23,10 +23,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class TurretIOSensorInputs implements TurretIO, IORefresher {
-    private final Camera turretCamera;
     private final TalonFX turretMotor;
-    private final DutyCycleEncoder enc11;
-    private final DutyCycleEncoder enc13;
+    private final DutyCycleEncoder pinionEncoder;
+    private final DutyCycleEncoder followerEncoder;
 
     private final MotionMagicVoltage mmVoltage = new MotionMagicVoltage(0);
     private final StatusSignal<Angle> encoderSignal;
@@ -35,37 +34,25 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
     private final double turretRotationOffset;
     private final double turretDegreesOffset = 246.7;
 
-    private static final int[] kValidTargetIDs = {9, 10, 23, 26};
-
-    private Optional<Double> cachedYawErrorDeg = Optional.empty();
-    private double cachedYawTimestampSec = Double.NEGATIVE_INFINITY;
-
-    public TurretIOSensorInputs(Camera camera) {
+    public TurretIOSensorInputs() {
         this.turretMotor = new TalonFX(CanID.TURRET_MOTOR.getID());
-        Slot0Configs config = new Slot0Configs();
-        config.kP = 1;
-        config.kI = 0.01;
-        config.kD = 0.3;
-        config.kS = 0.194;
-        config.kV = 0.1167;
-        
+
         MotionMagicConfigs mm = new MotionMagicConfigs();
         mm.MotionMagicAcceleration = 60;
         mm.MotionMagicCruiseVelocity = 30;
         mm.MotionMagicJerk = 0;
 
         this.turretMotor.getConfigurator().apply(mm);
-        // this.turretMotor.getConfigurator().apply(config);
-        this.turretCamera = camera;
-        this.enc11 = new DutyCycleEncoder(0);
-        this.enc13 = new DutyCycleEncoder(1);
+        this.pinionEncoder = new DutyCycleEncoder(0);
+        this.followerEncoder = new DutyCycleEncoder(1);
 
         this.encoderSignal = turretMotor.getPosition();
 
-        double enc11InitialValue = enc11.get();
-        double enc13InitialValue = enc13.get();
+        double pinionEncoderValue = pinionEncoder.get();
+        double followerEncoderValue = followerEncoder.get();
 
-        double turretRotations = TurretMath.getTurretAngleRevs(enc13InitialValue, enc11InitialValue);
+        // set offset of the turret on startup
+        double turretRotations = TurretMath.getTurretAngleRevs(pinionEncoderValue, followerEncoderValue);
     
         double turretDegrees = TurretMath.normalizeTurretHeading(
             TurretMath.toDegreesWrapped(turretRotations),
@@ -127,9 +114,9 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
     
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        inputs.enc11 = enc11.get();
-        inputs.enc13 = enc13.get();
-        double turretRotations = TurretMath.getTurretAngleRevs(inputs.enc13, inputs.enc11);
+        inputs.pinionEncoder = this.pinionEncoder.get();
+        inputs.followerEncoder = this.followerEncoder.get();
+        double turretRotations = TurretMath.getTurretAngleRevs(inputs.pinionEncoder, inputs.followerEncoder);
     
         inputs.turretAngleDegrees = TurretMath.normalizeTurretHeading(
             TurretMath.toDegreesWrapped(turretRotations),
@@ -142,50 +129,6 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(encoderSignal);
-        cachedYawErrorDeg = Optional.empty();
-
-        if (turretCamera == null || turretCamera.getPhotonCamera() == null) return;
-
-        List<PhotonPipelineResult> unread = turretCamera.getPhotonCamera().getAllUnreadResults();
-        if (unread.isEmpty()) return;
-
-        PhotonPipelineResult latest = null;
-        double latestTs = cachedYawTimestampSec;
-
-        for (PhotonPipelineResult r : unread) {
-            double ts = r.getTimestampSeconds();
-            if (ts > latestTs) {
-                latestTs = ts;
-                latest = r;
-            }
-        }
-
-        if (latest == null || !latest.hasTargets()) return;
-
-        var validTargets = latest.getTargets().stream()
-                .filter(t -> {
-                    int id = t.getFiducialId();
-                    for (int valid : kValidTargetIDs) {
-                        if (id == valid) return true;
-                    }
-                    return false;
-                })
-                .toList();
-        if (validTargets.isEmpty()) return;
-
-        double lowestAmbiguity = Double.MAX_VALUE;
-        double yawDeg = 0.0;
-
-        for (var t : validTargets) {
-            double amb = t.getPoseAmbiguity();
-            if (amb < lowestAmbiguity) {
-                lowestAmbiguity = amb;
-                yawDeg = t.getYaw();
-            }
-        }
-
-        cachedYawErrorDeg = Optional.of(yawDeg);
-        cachedYawTimestampSec = latestTs;
     }
 
     @Override
@@ -200,10 +143,5 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
             )
         );
         return MathUtil.inputModulus(-fieldAngleDeg, -180, 180);
-    }
-
-    @Override
-    public Optional<Double> getErrorFromCamera() {
-        return cachedYawErrorDeg;
     }
 }

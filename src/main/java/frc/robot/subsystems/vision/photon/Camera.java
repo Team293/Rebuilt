@@ -53,12 +53,6 @@ public class Camera {
         }
 
         return bestPose.orElse(null);
-
-        // var estimatedPose = poseEstimator.update(result).orElse(null);
-        
-        // Logger.recordOutput("EstimatedPose/" + this.id, estimatedPose.estimatedPose);  
-
-        // return estimatedPose;
     }
 
     public PhotonCamera getPhotonCamera() {

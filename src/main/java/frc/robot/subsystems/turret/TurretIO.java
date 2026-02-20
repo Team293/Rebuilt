@@ -5,18 +5,14 @@ import frc.lib.subsystem.BaseIO;
 import frc.lib.subsystem.BaseInputClass;
 import org.littletonrobotics.junction.AutoLog;
 
-import java.util.Optional;
-
 public interface TurretIO extends BaseIO<TurretIO.TurretIOInputs> {
 
     @AutoLog
     public static class TurretIOInputs extends BaseInputClass {
         public double turretAngleDegrees = 0.0;
-        public double offsetError = 0.0; // feed from camera, raw error value
-        public double enc11 = 0.0;
-        public double enc13 = 0.0;
+        public double pinionEncoder = 0.0;
+        public double followerEncoder = 0.0;
     }
 
-    Optional<Double> getErrorFromCamera();
     double getAngleOffsetFromPose(Translation2d robotPose, Translation2d target);
 }

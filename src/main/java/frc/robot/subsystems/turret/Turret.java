@@ -20,7 +20,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     private TurretIOSensorInputs sensorData;
     private final CommandSwerveDrivetrain drive;
 
-    public enum State { TARGETING_HUB, TARGETING_SHUTTLE, MANUAL_CONTROL }
+    public enum State { TARGETING_HUB, TARGETING_SHUTTLE }
 
     private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
@@ -49,7 +49,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
                     new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
                 );
                 Elastic.selectTab("Shuttling Mode");
-                targetPos = new Translation2d(); // 0,0 I think
+                targetPos = new Translation2d();
             }))
             .build();
     }
@@ -57,8 +57,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     @Override
     public void onPeriodic() {
         tsm.tick();
-        Logger.recordOutput("Turret/enc11", io.enc11);
-        Logger.recordOutput("Turret/enc13", io.enc13);
+        Logger.recordOutput("Turret/PinionEncoder", io.pinionEncoder);
+        Logger.recordOutput("Turret/FollowerEncoder", io.followerEncoder);
         Logger.recordOutput("Turret/Angle", io.turretAngleDegrees);
         double turretFieldAngleDeg = io.turretAngleDegrees;
         Pose2d turretPose = new Pose2d(drive.getPose().getTranslation(), new Rotation2d(TurretMath.toRad(turretFieldAngleDeg)));
@@ -77,7 +77,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        sensorData = new TurretIOSensorInputs(null);
+        sensorData = new TurretIOSensorInputs();
         return useAsyncDataRefresher(sensorData);
     }
 }

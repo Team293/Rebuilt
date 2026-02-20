@@ -2,26 +2,41 @@ package frc.robot.subsystems.turret.calc;
 
 /**
  * Utility class for computing absolute turret position using two geared absolute encoders
- * with the Chinese Remainder Theorem (CRT) approach.
- * 
- * Hardware setup:
+ * with a CRT-like search approach.
+ *
+ * Hardware setup (example):
  * - Turret gear: 140 teeth
- * - Encoder 13: 13-tooth gear driving an absolute encoder (reads 0–1 rev)
- * - Encoder 11: 11-tooth gear driving an absolute encoder (reads 0–1 rev)
- * 
- * The combination gives unique positions over 11 × 13 = 143 teeth → 143/140 ≈ 1.0214 turret revolutions.
+ * - Encoder A: e.g. 13-tooth gear driving an absolute encoder (reads 0–1 rev)
+ * - Encoder B: e.g. 11-tooth gear driving an absolute encoder (reads 0–1 rev)
+ *
+ * The combination gives unique positions over (encoderA_teeth × encoderB_teeth) teeth.
  * Beyond that range, continuity tracking (unwrapping) is used.
  */
 public class TurretMath {
 
-    private static final double GEAR_TEETH_TURRET = 140.0;
-    private static final double GEAR_TEETH_ENC13  = 13.0;
-    private static final double GEAR_TEETH_ENC11  = 11.0;
-    private static final double PERIOD_TEETH      = GEAR_TEETH_ENC11 * GEAR_TEETH_ENC13; // 143
-    private static final double PERIOD_REV        = PERIOD_TEETH / GEAR_TEETH_TURRET;    // ≈1.0214
+    // Hardware tooth counts
+    private static final double TURRET_GEAR_TEETH         = 140.0;
+    private static final double ENCODER_A_TEETH           = 13.0;
+    private static final double ENCODER_B_TEETH           = 11.0;
 
-    private static double offsetDegrees = 0;           // Calibration offset (degrees)
-    private static double lastPositionRevs = 0.0;        // Unwrapped continuous position
+    // Derived encoder combination values
+    private static final double ENCODER_COMBINED_TEETH    = ENCODER_A_TEETH * ENCODER_B_TEETH; // 143 (example)
+    private static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / TURRET_GEAR_TEETH;    // ≈1.0214 (example)
+    private static final double HALF_ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_PERIOD_REV / 2.0;
+
+    private static final double NORMALIZED_REV = 1.0;                // encoder reading range (0..1)
+    private static final double HALF_NORMALIZED_REV = NORMALIZED_REV / 2.0;
+    private static final double DEGREES_PER_REV = 360.0;
+    private static final double RAD_PER_REV = 2.0 * Math.PI;
+    private static final double MOTOR_UNITS_PER_REV = 14.0;          // scale used in degreesToMotorPosition
+
+    // Defaults / initial values
+    private static final double DEFAULT_OFFSET_DEGREES = 0.0;
+    private static final double DEFAULT_LAST_POSITION_REVS = 0.0;
+
+    // State
+    private static double offsetDegrees = DEFAULT_OFFSET_DEGREES;   // Calibration offset (degrees)
+    private static double lastPositionRevs = DEFAULT_LAST_POSITION_REVS; // Unwrapped continuous position
     private static boolean initialized = false;
 
     private static double mod(double x, double m) {
@@ -29,41 +44,43 @@ public class TurretMath {
     }
 
     /**
-     * Computes the raw absolute turret position in revolutions of the 13-tooth gear
-     * (i.e. position in "13-gear equivalent revolutions").
-     * Range is approximately 0 to (143/13) ≈ 11.0 revolutions of the 13-gear.
-     * <p>
-     * This uses a search-based CRT solution (most reliable for real hardware).
+     * Computes the raw absolute turret position in revolutions of the encoder-A gear
+     * (i.e. position in "encoder-A-gear-equivalent revolutions").
+     * Range is approximately 0 to (combined_teeth / encoderA_teeth) revolutions of the encoder-A gear.
      *
-     * @param enc13  Absolute encoder on 13-tooth gear, normalized [0, 1)
-     * @param enc11  Absolute encoder on 11-tooth gear, normalized [0, 1)
-     * @return       Raw turret position in 13-gear revolutions (multiply by 13/140 for turret revs)
+     * This uses a search-based approach across the possible integer wraps of the encoder-A reading
+     * to find the branch that best matches the encoder-B reading.
+     *
+     * @param encoderAReading  Absolute encoder A reading (normalized [0, 1))
+     * @param encoderBReading  Absolute encoder B reading (normalized [0, 1))
+     * @return       Raw turret position in encoder-A-gear revolutions
      */
-    public static double getRawPosition13Revs(double enc13, double enc11) {
-        double offsetRevs = offsetDegrees / 360.0;
+    public static double getRawPositionPrimaryRevs(double encoderAReading, double encoderBReading) {
+        double offsetRevs = offsetDegrees / DEGREES_PER_REV;
 
         // Apply offset and wrap to [0,1)
-        enc13 = mod(enc13 - offsetRevs, 1.0);
-        enc11 = mod(enc11 - offsetRevs, 1.0);
+        encoderAReading = mod(encoderAReading - offsetRevs, NORMALIZED_REV);
+        encoderBReading = mod(encoderBReading - offsetRevs, NORMALIZED_REV);
 
         double bestError = Double.POSITIVE_INFINITY;
         double bestPosition = 0.0;
 
-        // Search over the 11 possible integer steps of the slower gear
-        for (int k = 0; k < (int) GEAR_TEETH_ENC11; k++) {
-            double assumed13Revs = enc13 + k;
-            // Predict what enc11 *should* read if this is the correct branch
-            double predicted11 = mod(assumed13Revs * (GEAR_TEETH_ENC13 / GEAR_TEETH_ENC11), 1.0);
+        // Search over the possible integer wraps of the secondary/primary relationship
+        int searchCount = (int) ENCODER_B_TEETH; // number of distinct branches to check (encoder B teeth)
+        for (int k = 0; k < searchCount; k++) {
+            double assumedPrimaryRevs = encoderAReading + k;
+            // Predict what the encoder-B reading should be if this is the correct branch
+            double predictedEncoderB = mod(assumedPrimaryRevs * (ENCODER_A_TEETH / ENCODER_B_TEETH), NORMALIZED_REV);
 
-            double error = Math.abs(predicted11 - enc11);
+            double error = Math.abs(predictedEncoderB - encoderBReading);
             // Handle wrap-around distance
-            if (error > 0.5) {
-                error = 1.0 - error;
+            if (error > HALF_NORMALIZED_REV) {
+                error = NORMALIZED_REV - error;
             }
 
             if (error < bestError) {
                 bestError = error;
-                bestPosition = assumed13Revs;
+                bestPosition = assumedPrimaryRevs;
             }
         }
 
@@ -73,20 +90,20 @@ public class TurretMath {
     /**
      * Returns the turret angle in revolutions, unwrapped for continuous multi-turn motion.
      * Applies offset and continuity tracking.
-     * 
-     * @param enc13  Absolute encoder on 13-tooth gear [0,1)
-     * @param enc11  Absolute encoder on 11-tooth gear [0,1)
+     *
+     * @param encoderAReading   Absolute encoder A reading [0,1)
+     * @param encoderBReading   Absolute encoder B reading [0,1)
      * @return       Continuous turret position in revolutions (can be >1 or <0)
      */
-    public static double getTurretAngleRevs(double enc13, double enc11) {
-        double raw13Revs = getRawPosition13Revs(enc13, enc11);
-        double rawTurretRevs = raw13Revs * (GEAR_TEETH_ENC13 / GEAR_TEETH_TURRET);
+    public static double getTurretAngleRevs(double encoderAReading, double encoderBReading) {
+        double rawPrimaryRevs = getRawPositionPrimaryRevs(encoderAReading, encoderBReading);
+        double rawTurretRevs = rawPrimaryRevs * (ENCODER_A_TEETH / TURRET_GEAR_TEETH);
 
         // Apply offset again (in turret space)
-        rawTurretRevs -= offsetDegrees / 360.0;
+        rawTurretRevs -= offsetDegrees / DEGREES_PER_REV;
 
-        // Wrap raw reading into one period for comparison
-        double wrapped = mod(rawTurretRevs, PERIOD_REV);
+        // Wrap raw reading into one encoded period for comparison
+        double wrapped = mod(rawTurretRevs, ENCODER_COMBINED_PERIOD_REV);
 
         if (!initialized) {
             lastPositionRevs = wrapped;
@@ -97,11 +114,11 @@ public class TurretMath {
         // Compute shortest path delta (assuming small motion between calls)
         double delta = wrapped - lastPositionRevs;
 
-        // Unwrap using the known period
-        if (delta > PERIOD_REV / 2.0) {
-            delta -= PERIOD_REV;
-        } else if (delta < -PERIOD_REV / 2.0) {
-            delta += PERIOD_REV;
+        // Unwrap using the known encoder combined period
+        if (delta > HALF_ENCODER_COMBINED_PERIOD_REV) {
+            delta -= ENCODER_COMBINED_PERIOD_REV;
+        } else if (delta < -HALF_ENCODER_COMBINED_PERIOD_REV) {
+            delta += ENCODER_COMBINED_PERIOD_REV;
         }
 
         lastPositionRevs += delta;
@@ -113,26 +130,26 @@ public class TurretMath {
      * Use this when you only care about single-turn angle.
      */
     public static double toDegreesWrapped(double turretRevs) {
-        return mod(turretRevs, 1.0) * 360.0;
+        return mod(turretRevs, NORMALIZED_REV) * DEGREES_PER_REV;
     }
 
     /**
      * Convert turret revolutions to radians, wrapped to [0, 2π).
      */
     public static double toRadiansWrapped(double turretRevs) {
-        return mod(turretRevs, 1.0) * 2.0 * Math.PI;
+        return mod(turretRevs, NORMALIZED_REV) * RAD_PER_REV;
     }
 
     public static double degreesToMotorPosition(double turretDegrees) {
-        return (turretDegrees * 14) / 360;
+        return (turretDegrees * MOTOR_UNITS_PER_REV) / DEGREES_PER_REV;
     }
 
     public static double normalizeTurretHeading(double turretHeading, double zeroDegrees) {
         double newHeading = turretHeading - zeroDegrees;
 
         if (newHeading < 0) {
-            newHeading = 360 - Math.abs(newHeading);
-        } 
+            newHeading = DEGREES_PER_REV - Math.abs(newHeading);
+        }
 
         return newHeading;
     }
@@ -142,7 +159,7 @@ public class TurretMath {
      * Use this when you want continuous angle for PID or motion profiling.
      */
     public static double toDegreesContinuous(double turretRevs) {
-        return turretRevs * 360.0;
+        return turretRevs * DEGREES_PER_REV;
     }
 
     // Calibration / zeroing
@@ -154,13 +171,13 @@ public class TurretMath {
         return offsetDegrees;
     }
 
-    // Reset continuity tracker (call on robot enable or after large jumps)
+    // Reset continuity tracker
     public static void resetContinuity() {
         initialized = false;
-        lastPositionRevs = 0.0;
+        lastPositionRevs = DEFAULT_LAST_POSITION_REVS;
     }
 
     public static double toRad(double angle) {
-        return angle * (Math.PI / 180);
+        return angle * (Math.PI / DEGREES_PER_REV);
     }
 }
