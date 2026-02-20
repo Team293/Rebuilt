@@ -22,6 +22,7 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
     @Override
     public void onPeriodic() {
         int index = 0;
+        // update drive with vision measurements
         for (EstimatedRobotPose pose : io.estimatedRobotPoses) {
             Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
             drive.addVisionMeasurement(

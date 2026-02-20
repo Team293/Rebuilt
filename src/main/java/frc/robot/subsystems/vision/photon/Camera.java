@@ -3,13 +3,13 @@ package frc.robot.subsystems.vision.photon;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.wpilibj.Filesystem;
+
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.targeting.PhotonPipelineResult;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +24,7 @@ public class Camera {
         this.id = id;
         this.photonCamera = new PhotonCamera(id);
         this.poseEstimator = new PhotonPoseEstimator(
-                AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded),
+                AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField),
                 PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 cameraToRobot
         );
@@ -36,7 +36,9 @@ public class Camera {
      */
     public EstimatedRobotPose getEstimatedRobotPose() {
         List<PhotonPipelineResult> results = photonCamera.getAllUnreadResults();
+        // get the best estimated pose from the results (using the most recent timestamp)
         Optional<EstimatedRobotPose> bestPose = Optional.empty();
+        // smallest possible timestamp, so any real timestamp will be greater than this
         double bestTimestamp = Double.NEGATIVE_INFINITY;
 
         for (PhotonPipelineResult result : results) {
@@ -51,6 +53,12 @@ public class Camera {
         }
 
         return bestPose.orElse(null);
+
+        // var estimatedPose = poseEstimator.update(result).orElse(null);
+        
+        // Logger.recordOutput("EstimatedPose/" + this.id, estimatedPose.estimatedPose);  
+
+        // return estimatedPose;
     }
 
     public PhotonCamera getPhotonCamera() {

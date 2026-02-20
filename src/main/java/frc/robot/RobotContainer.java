@@ -26,13 +26,14 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.turret.Turret.State;
+import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.vision.Vision;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-//    private final SendableChooser<Command> autoChooser;
+    private final SendableChooser<Command> autoChooser;
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -49,14 +50,16 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drivetrain;
     private final Vision vision;
     private final Turret turret;
+    private final Indexer indexer;
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
         turret = new Turret(drivetrain);
-//        autoChooser = drivetrain.getAutoChooser();
-//        SmartDashboard.putData("Auto Path", autoChooser);
+        autoChooser = drivetrain.getAutoChooser();
+        SmartDashboard.putData("Auto Path", autoChooser);
         
         this.vision = new Vision(drivetrain);
+        this.indexer = new Indexer(2);
         configureBindings();
     }
 
@@ -112,7 +115,7 @@ public class RobotContainer {
 
     }
 
-//    public Command getAutonomousCommand() {
-//        return autoChooser.getSelected();
-//    }
+    public Command getAutonomousCommand() {
+        return autoChooser.getSelected();
+    }
 }
