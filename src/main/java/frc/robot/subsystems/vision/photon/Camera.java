@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class Camera {
+    // ambiguity refers to pose confidence. lower ambiguity means higher confidence, and vice versa. 0.2 is recommended
     private static final double AMBIGUITY_THRESHOLD = 0.2;
 
     private transient final PhotonCamera photonCamera;
