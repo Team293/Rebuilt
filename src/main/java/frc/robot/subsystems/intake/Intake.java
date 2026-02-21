@@ -69,6 +69,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         if (intakeIO.getDeployMotorCurrent() > DEPLOY_CURRENT_THRESHOLD) { // If the deploy motor current exceeds the
                                                                            // threshold, we can assume it's fully
                                                                            // deployed
+            intakeIO.setDeploySpeed(0.0); // Disable the deploy motor
             intakeIO.setIntakeState(IntakeState.DEPLOYED); // Mark as deployed
         }
     }
@@ -96,6 +97,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         if (intakeIO.getDeployMotorCurrent() > DEPLOY_CURRENT_THRESHOLD) { // If the deploy motor current exceeds the
                                                                            // threshold, we can assume it's fully
                                                                            // retracted
+            intakeIO.setDeploySpeed(0.0); // Disable the deploy motor
             intakeIO.setIntakeState(IntakeState.RETRACTED); // Mark as retracted
         }
     }
