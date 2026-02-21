@@ -6,36 +6,38 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
+import frc.robot.subsystems.intake.Intake.IntakeState;
 
 public class IntakeIOTalonFX implements IntakeIO, IORefresher {
-    private static final double DEPLOY_SPEED = 1.0; //placeholder values 
-    private static final double RETRACT_SPEED = -1.0;
-
+    // TalonFX Motors
     private final TalonFX intakeMotor;
     private final TalonFX deployMotor;
 
-    private final StatusSignal<AngularVelocity> intakeVelocity; // Status Signal Fixed
+    // Status Signals
+    private final StatusSignal<AngularVelocity> intakeVelocity;
     private final StatusSignal<Current> intakeCurrent;
     private final StatusSignal<AngularVelocity> deployVelocity;
     private final StatusSignal<Current> deployCurrent;
 
-    private IntakeIOInputs latestInputs;
+    // Inputs for logging
+    private IntakeIOInputs intakeIO;
 
-    public IntakeIOTalonFX() { 
-        intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID()); // get intake canID
-        deployMotor = new TalonFX(CanID.INTAKE_DEPLOY_MOTOR.getID()); // get deploy canID
+    // IntakeIOTalonFX constructor
+    public IntakeIOTalonFX() {
+        intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID()); // Setup the intake motor with the CAN ID
+        deployMotor = new TalonFX(CanID.INTAKE_DEPLOY_MOTOR.getID()); // Set up deploy motor with the CAN ID
 
-         // Configure motors
+        // Configure motors
+        deployMotor.getConfigurator().apply(getDeployMotorConfig());
+        intakeMotor.getConfigurator().apply(getIntakeMotorConfig());
 
-        var deployConfig = new TalonFXConfiguration(); // Deploy Motor to break mode when no power
-        deployConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
-        deployMotor.getConfigurator().apply(deployConfig);
-
+        // Configure motor signals
         intakeVelocity = intakeMotor.getVelocity();
         intakeCurrent = intakeMotor.getStatorCurrent();
         deployVelocity = deployMotor.getVelocity();
@@ -56,40 +58,70 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
 
     @Override
     public void updateInputs(IntakeIOInputs inputs) {
-        latestInputs = inputs;
         inputs.intakeVelocityRPS = intakeVelocity.getValueAsDouble();
         inputs.intakeCurrentAmps = intakeCurrent.getValueAsDouble();
         inputs.deployVelocityRPS = deployVelocity.getValueAsDouble();
         inputs.deployCurrentAmps = deployCurrent.getValueAsDouble();
+        intakeIO = inputs;
     }
 
+    // Set the speed of the intake motor
+    // double speed - Speed to set the motor to in Rotations Per Second
     @Override
-    public void on(double speed) {
+    public void setIntakeSpeed(double speed) {
         intakeMotor.set(speed);
     }
 
+    // Set the speed of the deploy motor
+    // double speed - Speed to set the motor to in Rotations Per Second
     @Override
-    public void off() {
-        intakeMotor.set(0.0);
+    public void setDeploySpeed(double speed) {
+        deployMotor.set(speed);
     }
 
-    // Extends the intake out
+    // Return the state of the Intake
     @Override
-    public void deploy() {
-        if (latestInputs != null) {
-            latestInputs.deployed = true; //mark as deployed 
-        }
-        deployMotor.set(DEPLOY_SPEED);
+    public IntakeState getIntakeState() {
+        return intakeIO.intakeState;
     }
 
-    // Pulls the intake back in
+    // Set the state of the Intake
     @Override
-    public void retract() {
-        if (latestInputs != null) {
-            latestInputs.deployed = false; //mark as retracted  w
-        }
-        deployMotor.set(RETRACT_SPEED);
-        intakeMotor.set(0.0); 
+    public void setIntakeState(IntakeState newState) {
+        intakeIO.intakeState = newState;
+    }
 
+    // Return the current of the deploy motor in Amps
+    @Override
+    public double getDeployMotorCurrent() {
+        return intakeIO.deployCurrentAmps;
+    }
+
+    public static TalonFXConfiguration getIntakeMotorConfig() {
+        var intakeConfig = new TalonFXConfiguration();
+
+        // Set Intake motor to Coast when not on
+        intakeConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+
+        // Intake motor PID values
+        intakeConfig.Slot0.kP = 0.1;
+        intakeConfig.Slot0.kI = 0.0;
+        intakeConfig.Slot0.kD = 0.0;
+
+        return intakeConfig;
+    }
+
+    public static TalonFXConfiguration getDeployMotorConfig() {
+        var deployConfig = new TalonFXConfiguration();
+
+        // Set deploy motor to brake mode when not on
+        deployConfig.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+
+        // Deploy motor PID values
+        deployConfig.Slot0.kP = 0.1;
+        deployConfig.Slot0.kI = 0.0;
+        deployConfig.Slot0.kD = 0.0;
+
+        return deployConfig;
     }
 }
