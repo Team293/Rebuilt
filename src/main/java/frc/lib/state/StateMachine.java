@@ -11,6 +11,10 @@ public class StateMachine <E extends Enum<E>> {
     private E currentState;
     private final Map<E, StateNode<E>> stateNodes;
 
+    // Guard fields to prevent multiple transitions within a single tick
+    private boolean inTick = false;
+    private boolean transitionFiredThisTick = false;
+
     public StateMachine(E initialState, Map<E, StateNode<E>> stateNodes) {
         this.currentState = initialState;
         this.stateNodes = stateNodes;
@@ -82,19 +86,39 @@ public class StateMachine <E extends Enum<E>> {
     }
 
     public void tick() {
-        StateNode<E> stateNode = stateNodes.get(currentState);
-        for (Transition<E> transition : stateNode.transitions) {
-            if (transition.guard.getAsBoolean()) {
-                stateNode.onExit.run();
-                currentState = transition.target;
-                stateNodes.get(currentState).onEnter.run();
-                return;
+        // prevent re-entrant ticks
+        if (inTick) return;
+
+        inTick = true;
+        transitionFiredThisTick = false;
+        try {
+            StateNode<E> stateNode = stateNodes.get(currentState);
+            for (Transition<E> transition : stateNode.transitions) {
+                if (transition.guard.getAsBoolean()) {
+                    // mark that a transition has fired for this tick before running enter/exit
+                    transitionFiredThisTick = true;
+                    stateNode.onExit.run();
+                    currentState = transition.target;
+                    stateNodes.get(currentState).onEnter.run();
+                    return;
+                }
             }
+            stateNode.onTick.run();
+        } finally {
+            // reset guards when tick completes
+            inTick = false;
+            transitionFiredThisTick = false;
         }
-        stateNode.onTick.run();
     }
 
     public void transitionTo(E targetState) {
+        // If called during a tick and a transition already fired, ignore to avoid cascading transitions
+        if (inTick && transitionFiredThisTick) {
+            return;
+        }
+        // If called during tick and no transition has fired yet, mark one now
+        if (inTick) transitionFiredThisTick = true;
+
         StateNode<E> stateNode = stateNodes.get(currentState);
         stateNode.onExit.run();
         currentState = targetState;
