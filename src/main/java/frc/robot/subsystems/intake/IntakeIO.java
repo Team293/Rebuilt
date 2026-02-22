@@ -13,7 +13,7 @@ public interface IntakeIO extends BaseIO<IntakeIO.IntakeIOInputs> {
     public double intakeCurrentAmps = 0.0; // Intake Current in Amps
     public double deployVelocityRPS = 0.0; // Intake deploy motor Rotations Per Second
     public double deployCurrentAmps = 0.0; // Intake deploy motor Current in Amps
-    public IntakeState intakeState = IntakeState.RETRACTED; // True if the intake is deployed, False otherwise
+    public IntakeState intakeState = IntakeState.RETRACTED; // current intake state
   }
 
   void setIntakeSpeed(double speed);

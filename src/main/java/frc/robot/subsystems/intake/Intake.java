@@ -13,11 +13,11 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     private static final double SPEED_PER_MPS = 0.05; // Speed added to the base speed per m/s of drive velocity
     private static final double MAX_SPEED = 5.0; // speed cap, max speed of the intake in RPS
 
-    static enum IntakeState {
+    public enum IntakeState {
         DEPLOYED, RETRACTED, DEPLOYING, RETRACTING
     }
 
-    private final IntakeIOTalonFX intakeIO;
+    private IntakeIOTalonFX intakeIO;
     private final CommandSwerveDrivetrain drivetrain;
 
     private boolean running = false; // True if the intake is running, False otherwise
@@ -26,7 +26,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     public Intake(CommandSwerveDrivetrain drivetrain) {
         super("Intake", new IntakeIO.IntakeIOInputs());
         this.drivetrain = drivetrain;
-        this.intakeIO = new IntakeIOTalonFX();
+        enable();
     }
 
     // Intake periodic function
@@ -142,6 +142,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
+        intakeIO = new IntakeIOTalonFX();
         return useAsyncDataRefresher(intakeIO);
     }
 }
