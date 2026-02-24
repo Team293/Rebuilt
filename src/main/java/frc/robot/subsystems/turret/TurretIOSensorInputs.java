@@ -75,43 +75,35 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
 
         var drive = RobotContainer.getDrive();
 
-        // convert robot heading to [0, 360) range
         double robotHeadingDeg =
             MathUtil.inputModulus(
                 drive.getPose().getRotation().getDegrees(),
                 0.0, 360.0
             );
 
-        // convert robot angular velocity to degrees per second
         double robotOmegaDegPerSec =
             drive.getState().Speeds.omegaRadiansPerSecond
                 * 180.0 / Math.PI;
 
-        // dt = time we expect turret to reach commanded angle, tunable
         double dt = 0.025;
         double predictedHeadingDeg =
             robotHeadingDeg + robotOmegaDegPerSec * dt;
 
-        // turret angle in (-180, 180] range, where positive is counterclockwise from the field forward direction
         double turretAngleDeg =
             MathUtil.inputModulus(
                 fieldAngleDeg + predictedHeadingDeg,
                 -180.0, 180.0
             );
 
-        // convert turret angle to motor rotations, accounting for gear ratio and offset
         double rotations = (turretAngleDeg / 360.0) * kTurretGearRatio;
         rotations = -rotations + turretRotationOffset;
 
-        // calculate feedforward to counteract robot rotation, using a simple linear model with gain determined empirically
         double motorRps =
             -(robotOmegaDegPerSec / 360.0) * kTurretGearRatio;
 
-        // set the motor to the desired position with feedforward to counteract robot rotation
         turretMotor.setControl(
             mmVoltage
                 .withPosition(rotations)
-                    // 0.1167 is an empirically determined gain to convert from motor RPS to voltage needed to hold position against rotation
                 .withFeedForward(motorRps * 0.1167)
         );
 
@@ -125,8 +117,7 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
         inputs.pinionEncoder = this.pinionEncoder.get();
         inputs.followerEncoder = this.followerEncoder.get();
         double turretRotations = TurretMath.getTurretAngleRevs(inputs.pinionEncoder, inputs.followerEncoder);
-
-        // convert raw encoder readings to turret angle in degrees, accounting for gear ratio and offset
+    
         inputs.turretAngleDegrees = TurretMath.normalizeTurretHeading(
             TurretMath.toDegreesWrapped(turretRotations),
             turretDegreesOffset
@@ -145,7 +136,6 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
             Translation2d robotPose,
             Translation2d target
     ) {
-        // calculate angle from robot to target in field coordinates
         double fieldAngleDeg = Math.toDegrees(
             Math.atan2(
                 target.getY() - robotPose.getY(),

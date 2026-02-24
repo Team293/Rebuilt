@@ -10,14 +10,6 @@ public class ShotCompensation {
     public record AdjustedShot(double rpm, double hoodAngleDeg, double turretAngleDeg,
                                double turretFF_deg_s, double rangeFF_m_s) {}
 
-    /**
-     * Calculate adjustments to shot parameters to compensate for robot movement during the shot, using a simple linear prediction of target motion based on current velocity.
-     * @param robotPose current robot pose on the field
-     * @param fieldRelVel current robot velocity in field-relative coordinates (x is forward, y is left, omega is CCW positive), used to predict where the target will be when the shot arrives
-     * @param targetPose current target pose on the field, used to calculate initial aiming angle and distance for compensation calculations
-     * @param nominalShotTimeS estimated time from shot release to target impact at the nominal shot speed, used to predict where the target will be when the shot arrives. This should be based on empirical measurements of the actual shot time for the given shot parameters, and is critical for accurate compensation.
-     * @return adjusted shot parameters including feedforward terms for turret angle and shot speed to compensate for robot movement, as well as the effective turret angle to aim at after compensation. The caller should apply the feedforward terms to the turret control and shot speed commands to achieve the desired compensation.
-     */
     public static AdjustedShot compensateForMovement(
             Pose2d robotPose,
             ChassisSpeeds fieldRelVel,
@@ -88,12 +80,6 @@ public class ShotCompensation {
                 turretFF_deg_s, rangeFF_m_s);
     }
 
-    /**
-     * Calculate a feedforward term to compensate for the robot's velocity toward the target, which reduces effective range and thus shot time.
-     * @param velocity current robot velocity in field-relative coordinates
-     * @param directionToTarget unit vector pointing from robot to target in field-relative coordinates
-     * @return feedforward term to add to shot speed (in whatever units the caller expects, legacy scaling applies)
-     */
     private static double calculateVelocityCompensation(
             ChassisSpeeds velocity,
             Translation2d directionToTarget) {
