@@ -3,14 +3,13 @@ package frc.robot.subsystems.vision;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
-import frc.robot.subsystems.vision.photon.CameraManager;
 
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 
 public class Vision extends SpikeSystem<VisionIOInputs> {
 
-    private VisionIOPhotonCamera photonCameras;
+    private VisionIO visionIO;
     private final CommandSwerveDrivetrain drive;
 
     public Vision(CommandSwerveDrivetrain drive) {
@@ -35,7 +34,7 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        photonCameras = new VisionIOPhotonCamera();
-        return useAsyncDataRefresher(photonCameras);
+        this.visionIO = new VisionIOPhotonCamera();
+        return useAsyncDataRefresher(visionIO);
     }
 }
