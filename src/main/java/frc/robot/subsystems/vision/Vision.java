@@ -27,6 +27,8 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
             Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
             double avgDist = 0;
 
+            // calculate the average distance to the targets
+            // used to calculate the standard deviations of the vision measurement
             if (!pose.targetsUsed.isEmpty()) {
                 double totalDist = 0;
                 for (var target : pose.targetsUsed) {

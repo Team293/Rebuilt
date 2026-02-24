@@ -51,6 +51,8 @@ public class Camera {
             }
 
             Optional<EstimatedRobotPose> estimatedPose = poseEstimator.update(result);
+
+            // if the pose is present and the timestamp is greater than the best timestamp, update the best pose and timestamp
             if (estimatedPose.isPresent()) {
                 double timestamp = result.getTimestampSeconds();
                 if (timestamp > bestTimestamp) {
