@@ -63,7 +63,7 @@ public class Camera {
         return bestPose.orElse(null);
     }
 
-    private boolean isAmbiguous(PhotonPipelineResult result) {
+    private static boolean isAmbiguous(PhotonPipelineResult result) {
         var bestTarget = result.getBestTarget();
         if (bestTarget == null) return false;
 
