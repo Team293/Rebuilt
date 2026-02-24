@@ -42,6 +42,14 @@ public class TurretIOSensorInputs implements TurretIO, IORefresher {
         mm.MotionMagicCruiseVelocity = 30;
         mm.MotionMagicJerk = 0;
 
+        Slot0Configs config = new Slot0Configs();
+        config.kP = 1;
+        config.kI = 0.01;
+        config.kD = 0.3;
+        config.kS = 0.194;
+        config.kV = 0.1167;
+
+        this.turretMotor.getConfigurator().apply(config);
         this.turretMotor.getConfigurator().apply(mm);
         this.pinionEncoder = new DutyCycleEncoder(0);
         this.followerEncoder = new DutyCycleEncoder(1);
