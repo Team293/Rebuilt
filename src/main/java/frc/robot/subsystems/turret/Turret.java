@@ -8,14 +8,14 @@ import frc.lib.FieldConstants;
 import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.subsystem.SpikeSystem;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 import frc.robot.subsystems.turret.calc.ShotCompensation;
-import frc.robot.subsystems.turret.calc.TurretMath;
 import org.littletonrobotics.junction.Logger;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    private TurretIOSensorInputs sensorData;
+    private TurretIOTalonFX turretIO;
     private final CommandSwerveDrivetrain drive;
 
     public enum State { TARGETING_HUB, TARGETING_SHUTTLE }
@@ -24,8 +24,26 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
-    public void switchState(State state) {
-        currentState = state;
+    public void setTargetingHub() {
+        if (currentState != State.TARGETING_HUB) {
+            Elastic.sendNotification(
+                    new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
+            );
+            Elastic.selectTab("Scoring Mode");
+            targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+            currentState = State.TARGETING_HUB;
+        }
+    }
+
+    public void setTargetingShuttle() {
+        if (currentState != State.TARGETING_SHUTTLE) {
+            Elastic.sendNotification(
+                    new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
+            );
+            Elastic.selectTab("Shuttling Mode");
+            targetPos = new Translation2d(0, 0);
+            currentState = State.TARGETING_SHUTTLE;
+        }
     }
 
     public Turret(CommandSwerveDrivetrain drive) {
@@ -36,44 +54,21 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     @Override
     public void onPeriodic() {
-        switch (currentState) {
-            case TARGETING_HUB -> {
-                Elastic.sendNotification(
-                        new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
-                );
-                Elastic.selectTab("Scoring Mode");
-                targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
-            }
-            case TARGETING_SHUTTLE -> {
-                Elastic.sendNotification(
-                        new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
-                );
-                Elastic.selectTab("Shuttling Mode");
-                targetPos = new Translation2d();
-            }
-        }
-
-        Logger.recordOutput("Turret/PinionEncoder", io.pinionEncoder);
-        Logger.recordOutput("Turret/FollowerEncoder", io.followerEncoder);
-        Logger.recordOutput("Turret/Angle", io.turretAngleDegrees);
-        double turretFieldAngleDeg = io.turretAngleDegrees;
-        Pose2d turretPose = new Pose2d(drive.getPose().getTranslation(), new Rotation2d(TurretMath.toRad(turretFieldAngleDeg)));
-        Logger.recordOutput("Turret/TurretPose", turretPose);
-
+        // compensate for robot movement
         ShotCompensation.AdjustedShot targetAngleCompensated = ShotCompensation.compensateForMovement(
                 drive.getPose(),
                 drive.getState().Speeds,
-                new Pose2d(targetPos, new Rotation2d()),
-                0.3 // see #23
+                new Pose2d(this.targetPos, new Rotation2d()),
+                0.3 // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
         );
 
-        sensorData.setTurretAngle(targetAngleCompensated.turretAngleDeg());
-        Logger.recordOutput("Turret/TargetOffset", targetAngleCompensated.turretAngleDeg());
+        // set the turret angle to the compensated angle
+        this.turretIO.setTurretAngle(targetAngleCompensated.turretAngleDeg());
     }
 
     @Override
     protected Runnable setupDataRefresher() {
-        sensorData = new TurretIOSensorInputs();
-        return useAsyncDataRefresher(sensorData);
+        this.turretIO = new TurretIOTalonFX(RobotContainer.getDrive());
+        return useAsyncDataRefresher(this.turretIO);
     }
 }
