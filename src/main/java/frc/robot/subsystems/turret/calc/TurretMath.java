@@ -39,6 +39,12 @@ public class TurretMath {
     private static double lastPositionRevs = DEFAULT_LAST_POSITION_REVS; // Unwrapped continuous position
     private static boolean initialized = false;
 
+    /**
+     * Helper method to perform modulus that always returns a positive result, wrapping x into [0, m).
+     * @param x value to wrap
+     * @param m modulus (e.g. 1.0 for normalized encoder readings)
+     * @return wrapped value in [0, m)
+     */
     private static double mod(double x, double m) {
         return ((x % m) + m) % m;
     }
