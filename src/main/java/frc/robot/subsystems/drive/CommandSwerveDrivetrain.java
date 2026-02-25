@@ -55,6 +55,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
 
+    private double robotOmegaDegPerSec = 0.0;
+
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
         new SysIdRoutine.Config(
@@ -250,6 +252,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+
+        this.robotOmegaDegPerSec = this.getState().Speeds.omegaRadiansPerSecond
+                * 180.0 / Math.PI;
     }
 
     private void startSimThread() {
@@ -336,7 +341,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         } catch (Exception e) {
             DriverStation.reportError("Failed to load PathPlanner config and configure AutoBuilder", e.getStackTrace());
         }
-
     }
 
     public Pose2d getPose() {
@@ -349,5 +353,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     public SendableChooser<Command> getAutoChooser() {
         return AutoBuilder.buildAutoChooser();
+    }
+
+    public double getRobotOmegaDegPerSec() {
+        return robotOmegaDegPerSec;
     }
 }
