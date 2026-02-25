@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -14,13 +16,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.vision.Vision;
@@ -43,14 +45,15 @@ public class RobotContainer {
     private final CommandXboxController driverController = new CommandXboxController(0);
     private final CommandXboxController operatorController = new CommandXboxController(1);
 
-
-    public final CommandSwerveDrivetrain drivetrain;
+    public static CommandSwerveDrivetrain drivetrain;
     private final Vision vision;
+    private final Turret turret;
     private final Intake intake;
     private final Indexer indexer;
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
+        turret = new Turret(drivetrain);
         autoChooser = drivetrain.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
         
@@ -58,6 +61,10 @@ public class RobotContainer {
         this.intake = new Intake(drivetrain);
         this.indexer = new Indexer(2);
         configureBindings();
+    }
+
+    public static CommandSwerveDrivetrain getDrive() {
+        return drivetrain;
     }
 
     private void configureBindings() {
@@ -99,6 +106,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return autoChooser.getSelected();   
+        return autoChooser.getSelected();
     }
 }
