@@ -1,16 +1,16 @@
-package frc.robot.subsystems.indexer;
+package frc.robot.subsystems.trigger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
-public class IndexerIOTalonFX implements IORefresher, IndexerIO {
+public class TriggerIOTalonFX implements IORefresher, TriggerIO {
     private final TalonFX motor;             // Motor object
     private final BaseStatusSignal motorRps; // Rotations per second
 
-    public IndexerIOTalonFX() {
-        this.motor = new TalonFX(CanID.INDEXER.getID());
+    public TriggerIOTalonFX() {
+        this.motor = new TalonFX(CanID.TRIGGER_MOTOR.getID());
         this.motorRps = motor.getRotorVelocity();
     }
 
@@ -21,7 +21,7 @@ public class IndexerIOTalonFX implements IORefresher, IndexerIO {
     }
 
     @Override
-    public void updateInputs(IndexerIOInputs inputs) {
+    public void updateInputs(TriggerIOInputs inputs) {
         inputs.motorRps = motorRps.getValueAsDouble();
     }
 

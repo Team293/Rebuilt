@@ -7,14 +7,12 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -22,7 +20,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.trigger.Trigger;
 import frc.robot.subsystems.vision.Vision;
 
 public class RobotContainer {
@@ -47,7 +45,7 @@ public class RobotContainer {
     public final CommandSwerveDrivetrain drivetrain;
     private final Vision vision;
     private final Intake intake;
-    private final Indexer indexer;
+    private final Trigger trigger;
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
@@ -56,7 +54,7 @@ public class RobotContainer {
         
         this.vision = new Vision(drivetrain);
         this.intake = new Intake(drivetrain);
-        this.indexer = new Indexer(2);
+        this.trigger = new Trigger(2);
         configureBindings();
     }
 

@@ -6,7 +6,7 @@ package frc.robot;
 public enum CanID {
     INTAKE_MOTOR(9),
     INTAKE_DEPLOY_MOTOR(11),
-    INDEXER(10);
+    TRIGGER_MOTOR(10);
 
     private final int deviceID;
 
