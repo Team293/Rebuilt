@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.indexer.Indexer;
@@ -54,6 +55,7 @@ public class RobotContainer {
     private final Turret turret;
     private final Intake intake;
     private final Indexer indexer;
+    private final Shooter shooter;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
@@ -64,6 +66,7 @@ public class RobotContainer {
         this.vision = new Vision(drive);
         this.intake = new Intake(drive);
         this.indexer = new Indexer(2);
+        this.shooter = new Shooter();
 
         alwaysRunCommands.add(
                 new ShotCompensationCmd(drive, this.turret)
