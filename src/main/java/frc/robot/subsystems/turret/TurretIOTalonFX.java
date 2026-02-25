@@ -2,9 +2,12 @@ package frc.robot.subsystems.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -20,12 +23,12 @@ import org.littletonrobotics.junction.Logger;
 
 public class TurretIOTalonFX implements TurretIO {
     private final TalonFX turretMotor;
-    private final DutyCycleEncoder pinionEncoder;
-    private final DutyCycleEncoder followerEncoder;
     private final CommandSwerveDrivetrain drive;
 
     private final MotionMagicVoltage mmVoltage = new MotionMagicVoltage(0);
     private final StatusSignal<Angle> encoderSignal;
+    private final BaseStatusSignal pinionEncoderSignal;
+    private final BaseStatusSignal followerEncoderSignal;
 
     private static final double kTurretGearRatio = 140/10; // turret ring: 140 teeth, motor pinion: 10 teeth
 
@@ -51,13 +54,17 @@ public class TurretIOTalonFX implements TurretIO {
 
         this.turretMotor.getConfigurator().apply(config);
         this.turretMotor.getConfigurator().apply(mm);
-        this.pinionEncoder = new DutyCycleEncoder(0);
-        this.followerEncoder = new DutyCycleEncoder(1);
+
+        CANcoder pinionEncoder = new CANcoder(CanID.TURRET_PINION_CANCODER.getID());
+        CANcoder followerEncoder = new CANcoder(CanID.TURRET_FOLLOWER_CANCODER.getID());
+
+        this.pinionEncoderSignal = pinionEncoder.getAbsolutePosition();
+        this.followerEncoderSignal = followerEncoder.getAbsolutePosition();
 
         this.encoderSignal = this.turretMotor.getPosition();
 
-        double pinionEncoderValue = this.pinionEncoder.get();
-        double followerEncoderValue = this.followerEncoder.get();
+        double pinionEncoderValue = this.pinionEncoderSignal.getValueAsDouble();
+        double followerEncoderValue = this.followerEncoderSignal.getValueAsDouble();
 
         // set offset of the turret on startup
         double turretRotations = TurretMath.getTurretAngleRevs(pinionEncoderValue, followerEncoderValue);
@@ -116,8 +123,8 @@ public class TurretIOTalonFX implements TurretIO {
     
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        inputs.pinionEncoder = this.pinionEncoder.get();
-        inputs.followerEncoder = this.followerEncoder.get();
+        inputs.pinionEncoder = this.pinionEncoderSignal.getValueAsDouble();
+        inputs.followerEncoder = this.followerEncoderSignal.getValueAsDouble();
         inputs.turretSetPointDegrees = this.targetAngleDeg;
 
         double turretRotations = TurretMath.getTurretAngleRevs(inputs.pinionEncoder, inputs.followerEncoder);
@@ -136,6 +143,6 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void refreshData() {
-        BaseStatusSignal.refreshAll(encoderSignal);
+        BaseStatusSignal.refreshAll(encoderSignal, pinionEncoderSignal, followerEncoderSignal);
     }
 }
