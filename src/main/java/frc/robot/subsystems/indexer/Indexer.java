@@ -7,8 +7,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 
 public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
     private final static double indexerSpeed = 10.0; // Rotations per second
-
-    private IndexerIO indexerIO;
+    private final IndexerIOTalonFX indexerIO = new IndexerIOTalonFX();
     private DigitalInput proximitySensor;
 
     public Indexer(int channel) {
@@ -28,7 +27,6 @@ public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        this.indexerIO = new IndexerIOTalonFX();
         return useAsyncDataRefresher(indexerIO);
     }
 }

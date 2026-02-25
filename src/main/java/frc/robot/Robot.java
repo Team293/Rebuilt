@@ -14,6 +14,7 @@
 package frc.robot;
 
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -35,6 +36,9 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
  * project.
  */
 public class Robot extends LoggedRobot {
+  private static final double LOOP_PERIOD_S = 0.02; // 20 ms loop period
+  private static double tickStart = 0; // start time of current tick, updated for each tick, in seconds
+
   private Command autonomousCommand;
   private RobotContainer robotContainer;
 
@@ -45,7 +49,6 @@ public class Robot extends LoggedRobot {
                   ? 100000000
                   : // 100 MB
                   1000000000; // 1 GB
-
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -151,6 +154,7 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
+    tickStart = Timer.getFPGATimestamp();
     // Runs the Scheduler. This is responsible for polling buttons, adding
     // newly-scheduled commands, running already-scheduled commands, removing
     // finished or interrupted commands, and running subsystem periodic() methods.
@@ -176,6 +180,10 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
+
+    for (var cmd : robotContainer.getAlwaysRunCommands()) {
+      CommandScheduler.getInstance().schedule(cmd);
+    }
   }
 
   /** This function is called periodically during autonomous. */
@@ -191,6 +199,10 @@ public class Robot extends LoggedRobot {
     // this line or comment it out.
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
+    }
+
+    for (var cmd : robotContainer.getAlwaysRunCommands()) {
+      CommandScheduler.getInstance().schedule(cmd);
     }
   }
 
@@ -216,4 +228,13 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
+
+  /**
+   * Utility function to check if a given timestamp is within the current tick.
+   * @param timestamp timestamp to check, in seconds
+   * @return true if the timestamp is within the current tick, false otherwise
+   */
+  public static boolean isTimestampInCurrentTick(double timestamp) {
+    return timestamp >= tickStart && timestamp < tickStart + LOOP_PERIOD_S;
+  }
 }
