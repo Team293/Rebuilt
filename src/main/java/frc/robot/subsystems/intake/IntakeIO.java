@@ -2,11 +2,12 @@ package frc.robot.subsystems.intake;
 
 import frc.lib.subsystem.BaseIO;
 import frc.lib.subsystem.BaseInputClass;
+import frc.lib.subsystem.IORefresher;
 import frc.robot.subsystems.intake.Intake.IntakeState;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface IntakeIO extends BaseIO<IntakeIO.IntakeIOInputs> {
+public interface IntakeIO extends BaseIO<IntakeIO.IntakeIOInputs>, IORefresher {
   @AutoLog
   class IntakeIOInputs extends BaseInputClass {
     public double intakeVelocityRPS = 0.0; // Intake velocity in Rotations Per Second

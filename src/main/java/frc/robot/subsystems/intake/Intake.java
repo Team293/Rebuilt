@@ -17,7 +17,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         DEPLOYED, RETRACTED, DEPLOYING, RETRACTING
     }
 
-    private IntakeIOTalonFX intakeIO;
+    private IntakeIO intakeIO;
     private final CommandSwerveDrivetrain drivetrain;
 
     private boolean running = false; // True if the intake is running, False otherwise
@@ -142,7 +142,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        intakeIO = new IntakeIOTalonFX();
+        this.intakeIO = new IntakeIOTalonFX();
         return useAsyncDataRefresher(intakeIO);
     }
 }
