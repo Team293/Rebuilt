@@ -1,62 +1,40 @@
 package frc.robot.subsystems.turret;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.lib.Elastic;
 import frc.lib.FieldConstants;
 import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
-import frc.lib.pubsub.PubResult;
-import frc.lib.pubsub.PubTopic;
-import frc.lib.pubsub.SimpleDataPub;
-import frc.lib.pubsub.impl.PubBroker;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
+import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.turret.calc.ShotCompensation;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.Optional;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    private final SimpleDataPub<ShotCompensation.AdjustedShot> shotCompensationPub;
-
-    private final CommandSwerveDrivetrain drive;
-
     public enum State { TARGETING_HUB, TARGETING_SHUTTLE }
 
     private TurretIOTalonFX turretIO;
     private State currentState = State.TARGETING_HUB;
     private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
-    public Turret(CommandSwerveDrivetrain drive) {
+    public Turret() {
         super("Turret", new TurretIO.TurretIOInputs());
         Logger.recordOutput("Hub/Center", FieldConstants.Hub.innerCenterPoint);
-
-        this.shotCompensationPub = PubBroker.getOrCreate(PubTopic.SHOT_COMPENSATION);
-
-        this.drive = drive;
     }
 
     @Override
     public void onPeriodic() {
         // compensate for robot movement
-        Optional<PubResult<ShotCompensation.AdjustedShot>> pollRes = shotCompensationPub.poll();
+        ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
 
-        pollRes.ifPresent(res -> {
-            if (!res.isInTimestamp()) {
-                // we can add rejection logic if needed
-                System.out.println("WARNING: Turret compensation data is stale!");
-            }
-
-            // set the turret angle to the compensated angle
-            ShotCompensation.AdjustedShot compensatedShot = res.getData();
-
-            this.turretIO.setTurretAngle(compensatedShot.turretAngleDeg());
-        });
-
+        if (shotData != null) {
+            this.turretIO.setTurretAngle(shotData.turretAngleDeg());
+        }
     }
 
     @Override

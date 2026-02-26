@@ -180,10 +180,6 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
-
-    for (var cmd : robotContainer.getAlwaysRunCommands()) {
-      CommandScheduler.getInstance().schedule(cmd);
-    }
   }
 
   /** This function is called periodically during autonomous. */
@@ -199,10 +195,6 @@ public class Robot extends LoggedRobot {
     // this line or comment it out.
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
-    }
-
-    for (var cmd : robotContainer.getAlwaysRunCommands()) {
-      CommandScheduler.getInstance().schedule(cmd);
     }
   }
 

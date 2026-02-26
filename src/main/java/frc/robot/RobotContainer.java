@@ -6,8 +6,6 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import frc.robot.commands.ShotCompensationCmd;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -22,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.indexer.Indexer;
@@ -48,29 +47,25 @@ public class RobotContainer {
     private final CommandXboxController driverController = new CommandXboxController(0);
     private final CommandXboxController operatorController = new CommandXboxController(1);
 
-    private final Set<Command> alwaysRunCommands = new HashSet<>();
-
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
     private final Intake intake;
     private final Indexer indexer;
     private final Shooter shooter;
+    private final Targeting targeting;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
-        turret = new Turret(drive);
-        autoChooser = drive.getAutoChooser();
-        SmartDashboard.putData("Auto Path", autoChooser);
-        
+        this.turret = new Turret();
         this.vision = new Vision(drive);
         this.intake = new Intake(drive);
         this.indexer = new Indexer(2);
         this.shooter = new Shooter();
+        this.targeting = new Targeting(drive, turret);
 
-        alwaysRunCommands.add(
-                new ShotCompensationCmd(drive, this.turret)
-        );
+        autoChooser = drive.getAutoChooser();
+        SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
     }
@@ -119,9 +114,5 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();
-    }
-
-    public Set<Command> getAlwaysRunCommands() {
-        return alwaysRunCommands;
     }
 }
