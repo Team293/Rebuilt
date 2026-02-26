@@ -10,6 +10,8 @@ public enum DriveChassis {
 
     ;
 
+    private static CommandSwerveDrivetrain instance;
+
     private final Class<?> constantsClass;
     private final Supplier<CommandSwerveDrivetrain> createDrivetrainSupplier;
 
@@ -19,7 +21,11 @@ public enum DriveChassis {
     }
 
     public CommandSwerveDrivetrain createDrivetrain() {
-        return this.createDrivetrainSupplier.get();
+        if (instance == null) {
+            instance = createDrivetrainSupplier.get();
+        }
+
+        return instance;
     }
 
     public <T> T getField(String name) {
