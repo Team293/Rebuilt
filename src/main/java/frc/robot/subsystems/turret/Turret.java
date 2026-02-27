@@ -1,7 +1,5 @@
 package frc.robot.subsystems.turret;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.lib.Elastic;
 import frc.lib.FieldConstants;
@@ -9,20 +7,48 @@ import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
+import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.turret.calc.ShotCompensation;
 import org.littletonrobotics.junction.Logger;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    private TurretIOTalonFX turretIO;
-    private final CommandSwerveDrivetrain drive;
+    private static final double TURRET_ANGLE_THRESHOLD_DEG = 3.0; // degrees within target angle to be considered "at target"
 
     public enum State { TARGETING_HUB, TARGETING_SHUTTLE }
 
+    private TurretIOTalonFX turretIO;
     private State currentState = State.TARGETING_HUB;
-
     private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+    private double targetAngleDeg = 0.0;
+
+    public Turret() {
+        super("Turret", new TurretIO.TurretIOInputs());
+        Logger.recordOutput("Hub/Center", FieldConstants.Hub.innerCenterPoint);
+    }
+
+    @Override
+    public void onPeriodic() {
+        // compensate for robot movement
+        ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
+
+        if (shotData != null) {
+            double newTargetAngleDeg = shotData.turretAngleDeg();
+            this.targetAngleDeg = newTargetAngleDeg;
+
+            this.turretIO.setTurretAngle(newTargetAngleDeg);
+        }
+    }
+
+    @Override
+    protected Runnable setupDataRefresher() {
+        this.turretIO = new TurretIOTalonFX(RobotContainer.getDrive());
+        return useAsyncDataRefresher(this.turretIO);
+    }
+
+    public Translation2d getTargetPos() {
+        return this.targetPos;
+    }
 
     public void setTargetingHub() {
         if (currentState != State.TARGETING_HUB) {
@@ -46,29 +72,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         }
     }
 
-    public Turret(CommandSwerveDrivetrain drive) {
-        super("Turret", new TurretIO.TurretIOInputs());
-        Logger.recordOutput("Hub/Center", FieldConstants.Hub.innerCenterPoint);
-        this.drive = drive;
-    }
-
-    @Override
-    public void onPeriodic() {
-        // compensate for robot movement
-        ShotCompensation.AdjustedShot targetAngleCompensated = ShotCompensation.compensateForMovement(
-                drive.getPose(),
-                drive.getState().Speeds,
-                new Pose2d(this.targetPos, new Rotation2d()),
-                0.3 // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
-        );
-
-        // set the turret angle to the compensated angle
-        this.turretIO.setTurretAngle(targetAngleCompensated.turretAngleDeg());
-    }
-
-    @Override
-    protected Runnable setupDataRefresher() {
-        this.turretIO = new TurretIOTalonFX(RobotContainer.getDrive());
-        return useAsyncDataRefresher(this.turretIO);
+    public boolean isAtTargetAngle() {
+        double angleError = Math.abs(super.io.turretAngleDegrees - targetAngleDeg);
+        return angleError < TURRET_ANGLE_THRESHOLD_DEG;
     }
 }

@@ -10,7 +10,7 @@ public class IndexerIOTalonFX implements IORefresher, IndexerIO {
     private final BaseStatusSignal motorRps; // Rotations per second
 
     public IndexerIOTalonFX() {
-        this.motor = new TalonFX(CanID.INDEXER.getID());
+        this.motor = new TalonFX(CanID.INDEXER_MOTOR.getID());
         this.motorRps = motor.getRotorVelocity();
     }
 
