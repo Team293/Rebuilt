@@ -17,6 +17,8 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
@@ -38,6 +40,10 @@ import org.littletonrobotics.junction.Logger;
  * Subsystem so it can easily be used in command-based projects.
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
+    // default standard deviations
+    // x, y, heading; trust x and y translation and reject yaw
+    public static final Vector<N3> kDefaultVisionStdDevs = VecBuilder.fill(0.3, 0.3, 99999.0);
+
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private double m_lastSimTime;
 
@@ -116,6 +122,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     /* The SysId routine to test */
     private final SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
+
+    {
+        this.setVisionMeasurementStdDevs(kDefaultVisionStdDevs);
+    }
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
