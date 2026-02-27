@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
+import frc.robot.subsystems.findexer.Findexer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.turret.Turret;
@@ -54,6 +55,7 @@ public class RobotContainer {
     private final Indexer indexer;
     private final Shooter shooter;
     private final Targeting targeting;
+    private final Findexer findexer;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
@@ -63,6 +65,7 @@ public class RobotContainer {
         this.shooter = new Shooter();
         this.targeting = new Targeting(drive, turret);
         this.indexer = new Indexer(2, shooter, turret);
+        this.findexer = new Findexer(indexer);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);

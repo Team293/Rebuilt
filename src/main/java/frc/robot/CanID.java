@@ -15,6 +15,7 @@ public enum CanID {
     INTAKE_MOTOR(9),
     INTAKE_DEPLOY_MOTOR(11),
 
+    FINDEXER_MOTOR(15)
     ;
 
     private final int deviceID;

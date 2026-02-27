@@ -76,13 +76,6 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         // convert hood angle to motor rotations and calculate offset
         this.hoodMotorPositionOffset = this.hoodMotorPosition.getValueAsDouble() - angleToMotorRotations(this.hoodAngle.getValueAsDouble());
 
-        BaseStatusSignal.setUpdateFrequencyForAll(
-                50.0,
-                motorVelocity,
-                hoodAngle,
-                hoodMotorPosition
-        );
-
         flywheelMotor.optimizeBusUtilization();
         hoodMotor.optimizeBusUtilization();
     }
