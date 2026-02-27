@@ -24,5 +24,6 @@ hs_err_pid*
 replay_pid*
 .gradle/
 build/
+
 # IntelliJ IDEA
 .idea/*

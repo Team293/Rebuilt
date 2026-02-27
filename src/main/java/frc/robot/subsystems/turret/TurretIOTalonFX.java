@@ -74,9 +74,9 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     @Override
-    public void setTurretAngle(double fieldAngleDeg) {
-        this.targetAngleDeg = fieldAngleDeg;
-        fieldAngleDeg = MathUtil.inputModulus(fieldAngleDeg, 0.0, 360.0);
+    public void setTurretAngle(double fieldTargetHeadingDeg) {
+        this.targetAngleDeg = fieldTargetHeadingDeg;
+        fieldTargetHeadingDeg = MathUtil.inputModulus(fieldTargetHeadingDeg, 0.0, 360.0);
 
         // convert robot heading to [0, 360) range
         double robotHeadingDeg =
@@ -90,10 +90,10 @@ public class TurretIOTalonFX implements TurretIO {
         double predictedHeadingDeg =
             robotHeadingDeg + this.drive.getRobotOmegaDegPerSec() * dt;
 
-        // turret angle in (-180, 180] range, where positive is counterclockwise from the field forward direction
+        // turret angle in (-180, 180] range, where positive is counterclockwise relative to the robot's forward direction, and negative is clockwise
         double turretAngleDeg =
             MathUtil.inputModulus(
-                fieldAngleDeg + predictedHeadingDeg,
+                fieldTargetHeadingDeg - predictedHeadingDeg,
                 -180.0, 180.0
             );
 
