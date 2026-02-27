@@ -60,9 +60,9 @@ public class RobotContainer {
         this.turret = new Turret();
         this.vision = new Vision(drive);
         this.intake = new Intake(drive);
-        this.indexer = new Indexer(2);
         this.shooter = new Shooter();
         this.targeting = new Targeting(drive, turret);
+        this.indexer = new Indexer(2, shooter, turret);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);

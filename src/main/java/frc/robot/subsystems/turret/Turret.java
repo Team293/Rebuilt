@@ -7,20 +7,20 @@ import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.turret.calc.ShotCompensation;
 import org.littletonrobotics.junction.Logger;
 
-import java.util.Optional;
-
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
+    private static final double TURRET_ANGLE_THRESHOLD_DEG = 3.0; // degrees within target angle to be considered "at target"
+
     public enum State { TARGETING_HUB, TARGETING_SHUTTLE }
 
     private TurretIOTalonFX turretIO;
     private State currentState = State.TARGETING_HUB;
     private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+    private double targetAngleDeg = 0.0;
 
     public Turret() {
         super("Turret", new TurretIO.TurretIOInputs());
@@ -33,7 +33,10 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
 
         if (shotData != null) {
-            this.turretIO.setTurretAngle(shotData.turretAngleDeg());
+            double newTargetAngleDeg = shotData.turretAngleDeg();
+            this.targetAngleDeg = newTargetAngleDeg;
+
+            this.turretIO.setTurretAngle(newTargetAngleDeg);
         }
     }
 
@@ -67,5 +70,10 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
             targetPos = new Translation2d(0, 0);
             currentState = State.TARGETING_SHUTTLE;
         }
+    }
+
+    public boolean isAtTargetAngle() {
+        double angleError = Math.abs(super.io.turretAngleDegrees - targetAngleDeg);
+        return angleError < TURRET_ANGLE_THRESHOLD_DEG;
     }
 }
