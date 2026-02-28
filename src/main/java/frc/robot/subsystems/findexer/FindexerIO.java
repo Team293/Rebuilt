@@ -8,7 +8,7 @@ import org.littletonrobotics.junction.AutoLog;
 public interface FindexerIO extends BaseIO<FindexerIO.FindexerIOInputs>, IORefresher {
     @AutoLog
     public static class FindexerIOInputs extends BaseInputClass {
-        public double motorRps = 0.0;
+        public double motorRps = 0.0; // Motor rotations per second
     }
 
     void setSpeed(double rps);

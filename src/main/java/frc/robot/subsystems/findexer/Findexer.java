@@ -16,8 +16,12 @@ public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
         this.indexer = indexer;
     }
 
+    /**
+     * Run the findexer if the indexer needs feeding (doesn't have a ball), otherwise stop it.
+     */
     @Override
     public void onPeriodic() {
+        // run the findexer if the indexer needs feeding (doesn't have a ball), otherwise stop it
         if (indexer.needsFeeding()) {
             findexerIO.setSpeed(FEEDING_RPS);
         } else {
@@ -25,6 +29,9 @@ public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
         }
     }
 
+    /**
+     * Sets up the data refresher for Findexer
+     */
     @Override
     protected Runnable setupDataRefresher() {
         this.findexerIO = new FindexerIOTalonFX();

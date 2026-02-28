@@ -18,16 +18,27 @@ public class FindexerIOTalonFX implements FindexerIO {
         this.motor.optimizeBusUtilization();
     }
 
+    /**
+     * Set the speed of the findexer motor in rotations per second.
+     * @param rps The desired speed in rotations per second
+     */
     @Override
     public void setSpeed(double rps) {
         this.motor.set(rps);
     }
 
+    /**
+     * Refresh all status signals. Automatically called periodically
+     */
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(motorRps);
     }
 
+    /**
+     * Updates the inputs 
+     * Called automatically
+     */
     @Override
     public void updateInputs(FindexerIOInputs inputs) {
         inputs.motorRps = motorRps.getValueAsDouble();
