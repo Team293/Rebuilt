@@ -11,9 +11,10 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
-public class ShooterIOTalonFX implements ShooterIO {
+public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     private static final double HOOD_GEAR_RATIO = 1.0/1.0; // hood pulley teeth / motor pulley teeth (motor revs per hood rev)
 
     private final TalonFX flywheelMotor;
@@ -75,17 +76,9 @@ public class ShooterIOTalonFX implements ShooterIO {
         // convert hood angle to motor rotations and calculate offset
         this.hoodMotorPositionOffset = this.hoodMotorPosition.getValueAsDouble() - angleToMotorRotations(this.hoodAngle.getValueAsDouble());
 
-        BaseStatusSignal.setUpdateFrequencyForAll(
-                50.0,
-                motorVelocity,
-                hoodAngle,
-                hoodMotorPosition
-        );
-
         flywheelMotor.optimizeBusUtilization();
         hoodMotor.optimizeBusUtilization();
     }
-
     
     /**
      * Periodically refreshes encoder signal
