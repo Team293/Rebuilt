@@ -58,6 +58,14 @@ public class TurretIOTalonFX implements TurretIO {
         CANcoder pinionEncoder = new CANcoder(CanID.TURRET_PINION_CANCODER.getID());
         CANcoder followerEncoder = new CANcoder(CanID.TURRET_FOLLOWER_CANCODER.getID());
 
+        CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
+
+        // constrain sensor readings to [0, 1)
+        encoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
+
+        pinionEncoder.getConfigurator().apply(encoderConfig);
+        followerEncoder.getConfigurator().apply(encoderConfig);
+
         this.pinionEncoderSignal = pinionEncoder.getAbsolutePosition();
         this.followerEncoderSignal = followerEncoder.getAbsolutePosition();
 
