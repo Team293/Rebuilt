@@ -6,10 +6,10 @@ package frc.robot.subsystems.turret.calc;
  *
  * Hardware setup (example):
  * - Turret gear: 140 teeth
- * - Encoder A: e.g. 13-tooth gear driving an absolute encoder (reads 0–1 rev)
- * - Encoder B: e.g. 11-tooth gear driving an absolute encoder (reads 0–1 rev)
+ * - Encoder A: e.g. 13-tooth gear driving an absolute encoder (reads 0-1 rev)
+ * - Encoder B: e.g. 11-tooth gear driving an absolute encoder (reads 0-1 rev)
  *
- * The combination gives unique positions over (encoderA_teeth × encoderB_teeth) teeth.
+ * The combination gives unique positions over (encoderA_teeth x encoderB_teeth) teeth.
  * Beyond that range, continuity tracking (unwrapping) is used.
  */
 public class TurretMath {
@@ -20,8 +20,8 @@ public class TurretMath {
     private static final double ENCODER_B_TEETH           = 11.0;
 
     // Derived encoder combination values
-    private static final double ENCODER_COMBINED_TEETH    = ENCODER_A_TEETH * ENCODER_B_TEETH; // 143 (example)
-    private static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / TURRET_GEAR_TEETH;    // ≈1.0214 (example)
+    private static final double ENCODER_COMBINED_TEETH    = ENCODER_A_TEETH * ENCODER_B_TEETH;
+    private static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / TURRET_GEAR_TEETH;   
     private static final double HALF_ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_PERIOD_REV / 2.0;
 
     private static final double NORMALIZED_REV = 1.0;                // encoder reading range (0..1)
@@ -140,7 +140,7 @@ public class TurretMath {
     }
 
     /**
-     * Convert turret revolutions to radians, wrapped to [0, 2π).
+     * Convert turret revolutions to radians, wrapped to [0, 2pi).
      */
     public static double toRadiansWrapped(double turretRevs) {
         return mod(turretRevs, NORMALIZED_REV) * RAD_PER_REV;

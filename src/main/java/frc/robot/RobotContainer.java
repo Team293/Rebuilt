@@ -63,7 +63,7 @@ public class RobotContainer {
         this.vision = new Vision(drive);
         this.intake = new Intake(drive);
         this.shooter = new Shooter();
-        this.targeting = new Targeting(drive, turret);
+        this.targeting = new Targeting(drive);
         this.indexer = new Indexer(2, shooter, turret);
         this.findexer = new Findexer(indexer);
 
