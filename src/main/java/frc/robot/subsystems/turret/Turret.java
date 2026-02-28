@@ -9,7 +9,7 @@ import frc.robot.subsystems.turret.calc.ShotCompensation;
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     private static final double TURRET_ANGLE_THRESHOLD_DEG = 3.0; // degrees within target angle to be considered "at target"
     
-    private TurretIOTalonFX turretIO;
+    private TurretIO turretIO;
     private double targetAngleDeg = 0.0;
 
     public Turret() {
