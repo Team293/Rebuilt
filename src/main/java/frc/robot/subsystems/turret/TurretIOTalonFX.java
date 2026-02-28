@@ -12,11 +12,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import frc.robot.CanID;
-import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.calc.TurretMath;
-
-import org.littletonrobotics.junction.Logger;
 
 public class TurretIOTalonFX implements TurretIO {
     private final TalonFX turretMotor;
@@ -42,18 +39,19 @@ public class TurretIOTalonFX implements TurretIO {
         mm.MotionMagicAcceleration = 60; // rot/sec^2
         mm.MotionMagicCruiseVelocity = 30; // rot/sec
 
+        // Motor configuration
         Slot0Configs config = new Slot0Configs();
         config.kP = 1;
         config.kI = 0.01;
         config.kD = 0.3;
         config.kS = 0.194;
         config.kV = 0.1167;
-
         this.turretMotor.getConfigurator().apply(config);
         this.turretMotor.getConfigurator().apply(mm);
+
+        // Setup encoders
         this.pinionEncoder = new DutyCycleEncoder(0);
         this.followerEncoder = new DutyCycleEncoder(1);
-
         this.encoderSignal = this.turretMotor.getPosition();
 
         double pinionEncoderValue = this.pinionEncoder.get();
@@ -61,7 +59,7 @@ public class TurretIOTalonFX implements TurretIO {
 
         // set offset of the turret on startup
         double turretRotations = TurretMath.getTurretAngleRevs(pinionEncoderValue, followerEncoderValue);
-    
+
         double turretDegrees = TurretMath.normalizeTurretHeading(
             TurretMath.toDegreesWrapped(turretRotations),
             this.turretDegreesOffset
@@ -73,6 +71,10 @@ public class TurretIOTalonFX implements TurretIO {
         this.turretRotationOffset = currentMotorRevs + toZeroRevs;
     }
 
+    /**
+     * Set the turret angle to a target field angle
+     * @param fieldTargetHeadingDeg field relative angle to set turret to 
+     */
     @Override
     public void setTurretAngle(double fieldTargetHeadingDeg) {
         this.targetAngleDeg = fieldTargetHeadingDeg;
@@ -114,6 +116,11 @@ public class TurretIOTalonFX implements TurretIO {
         );
     }
     
+    
+    /**
+     * Periodically called to update the Turret information for logging
+     * @param inputs TurretIOInputs object to update
+     */
     @Override
     public void updateInputs(TurretIOInputs inputs) {
         inputs.pinionEncoder = this.pinionEncoder.get();
@@ -134,6 +141,10 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.turretPosition = new Pose2d(drive.getPose().getTranslation(), new Rotation2d(TurretMath.toRad(inputs.turretAngleDegrees)));
     }
 
+    /**
+     * Periodically refreshes encoder signal
+     * @note This is called automatically
+     */
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(encoderSignal);

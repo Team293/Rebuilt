@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class Camera {
+    // ambiguity refers to pose confidence. lower ambiguity means higher confidence, and vice versa. 0.2 is recommended
+    private static final double AMBIGUITY_THRESHOLD = 0.2;
+
     private transient final PhotonCamera photonCamera;
     private final String id;
     private transient final PhotonPoseEstimator poseEstimator;
@@ -42,7 +45,14 @@ public class Camera {
         double bestTimestamp = Double.NEGATIVE_INFINITY;
 
         for (PhotonPipelineResult result : results) {
+            // check if the pose is within ambiguity threshold
+            if (result.hasTargets() && isAmbiguous(result)) {
+                continue;
+            }
+
             Optional<EstimatedRobotPose> estimatedPose = poseEstimator.update(result);
+
+            // if the pose is present and the timestamp is greater than the best timestamp, update the best pose and timestamp
             if (estimatedPose.isPresent()) {
                 double timestamp = result.getTimestampSeconds();
                 if (timestamp > bestTimestamp) {
@@ -53,6 +63,14 @@ public class Camera {
         }
 
         return bestPose.orElse(null);
+    }
+
+    private static boolean isAmbiguous(PhotonPipelineResult result) {
+        var bestTarget = result.getBestTarget();
+        if (bestTarget == null) return false;
+
+        double ambiguity = bestTarget.getPoseAmbiguity();
+        return ambiguity > AMBIGUITY_THRESHOLD;
     }
 
     public PhotonCamera getPhotonCamera() {

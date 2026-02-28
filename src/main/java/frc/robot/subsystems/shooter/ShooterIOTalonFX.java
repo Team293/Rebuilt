@@ -79,14 +79,22 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         flywheelMotor.optimizeBusUtilization();
         hoodMotor.optimizeBusUtilization();
     }
-
+    
+    /**
+     * Periodically refreshes encoder signal
+     * @note This is called automatically
+     */
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition);
     }
 
+    /**
+     * Periodically called to update the shooter information for logging
+     * @param inputs ShooterIOInputs object to update
+     */
     @Override
-    public void updateInputs(ShooterIO.ShooterIOInputs inputs) {
+    public void updateInputs(ShooterIOInputs inputs) {
         inputs.motorRPS = this.motorVelocity.getValueAsDouble();
         inputs.hoodAngle = this.hoodAngle.getValueAsDouble() * 360; // convert rotations to degrees
         inputs.hoodMotorPosition = this.hoodMotorPosition.getValueAsDouble();
@@ -95,6 +103,10 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         inputs.hoodSetPointAngle = this.hoodAngleSetPoint;
     }
 
+    /**
+     * Set the target flywheel velocity
+     * @param rps - target rotations per second
+     */
     @Override
     public void setFlywheelVelocity(double rps) {
         this.flywheelRPSSetPoint = rps;
@@ -103,6 +115,10 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         flywheelMotor.setControl(this.flywheelVelocityControl);
     }
 
+    /**
+     * Set the target hood angle 
+     * @param angle target angle TODO: relative to what 
+     */
     @Override
     public void setHoodAngle(double angle) {
         this.hoodAngleSetPoint = angle;
@@ -112,6 +128,11 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         this.hoodMotor.setControl(this.hoodPositionControl);
     }
 
+    /**
+     * Converts angle in degrees to motor rotations per second
+     * @param angle Input angle in degrees
+     * @return double motor rotations per second
+     */
     private static double angleToMotorRotations(double angle) {
         // rotations = (angle_deg * gear_ratio) / 360
         return angle * HOOD_GEAR_RATIO / 360.0;

@@ -113,6 +113,9 @@ public class RobotContainer {
 
         operatorController.a().onTrue(intake.run(() -> intake.deploy()));
         operatorController.b().onTrue(intake.run(() -> intake.retract()));
+
+        operatorController.x().onTrue(targeting.run(() -> targeting.setTargetingHub()));
+        operatorController.y().onTrue(targeting.run(() -> targeting.setTargetingShuttle()));
     }
 
     public Command getAutonomousCommand() {
