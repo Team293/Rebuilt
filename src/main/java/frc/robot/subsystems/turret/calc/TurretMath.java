@@ -21,7 +21,7 @@ public class TurretMath {
 
     // Derived encoder combination values
     private static final double ENCODER_COMBINED_TEETH    = ENCODER_A_TEETH * ENCODER_B_TEETH;
-    private static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / TURRET_GEAR_TEETH;   
+    private static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / TURRET_GEAR_TEETH;  
     private static final double HALF_ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_PERIOD_REV / 2.0;
 
     private static final double NORMALIZED_REV = 1.0;                // encoder reading range (0..1)
