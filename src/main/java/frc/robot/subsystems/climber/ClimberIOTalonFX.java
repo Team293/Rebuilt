@@ -3,6 +3,8 @@ package frc.robot.subsystems.climber;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -18,6 +20,10 @@ public class ClimberIOTalonFX implements ClimberIO, IORefresher {
 
     private final StatusSignal<Angle> climberPosition;
     private final StatusSignal<Current> climberCurrent;
+    private final StatusSignal<AngularVelocity> climberVelocity;
+
+    private static VelocityVoltage velocityControl = new VelocityVoltage(0.0d).withSlot(0);
+    private static PositionVoltage positionControl = new PositionVoltage(0.0d).withSlot(0);
 
     public ClimberIOTalonFX() {
         climberMotor = new TalonFX(climberMotorID);
@@ -27,8 +33,9 @@ public class ClimberIOTalonFX implements ClimberIO, IORefresher {
 
         climberPosition = climberMotor.getPosition();
         climberCurrent = climberMotor.getStatorCurrent();
+        climberVelocity = climberMotor.getVelocity();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(50.0, climberPosition, climberCurrent);
+        BaseStatusSignal.setUpdateFrequencyForAll(50.0, climberPosition, climberCurrent, climberVelocity);
 
         climberMotor.optimizeBusUtilization();
     }
@@ -42,6 +49,26 @@ public class ClimberIOTalonFX implements ClimberIO, IORefresher {
     public void updateInputs(ClimberIOInputs inputs) {
         inputs.climberPositionRotations = climberPosition.getValueAsDouble(); // Get position in rotations
         inputs.climberCurrentAmps = climberCurrent.getValueAsDouble(); // Get current in amps
+    }
+
+    public double getVelocity() {
+        return climberVelocity.getValueAsDouble(); // Get velocity in rotations per second
+    }
+
+    public void setVelocity(double velocityRotationsPerSecond) {
+        // Create a controller for the motor
+        velocityControl.withVelocity(velocityRotationsPerSecond).withSlot(0);
+        climberMotor.setControl(velocityControl);
+    }
+
+    public double getPosition() {
+        return climberPosition.getValueAsDouble(); // Get position in rotations
+    }
+
+    public void setPosition(double positionRotations) {
+        // Create a controller for the motor
+        positionControl.withPosition(positionRotations).withSlot(0);
+        climberMotor.setControl(positionControl);
     }
 
     // Method to configure the climber motor settings

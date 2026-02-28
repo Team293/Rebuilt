@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.indexer.Indexer;
@@ -48,6 +49,7 @@ public class RobotContainer {
     private final Vision vision;
     private final Intake intake;
     private final Indexer indexer;
+    private final Climber climber;
 
     public RobotContainer() {
         drivetrain = TunerConstants.createDrivetrain();
@@ -57,6 +59,7 @@ public class RobotContainer {
         this.vision = new Vision(drivetrain);
         this.intake = new Intake(drivetrain);
         this.indexer = new Indexer(2);
+        this.climber = new Climber(operatorController);
         configureBindings();
     }
 
