@@ -61,7 +61,7 @@ public class RobotContainer {
         this.vision = new Vision(drive);
         this.intake = new Intake(drive);
         this.shooter = new Shooter();
-        this.targeting = new Targeting(drive, turret);
+        this.targeting = new Targeting(drive);
         this.indexer = new Indexer(2, shooter, turret);
 
         autoChooser = drive.getAutoChooser();
@@ -110,6 +110,9 @@ public class RobotContainer {
 
         operatorController.a().onTrue(intake.run(() -> intake.deploy()));
         operatorController.b().onTrue(intake.run(() -> intake.retract()));
+
+        operatorController.x().onTrue(targeting.run(() -> targeting.setTargetingHub()));
+        operatorController.y().onTrue(targeting.run(() -> targeting.setTargetingShuttle()));
     }
 
     public Command getAutonomousCommand() {
