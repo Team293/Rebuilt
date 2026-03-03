@@ -8,5 +8,8 @@ public class ShotData {
 
     static {
         // TODO: get data and fill these in
+        distanceToRPM.put(0.0, 0.0);
+        distanceToHoodAngle.put(0.0, 0.0);
     }
+
 }
