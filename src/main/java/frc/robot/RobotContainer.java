@@ -27,10 +27,9 @@ import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.vision.Vision;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class RobotContainer {
+    private static final int TRIGGER_SENSOR_CHANNEL = 2; // DIO channel for the trigger proximity sensor
+
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
@@ -64,7 +63,7 @@ public class RobotContainer {
         this.intake = new Intake(drive);
         this.shooter = new Shooter();
         this.targeting = new Targeting(drive);
-        this.trigger = new Trigger(2, shooter, turret);
+        this.trigger = new Trigger(TRIGGER_SENSOR_CHANNEL, shooter, turret);
         this.findexer = new Findexer(trigger);
 
         autoChooser = drive.getAutoChooser();
