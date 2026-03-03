@@ -2,26 +2,65 @@ package frc.robot.subsystems.trigger;
 
 import frc.lib.subsystem.SpikeSystem;
 import edu.wpi.first.wpilibj.DigitalInput;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.turret.Turret;
 
 public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
-    private final static double triggerSpeed = 10.0; // Rotations per second
+    private final static double TRIGGER_SPEED = 10.0; // Rotations per second
+
+    private final Shooter shooter;
+    private final Turret turret;
 
     private TriggerIO triggerIO;
     private DigitalInput proximitySensor;
 
-    public Trigger(int channel) {
-        super("Trigger", new TriggerIO.TriggerIOInputs());
+    public Trigger(int channel, Shooter shooter, Turret turret) {
+        super("Indexer", new TriggerIO.TriggerIOInputs());
         proximitySensor = new DigitalInput(channel);
+
+        this.shooter = shooter;
+        this.turret = turret;
     }
 
-    // Activate motor if proximity sensor detects a ball in the trigger
+    // Activate motor if proximity sensor detects a ball in the indexer
     @Override
     public void onPeriodic() {
-        if (proximitySensor.get()) {
-            triggerIO.setSpeed(0.0);
+        if (mechanismReadyForBalls()) {
+            // run the indexer if the mechanisms are ready for balls
+            // run it regardless of ball in indexer, so that it can feed a ball in if there is one queued up
+            triggerIO.setSpeed(TRIGGER_SPEED);
+        } else if (needsFeeding()) {
+            // bring the ball to the indexer and stop once we see a ball
+            triggerIO.setSpeed(TRIGGER_SPEED);
         } else {
-            triggerIO.setSpeed(triggerSpeed);
+            // stop the indexer if the mechanisms aren't ready and we have a ball queued
+            triggerIO.setSpeed(0.0);
         }
+    }
+
+    /**
+     * Checks the proximity sensor to see if there is a ball currently queued up in the indexer.
+     * @return true if there is a ball in the indexer, false otherwise
+     */
+    private boolean hasBallQueued() {
+        return proximitySensor.get();
+    }
+
+    /**
+     * Determines if the shooter and turret are ready to receive a ball.
+     * @return true if both the shooter is at target RPS and the turret is at target angle, false otherwise
+     */
+    private boolean mechanismReadyForBalls() {
+        return shooter.isAtTargetRPS() && turret.isAtTargetAngle();
+    }
+
+    /**
+     * Determines if the indexer needs a ball fed into it.
+     * True if the mechanisms need a ball and there isn't one already queued up, false otherwise.
+     * @return true if the indexer needs a ball, false otherwise
+     */
+    public boolean needsFeeding() {
+        return !hasBallQueued();
     }
 
     @Override

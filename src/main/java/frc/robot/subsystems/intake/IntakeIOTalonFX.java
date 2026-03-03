@@ -43,9 +43,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         deployVelocity = deployMotor.getVelocity();
         deployCurrent = deployMotor.getStatorCurrent();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(50.0, // set to 50hz to match robot loop and avoid stale data issues
-                intakeVelocity, intakeCurrent, deployVelocity, deployCurrent);
-
         intakeMotor.optimizeBusUtilization();
         deployMotor.optimizeBusUtilization();
     }
