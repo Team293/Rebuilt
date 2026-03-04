@@ -10,6 +10,7 @@ public interface TriggerIO extends BaseIO<TriggerIO.TriggerIOInputs>, IORefreshe
     @AutoLog
     public static class TriggerIOInputs extends BaseInputClass {
         public double motorRps = 0.0;
+        public boolean proximitySensor = false;
     }
 
     abstract void setSpeed(double rps);

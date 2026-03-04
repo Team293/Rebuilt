@@ -6,17 +6,17 @@ import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
 
 public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
+    private static final int PROXIMITY_SENSOR_CHANNEL = 2; // DIO channel for the proximity sensor
+
     private final static double TRIGGER_SPEED = 10.0; // Rotations per second
 
     private final Shooter shooter;
     private final Turret turret;
 
     private TriggerIO triggerIO;
-    private DigitalInput proximitySensor;
 
-    public Trigger(int channel, Shooter shooter, Turret turret) {
-        super("Indexer", new TriggerIO.TriggerIOInputs());
-        proximitySensor = new DigitalInput(channel);
+    public Trigger(Shooter shooter, Turret turret) {
+        super("Trigger", new TriggerIO.TriggerIOInputs());
 
         this.shooter = shooter;
         this.turret = turret;
@@ -43,7 +43,7 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
      * @return true if there is a ball in the indexer, false otherwise
      */
     private boolean hasBallQueued() {
-        return proximitySensor.get();
+        return super.io.proximitySensor;
     }
 
     /**
@@ -65,7 +65,7 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        this.triggerIO = new TriggerIOTalonFX();
+        this.triggerIO = new TriggerIOTalonFX(PROXIMITY_SENSOR_CHANNEL);
         return useAsyncDataRefresher(triggerIO);
     }
 }
