@@ -4,7 +4,7 @@ package frc.robot;
  * Holder for all CAN device IDs besides drivetrain devices
  */
 public enum CanID {
-    INDEXER_MOTOR(10),
+    TRIGGER_MOTOR(10),
 
     FLYWHEEL_MOTOR(20),
     HOOD_MOTOR(12),
