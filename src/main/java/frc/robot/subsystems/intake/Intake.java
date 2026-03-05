@@ -140,6 +140,11 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         }
     }
 
+    // Returns true if the intake is fully deployed, false otherwise
+    public boolean isDeployed() {
+        return intakeIO.getIntakeState() == IntakeState.DEPLOYED;
+    }
+
     @Override
     protected Runnable setupDataRefresher() {
         this.intakeIO = new IntakeIOTalonFX();

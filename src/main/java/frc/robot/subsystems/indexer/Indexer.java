@@ -48,10 +48,10 @@ public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
 
     /**
      * Determines if the shooter and turret are ready to receive a ball.
-     * @return true if both the shooter is at target RPS and the turret is at target angle, false otherwise
+     * @return true if the shooter is at target RPS, the turret is at target angle, and the driver is requesting to shoot, false otherwise
      */
     private boolean mechanismReadyForBalls() {
-        return shooter.isAtTargetRPS() && turret.isAtTargetAngle();
+        return shooter.isAtTargetRPS() && turret.isAtTargetAngle() && shooter.isDriverRequestingShooting();
     }
 
     /**
