@@ -1,22 +1,22 @@
-package frc.robot.subsystems.indexer;
+package frc.robot.subsystems.trigger;
 
 import frc.lib.subsystem.SpikeSystem;
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
 
-public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
-    private final static double indexerSpeed = 10.0; // Rotations per second
+public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
+    private static final int PROXIMITY_SENSOR_CHANNEL = 2; // DIO channel for the proximity sensor
+
+    private final static double TRIGGER_SPEED = 10.0; // Rotations per second
 
     private final Shooter shooter;
     private final Turret turret;
 
-    private IndexerIO indexerIO;
-    private DigitalInput proximitySensor;
+    private TriggerIO triggerIO;
 
-    public Indexer(int channel, Shooter shooter, Turret turret) {
-        super("Indexer", new IndexerIO.IndexerIOInputs());
-        proximitySensor = new DigitalInput(channel);
+    public Trigger(Shooter shooter, Turret turret) {
+        super("Trigger", new TriggerIO.TriggerIOInputs());
 
         this.shooter = shooter;
         this.turret = turret;
@@ -28,13 +28,13 @@ public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
         if (mechanismReadyForBalls()) {
             // run the indexer if the mechanisms are ready for balls
             // run it regardless of ball in indexer, so that it can feed a ball in if there is one queued up
-            indexerIO.setSpeed(indexerSpeed);
+            triggerIO.setSpeed(TRIGGER_SPEED);
         } else if (needsFeeding()) {
             // bring the ball to the indexer and stop once we see a ball
-            indexerIO.setSpeed(indexerSpeed);
+            triggerIO.setSpeed(TRIGGER_SPEED);
         } else {
             // stop the indexer if the mechanisms aren't ready and we have a ball queued
-            indexerIO.setSpeed(0.0);
+            triggerIO.setSpeed(0.0);
         }
     }
 
@@ -43,7 +43,7 @@ public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
      * @return true if there is a ball in the indexer, false otherwise
      */
     private boolean hasBallQueued() {
-        return proximitySensor.get();
+        return super.io.proximitySensor;
     }
 
     /**
@@ -65,7 +65,7 @@ public class Indexer extends SpikeSystem<IndexerIO.IndexerIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        this.indexerIO = new IndexerIOTalonFX();
-        return useAsyncDataRefresher(indexerIO);
+        this.triggerIO = new TriggerIOTalonFX(PROXIMITY_SENSOR_CHANNEL);
+        return useAsyncDataRefresher(triggerIO);
     }
 }

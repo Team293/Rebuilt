@@ -24,13 +24,10 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.targeting.Targeting;
+import frc.robot.subsystems.trigger.Trigger;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.vision.Vision;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -54,7 +51,7 @@ public class RobotContainer {
     private final Vision vision;
     private final Turret turret;
     private final Intake intake;
-    private final Indexer indexer;
+    private final Trigger trigger;
     private final Shooter shooter;
     private final Targeting targeting;
     private final Findexer findexer;
@@ -66,8 +63,8 @@ public class RobotContainer {
         this.intake = new Intake(drive);
         this.shooter = new Shooter();
         this.targeting = new Targeting(drive);
-        this.indexer = new Indexer(2, shooter, turret);
-        this.findexer = new Findexer(indexer);
+        this.trigger = new Trigger(shooter, turret);
+        this.findexer = new Findexer(trigger);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);

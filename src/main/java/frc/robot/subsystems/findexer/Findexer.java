@@ -1,19 +1,19 @@
 package frc.robot.subsystems.findexer;
 
 import frc.lib.subsystem.SpikeSystem;
-import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.trigger.Trigger;
 
 public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
     private static final double FEEDING_RPS = 20.0; // feeding velocity in rotations per second
 
-    private final Indexer indexer;
+    private final Trigger trigger;
 
     private FindexerIO findexerIO;
 
-    public Findexer(Indexer indexer) {
+    public Findexer(Trigger trigger) {
         super("Findexer", new FindexerIO.FindexerIOInputs());
 
-        this.indexer = indexer;
+        this.trigger = trigger;
     }
 
     /**
@@ -22,7 +22,7 @@ public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
     @Override
     public void onPeriodic() {
         // run the findexer if the indexer needs feeding (doesn't have a ball), otherwise stop it
-        if (indexer.needsFeeding()) {
+        if (trigger.needsFeeding()) {
             findexerIO.setSpeed(FEEDING_RPS);
         } else {
             findexerIO.setSpeed(0.0);
