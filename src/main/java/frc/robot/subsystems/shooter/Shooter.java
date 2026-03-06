@@ -49,17 +49,11 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     }
 
     /**
-     * Sets the driver requesting shooting to true, indicating that the driver is currently requesting to shoot. This should be called when the driver presses the shoot button.
+     * Sets whether the driver is currently requesting to shoot. This can be used to determine if the shooter should be active or not.
+      * @param isRequesting true if the driver is requesting to shoot, false otherwise
      */
-    public void setDriverRequestingShootingTrue() {
-        this.driverRequestingShooting = true;
-    }
-
-    /**
-    * Sets the driver requesting shooting to false, indicating that the driver is no longer requesting to shoot. This should be called when the driver releases the shoot button.
-    */
-    public void setDriverRequestingShootingFalse() {
-        this.driverRequestingShooting = false;
+    public void setDriverRequestingShooting(boolean isRequesting) {
+        this.driverRequestingShooting = isRequesting;
     }
 
     /**

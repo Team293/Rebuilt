@@ -137,8 +137,8 @@ public class RobotContainer {
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
         driverController.rightTrigger()
-                .whileTrue(shooter.run(shooter::setDriverRequestingShootingTrue))
-                .whileFalse(shooter.run(shooter::setDriverRequestingShootingFalse));
+                .whileTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
+                .whileFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
     }
 
     public Command getAutonomousCommand() {
