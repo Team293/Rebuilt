@@ -50,11 +50,11 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         this.flywheelMotor = new TalonFX(CanID.FLYWHEEL_MOTOR.getID());
 
         var flywheelSlot0 = new Slot0Configs();
-        flywheelSlot0.kP = 0.1;
+        flywheelSlot0.kP = 0.15;
         flywheelSlot0.kI = 0.0;
         flywheelSlot0.kD = 0.0;
-        flywheelSlot0.kS = 0.0;
-        flywheelSlot0.kV = 0.0;
+        flywheelSlot0.kS = 0.225;
+        flywheelSlot0.kV = 0.125;
 
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
 
