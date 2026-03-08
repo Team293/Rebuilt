@@ -172,12 +172,19 @@ public class TurretIOTalonFX implements TurretIO {
     public static Slot0Configs getTurretMotorConfig() {
         Slot0Configs config = new Slot0Configs();
     
-        config.kP = 1;
+        // config.kP = 1;
+        // config.kI = 0.0;
+        // config.kD = 0.0;
+
+        // config.kS = 0.25;
+        // config.kV = 0.20;
+
+        config.kP = 0.0;
         config.kI = 0.0;
         config.kD = 0.0;
 
-        config.kS = 0.25;
-        config.kV = 0.20;
+        config.kS = 0.0;
+        config.kV = 0.0;
 
         return config;
     }

@@ -25,6 +25,9 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
         int index = 0;
         // update drive with vision measurements
         for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
+            if (pose == null) {
+                continue;
+            }
             Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
             double avgDist = 0;
 

@@ -16,9 +16,11 @@ public class FindexerIOTalonFX implements FindexerIO {
         this.motor = new TalonFX(CanID.FINDEXER_MOTOR.getID());
         this.motorRps = motor.getVelocity();
         Slot0Configs config = new Slot0Configs();
-        config.kP = 0.1;
+        config.kP = 0.5;
         config.kI = 0.0;
         config.kD = 0.0;
+        
+        config.kS = 0.0;
         this.motor.getConfigurator().apply(config);
 
         this.motor.optimizeBusUtilization();
