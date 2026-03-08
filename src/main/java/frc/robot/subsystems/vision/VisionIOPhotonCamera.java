@@ -1,5 +1,6 @@
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.math.geometry.Pose3d;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.subsystems.vision.photon.Camera;
 import frc.robot.subsystems.vision.photon.CameraManager;
@@ -29,6 +30,14 @@ public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     @Override
     public void updateInputs(VisionIOInputs inputs) {
-        inputs.estimatedRobotPoses = new ArrayList<>(estimatedRobotPoses);
+        inputs.estimatedRobotPoses = estimatedRobotPoses.stream()
+                .map(pose -> pose.estimatedPose)
+                .toArray(Pose3d[]::new);
+    }
+
+
+    @Override
+    public List<EstimatedRobotPose> getEstimatedRobotPoses() {
+        return estimatedRobotPoses;
     }
 }
