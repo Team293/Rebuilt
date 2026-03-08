@@ -9,6 +9,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     private ShooterIO shooterIO;
     private double targetRPS = 0.0; // Target rotations per second
+    private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
 
     public Shooter() {
         super("Shooter", new ShooterIO.ShooterIOInputs());
@@ -45,5 +46,21 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     public boolean isAtTargetRPS() {
         return Math.abs(super.io.motorRPS - targetRPS) < SHOOTER_READY_THRESHOLD_RPS;
+    }
+
+    /**
+     * Sets whether the driver is currently requesting to shoot. This can be used to determine if the shooter should be active or not.
+      * @param isRequesting true if the driver is requesting to shoot, false otherwise
+     */
+    public void setDriverRequestingShooting(boolean isRequesting) {
+        this.driverRequestingShooting = isRequesting;
+    }
+
+    /**
+     * Returns whether the driver is currently requesting to shoot.
+     * @return true if the driver is requesting to shoot, false otherwise
+     */
+    public boolean isDriverRequestingShooting() {
+        return this.driverRequestingShooting;
     }
 }
