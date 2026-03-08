@@ -13,10 +13,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
+import frc.lib.SpikeController;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
@@ -42,8 +44,8 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController driverController = new CommandXboxController(0);
-    private final CommandXboxController operatorController = new CommandXboxController(1);
+    private final CommandXboxController driverController = new SpikeController(0, 0.05);
+    private final CommandXboxController operatorController = new SpikeController(1, 0.05);
 
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
@@ -75,6 +77,13 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
+        setupSwerveBindings();
+        setupIntakeBindings();
+        setupTargetingBindings();
+        setupShooterBindings();
+    }
+
+    private void setupSwerveBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drive.setDefaultCommand(
@@ -107,12 +116,23 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
         driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
+    }
 
-        operatorController.a().onTrue(intake.run(() -> intake.deploy()));
-        operatorController.b().onTrue(intake.run(() -> intake.retract()));
+    private void setupIntakeBindings() {
+        // toggle intake on B press
+        operatorController.b().onTrue(intake.run(intake::toggleIntake));
+    }
 
-        operatorController.x().onTrue(targeting.run(() -> targeting.setTargetingHub()));
-        operatorController.y().onTrue(targeting.run(() -> targeting.setTargetingShuttle()));
+    private void setupTargetingBindings() {
+        operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
+        operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
+    }
+
+    private void setupShooterBindings() {
+        // toggle shooter on right trigger hold
+        driverController.rightTrigger()
+                .whileTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
+                .whileFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
     }
 
     public Command getAutonomousCommand() {
