@@ -38,6 +38,6 @@ public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     @Override
     public List<EstimatedRobotPose> getEstimatedRobotPoses() {
-        return estimatedRobotPoses;
+        return new ArrayList<>(estimatedRobotPoses);
     }
 }

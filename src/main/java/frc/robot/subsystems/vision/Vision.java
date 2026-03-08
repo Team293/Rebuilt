@@ -7,6 +7,8 @@ import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 
+import edu.wpi.first.math.geometry.Pose2d;
+
 public class Vision extends SpikeSystem<VisionIOInputs> {
 
     private VisionIO visionIO;
@@ -41,6 +43,7 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
             drive.addVisionMeasurement(
                     pose.estimatedPose.toPose2d(),
                     pose.timestampSeconds,
+                    // CommandSwerveDrivetrain.kDefaultVisionStdDevs
                     CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30)) // scale the std devs based on the average distance to the targets (farther targets are less accurate)
             );
             index++;
@@ -51,5 +54,18 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
     protected Runnable setupDataRefresher() {
         this.visionIO = new VisionIOPhotonCamera();
         return useAsyncDataRefresher(visionIO);
+    }
+
+    public Pose2d getEstimatedPositionFromCameras() {
+        if (visionIO.getEstimatedRobotPoses().isEmpty()) {
+            return null;
+        }
+
+        for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
+            if (pose != null) {
+                return pose.estimatedPose.toPose2d();
+            }
+        }
+        return null;
     }
 }

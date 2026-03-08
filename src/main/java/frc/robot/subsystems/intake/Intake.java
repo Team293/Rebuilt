@@ -35,27 +35,28 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     public void onPeriodic() {
         // Only act on the intake motor if the intake is running
         if (running) {
-            switch (intakeIO.getIntakeState()) {
-                case DEPLOYING: // Intake is deploying
-                    doDeployingState();
-                    break;
-                case RETRACTING: // Intake is retracting
-                    doRetractingState();
-                    break;
-                case DEPLOYED: // Intake is fully deployed
-                    doDeployedState();
-                    break;
-                case RETRACTED: // Intake is fully retracted
-                    doRetractedState();
-                    break;
-                default:
-                    // Error, unknown state!
-                    // Turn off the deploy and intake motors!
-                    intakeIO.setDeploySpeed(0.0);
-                    intakeIO.setIntakeSpeed(0.0);
-                    // Log unknown state
-                    break;
-            }
+            // switch (intakeIO.getIntakeState()) {
+            //     case DEPLOYING: // Intake is deploying
+            //         doDeployingState();
+            //         break;
+            //     case RETRACTING: // Intake is retracting
+            //         doRetractingState();
+            //         break;
+            //     case DEPLOYED: // Intake is fully deployed
+            //         doDeployedState();
+            //         break;
+            //     case RETRACTED: // Intake is fully retracted
+            //         doRetractedState();
+            //         break;
+            //     default:
+            //         // Error, unknown state!
+            //         // Turn off the deploy and intake motors!
+            //         intakeIO.setDeploySpeed(0.0);
+            //         intakeIO.setIntakeSpeed(0.0);
+            //         // Log unknown state
+            //         break;
+            // }
+            doDeployedState();
         }
     }
 

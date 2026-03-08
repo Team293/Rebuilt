@@ -1,5 +1,7 @@
 package frc.robot.subsystems.turret;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -19,15 +21,16 @@ public class TurretIOTalonFX implements TurretIO {
     private final TalonFX turretMotor;
     private final CommandSwerveDrivetrain drive;
 
+    private static final double TURRET_LIMIT_DEG = 160.0;
+
     private final MotionMagicVoltage mmVoltage = new MotionMagicVoltage(0);
     private final StatusSignal<Angle> encoderSignal;
     private final BaseStatusSignal pinionEncoderSignal;
     private final BaseStatusSignal followerEncoderSignal;
 
-    private static final double kTurretGearRatio = 140/10; // turret ring: 140 teeth, motor pinion: 10 teeth
+    private static final double kTurretGearRatio = 84.0/10.0; // turret ring: 84 teeth, motor pinion: 10 teeth
 
-    private final double turretRotationOffset; // offset in motor rotations, calculated at startup, units in motor rotations
-    private final double turretDegreesOffset = 246.7; // offset in degrees to align turret with front of robot
+    private final double turretDegreesOffset = 180.0; // offset in degrees to align turret with front of robot
 
     private double targetAngleDeg = 0.0; // target angle of the turret in degrees
 
@@ -36,16 +39,11 @@ public class TurretIOTalonFX implements TurretIO {
         this.turretMotor = new TalonFX(CanID.TURRET_MOTOR.getID());
 
         MotionMagicConfigs mm = new MotionMagicConfigs();
-        mm.MotionMagicAcceleration = 60; // rot/sec^2
-        mm.MotionMagicCruiseVelocity = 30; // rot/sec
+        mm.MotionMagicAcceleration = 10; // rot/sec^2
+        mm.MotionMagicCruiseVelocity = 10; // rot/sec
 
         // Motor configuration
-        Slot0Configs config = new Slot0Configs();
-        config.kP = 1;
-        config.kI = 0.01;
-        config.kD = 0.3;
-        config.kS = 0.194;
-        config.kV = 0.1167;
+        Slot0Configs config = getTurretMotorConfig();
 
         this.turretMotor.getConfigurator().apply(config);
         this.turretMotor.getConfigurator().apply(mm);
@@ -72,7 +70,7 @@ public class TurretIOTalonFX implements TurretIO {
         double currentMotorRevs = this.turretMotor.getPosition().getValueAsDouble();
         double toZeroRevs = TurretMath.degreesToMotorPosition(turretDegrees);
 
-        this.turretRotationOffset = currentMotorRevs + toZeroRevs;
+        turretMotor.setPosition(-toZeroRevs);
     }
 
     /**
@@ -81,6 +79,7 @@ public class TurretIOTalonFX implements TurretIO {
      */
     @Override
     public void setTurretAngle(double fieldTargetHeadingDeg) {
+        Logger.recordOutput("Turret/TargetAngle", fieldTargetHeadingDeg);
         this.targetAngleDeg = fieldTargetHeadingDeg;
         fieldTargetHeadingDeg = MathUtil.inputModulus(fieldTargetHeadingDeg, 0.0, 360.0);
 
@@ -103,20 +102,27 @@ public class TurretIOTalonFX implements TurretIO {
                 -180.0, 180.0
             );
 
+        if (turretAngleDeg > TURRET_LIMIT_DEG) {
+            turretAngleDeg -= 360.0;
+        } else if (turretAngleDeg < -TURRET_LIMIT_DEG) {
+            turretAngleDeg += 360.0;
+        }
+
         // convert turret angle to motor rotations, accounting for gear ratio and offset
-        double rotations = (turretAngleDeg / 360.0) * kTurretGearRatio;
-        rotations = -rotations + this.turretRotationOffset;
+        double turretAngleForMotor = turretAngleDeg;
+        if (turretAngleForMotor > 180.0) {
+            turretAngleForMotor -= 360.0;
+        }
+        Logger.recordOutput("Turret/TargetAngleForMotor", turretAngleForMotor);
+        double rotations = -(turretAngleForMotor / 360.0) * kTurretGearRatio;
 
-        // calculate feedforward to counteract robot rotation, using a simple linear model with gain determined empirically
-        double motorRps =
-            -(this.drive.getRobotOmegaDegPerSec() / 360.0) * kTurretGearRatio;
-
+        Logger.recordOutput("Turret/TargetRotations", rotations);
         // set the motor to the desired position with feedforward to counteract robot rotation
         this.turretMotor.setControl(
             this.mmVoltage
                 .withPosition(rotations)
                     // 0.1167 is an empirically determined gain to convert from motor RPS to voltage needed to hold position against rotation
-                .withFeedForward(motorRps * 0.1167)
+                // .withFeedForward(motorRps * 0.1167)
         );
     }
     
@@ -136,10 +142,19 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.robotOmegaDegPerSec = this.drive.getRobotOmegaDegPerSec();
 
         // convert raw encoder readings to turret angle in degrees, accounting for gear ratio and offset
-        inputs.turretAngleDegrees = TurretMath.normalizeTurretHeading(
+        double turretAngleDegreesNonNormalized = TurretMath.normalizeTurretHeading(
             TurretMath.toDegreesWrapped(turretRotations),
             turretDegreesOffset
         );
+
+        // normalize to -180 to 180 range
+        if (turretAngleDegreesNonNormalized > 180.0) {
+            inputs.turretAngleDegrees = turretAngleDegreesNonNormalized - 360.0;
+        } else if (turretAngleDegreesNonNormalized < -180.0) {
+            inputs.turretAngleDegrees = turretAngleDegreesNonNormalized + 360.0;
+        } else {
+            inputs.turretAngleDegrees = turretAngleDegreesNonNormalized;
+        }
 
         // creates a position for the turret based on robot position, rotated by turret angle for logging
         inputs.turretPosition = new Pose2d(drive.getPose().getTranslation(), new Rotation2d(TurretMath.toRad(inputs.turretAngleDegrees)));
@@ -152,5 +167,18 @@ public class TurretIOTalonFX implements TurretIO {
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(encoderSignal, pinionEncoderSignal, followerEncoderSignal);
+    }
+
+    public static Slot0Configs getTurretMotorConfig() {
+        Slot0Configs config = new Slot0Configs();
+    
+        config.kP = 1;
+        config.kI = 0.0;
+        config.kD = 0.0;
+
+        config.kS = 0.25;
+        config.kV = 0.20;
+
+        return config;
     }
 }

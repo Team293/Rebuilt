@@ -17,13 +17,13 @@ public class Targeting extends SubsystemBase {
     private static final double NOMINAL_SHOT_TIME_S = 0.3; // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
     private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
 
-    private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+    private Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
     private final CommandSwerveDrivetrain drive;
 
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
         setTargetingHub();
-        Logger.recordOutput("HubTarget", FieldConstants.Hub.innerCenterPoint);
+        Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
     }
     

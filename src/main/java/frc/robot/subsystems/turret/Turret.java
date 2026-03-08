@@ -1,5 +1,7 @@
 package frc.robot.subsystems.turret;
 
+import org.littletonrobotics.junction.Logger;
+
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 
@@ -14,6 +16,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     public Turret() {
         super("Turret", new TurretIO.TurretIOInputs());
+        System.out.println("Turret subsystem initialized");
     }
     
     /**
@@ -21,6 +24,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
      */ 
     @Override
     public void onPeriodic() {
+        Logger.recordOutput("Turret/Degrees", io.turretAngleDegrees);
+
         // compensate for robot movement
         ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
 

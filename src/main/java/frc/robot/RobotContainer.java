@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -80,7 +82,7 @@ public class RobotContainer {
         setupSwerveBindings();
         setupIntakeBindings();
         setupTargetingBindings();
-        setupShooterBindings();
+        // setupShooterBindings();
     }
 
     private void setupSwerveBindings() {
@@ -116,11 +118,19 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
         driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
+
+        operatorController.y().onTrue(vision.runOnce(() -> {
+            var estimatedPose = vision.getEstimatedPositionFromCameras();
+            if (estimatedPose != null) {
+                Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
+                drive.resetPose(estimatedPose);
+            }
+        }));
     }
 
     private void setupIntakeBindings() {
         // toggle intake on B press
-        operatorController.b().onTrue(intake.run(intake::toggleIntake));
+        // operatorController.b().onTrue(intake.run(intake::toggleIntake));
     }
 
     private void setupTargetingBindings() {
@@ -128,12 +138,12 @@ public class RobotContainer {
         operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
     }
 
-    private void setupShooterBindings() {
-        // toggle shooter on right trigger hold
-        driverController.rightTrigger()
-                .whileTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
-                .whileFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
-    }
+    // private void setupShooterBindings() {
+    //     // toggle shooter on right trigger hold
+    //     driverController.rightTrigger()
+    //             .whileTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
+    //             .whileFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+    // }
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();

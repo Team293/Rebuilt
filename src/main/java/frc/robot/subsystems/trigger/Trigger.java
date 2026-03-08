@@ -1,7 +1,6 @@
 package frc.robot.subsystems.trigger;
 
 import frc.lib.subsystem.SpikeSystem;
-import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
 
@@ -43,7 +42,8 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
      * @return true if there is a ball in the indexer, false otherwise
      */
     private boolean hasBallQueued() {
-        return super.io.proximitySensor;
+        // return super.io.proximitySensor;
+        return false;
     }
 
     /**

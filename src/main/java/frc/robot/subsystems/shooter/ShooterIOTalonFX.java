@@ -4,6 +4,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -24,14 +25,15 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     private final double hoodMotorPositionOffset; // offset in motor rotations, calculated at startup, units in motor rotations
 
     private final VelocityVoltage flywheelVelocityControl = new VelocityVoltage(0);
-    private final PositionVoltage hoodPositionControl = new PositionVoltage(0);
-
+    private final MotionMagicVelocityVoltage hoodVelocityControl = new MotionMagicVelocityVoltage(0);
     private final StatusSignal<AngularVelocity> motorVelocity; // rps
     private final StatusSignal<Angle> hoodMotorPosition; // motor rotations
     private final StatusSignal<Angle> hoodAngle; // degrees
 
     private double hoodAngleSetPoint = 0.0;
     private double flywheelRPSSetPoint = 0.0;
+
+    private double hoodTargetEncoder = 0.0;
 
     public ShooterIOTalonFX() {
         // hood configs
@@ -87,6 +89,12 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition);
+
+        double current = hoodAngle.getValueAsDouble();
+
+        if (Math.abs(current - hoodTargetEncoder) < 0.005) {
+            hoodMotor.stopMotor();
+        }
     }
 
     /**
@@ -119,13 +127,23 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
      * Set the target hood angle 
      * @param angle target angle TODO: relative to what 
      */
-    @Override
+   @Override
     public void setHoodAngle(double angle) {
+        angle = Math.max(15, Math.min(45, angle));
         this.hoodAngleSetPoint = angle;
-        double motorRotations = angleToMotorRotations(angle);
-        this.hoodPositionControl.withPosition(hoodMotorPositionOffset + motorRotations);
 
-        this.hoodMotor.setControl(this.hoodPositionControl);
+        // convert target angle -> encoder rotations
+        this.hoodTargetEncoder = angleToEncoder(angle);
+
+        double current = hoodAngle.getValueAsDouble();
+
+        double velocity = 0.5; // rps, tune later
+
+        if (current > hoodTargetEncoder) {
+            velocity = -velocity;
+        }
+
+        hoodMotor.setControl(hoodVelocityControl.withVelocity(velocity));
     }
 
     /**
@@ -136,5 +154,9 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     private static double angleToMotorRotations(double angle) {
         // rotations = (angle_deg * gear_ratio) / 360
         return angle * HOOD_GEAR_RATIO / 360.0;
+    }
+
+    private static double angleToEncoder(double angle) {
+        return (45.0 - angle) / 30.0;
     }
 }

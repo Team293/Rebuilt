@@ -26,9 +26,9 @@ public class CameraManager {
             new Camera(
                 "left", 
                 new Transform3d(
-                    Inches.of(29.5/2),
-                    Inches.of(0),
-                    Inches.of(6.875),
+                    Inches.of(-13.8),
+                    Inches.of(7.5),
+                    Inches.of(22.3/4),
                     new Rotation3d(
                         Degrees.of(0),
                         Degrees.of(60),
@@ -42,9 +42,9 @@ public class CameraManager {
             new Camera(
                 "right",
                  new Transform3d(
-                    Inches.of(-29.5/2),
-                    Inches.of(0),
-                    Inches.of(6.875),
+                    Inches.of(13.8),
+                    Inches.of(5),
+                    Inches.of(6.3/4),
                     new Rotation3d(
                         Degrees.of(0),
                         Degrees.of(60),

@@ -15,9 +15,9 @@ package frc.robot.subsystems.turret.calc;
 public class TurretMath {
 
     // Hardware tooth counts
-    private static final double TURRET_GEAR_TEETH         = 140.0;
-    private static final double ENCODER_A_TEETH           = 13.0;
-    private static final double ENCODER_B_TEETH           = 11.0;
+    private static final double TURRET_GEAR_TEETH         = 84.0;
+    private static final double ENCODER_A_TEETH           = 10.0;
+    private static final double ENCODER_B_TEETH           = 13.0;
 
     // Derived encoder combination values
     private static final double ENCODER_COMBINED_TEETH    = ENCODER_A_TEETH * ENCODER_B_TEETH;
@@ -28,7 +28,7 @@ public class TurretMath {
     private static final double HALF_NORMALIZED_REV = NORMALIZED_REV / 2.0;
     private static final double DEGREES_PER_REV = 360.0;
     private static final double RAD_PER_REV = 2.0 * Math.PI;
-    private static final double MOTOR_UNITS_PER_REV = 14.0;          // scale used in degreesToMotorPosition
+    private static final double MOTOR_UNITS_PER_REV = TURRET_GEAR_TEETH/ENCODER_A_TEETH;          // scale used in degreesToMotorPosition
 
     // Defaults / initial values
     private static final double DEFAULT_OFFSET_DEGREES = 0.0;
@@ -147,6 +147,9 @@ public class TurretMath {
     }
 
     public static double degreesToMotorPosition(double turretDegrees) {
+        if (turretDegrees > 180.0) {
+            turretDegrees -= 360.0;
+        }
         return (turretDegrees * MOTOR_UNITS_PER_REV) / DEGREES_PER_REV;
     }
 
