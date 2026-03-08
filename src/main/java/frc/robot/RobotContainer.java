@@ -120,13 +120,7 @@ public class RobotContainer {
 
     private void setupIntakeBindings() {
         // toggle intake on B press
-        operatorController.b().onTrue(Commands.runOnce(() -> {
-            if (intake.isDeployed()) {
-                intake.retract();
-            } else {
-                intake.deploy();
-            }
-        }));
+        operatorController.b().onTrue(intake.run(intake::toggleIntake));
     }
 
     private void setupTargetingBindings() {

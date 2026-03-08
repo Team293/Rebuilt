@@ -150,4 +150,13 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         this.intakeIO = new IntakeIOTalonFX();
         return useAsyncDataRefresher(intakeIO);
     }
+
+    // Toggles the intake between deployed and retracted states
+    public void toggleIntake() {
+        if (intakeIO.getIntakeState() == IntakeState.DEPLOYED || intakeIO.getIntakeState() == IntakeState.DEPLOYING) {
+            retract();
+        } else {
+            deploy();
+        }
+    }
 }
