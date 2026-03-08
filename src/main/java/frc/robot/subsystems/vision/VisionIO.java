@@ -1,5 +1,7 @@
 package frc.robot.subsystems.vision;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import frc.lib.subsystem.BaseIO;
 import frc.lib.subsystem.BaseInputClass;
 import frc.lib.subsystem.IORefresher;
@@ -12,6 +14,8 @@ public interface VisionIO extends BaseIO<VisionIO.VisionIOInputs>, IORefresher {
 
     @AutoLog
     public static class VisionIOInputs extends BaseInputClass {
-        public List<EstimatedRobotPose> estimatedRobotPoses = List.of();
+        public Pose3d[] estimatedRobotPoses = new Pose3d[0];
     }
+
+    List<EstimatedRobotPose> getEstimatedRobotPoses();
 }
