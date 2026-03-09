@@ -15,7 +15,7 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
     private TriggerIO triggerIO;
 
     public Trigger(Shooter shooter, Turret turret) {
-        super("Trigger", new TriggerIO.TriggerIOInputs());
+        super("Trigger", new TriggerIOInputsAutoLogged());
 
         this.shooter = shooter;
         this.turret = turret;

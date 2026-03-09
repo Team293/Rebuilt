@@ -11,7 +11,7 @@ public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
     private FindexerIO findexerIO;
 
     public Findexer(Trigger trigger) {
-        super("Findexer", new FindexerIO.FindexerIOInputs());
+        super("Findexer", new FindexerIOInputsAutoLogged());
 
         this.trigger = trigger;
     }

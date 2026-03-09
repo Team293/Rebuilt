@@ -36,9 +36,6 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
  * project.
  */
 public class Robot extends LoggedRobot {
-  private static final double LOOP_PERIOD_S = 0.02; // 20 ms loop period
-  private static double tickStart = 0; // start time of current tick, updated for each tick, in seconds
-
   private Command autonomousCommand;
   private RobotContainer robotContainer;
 
@@ -49,6 +46,9 @@ public class Robot extends LoggedRobot {
                   ? 100000000
                   : // 100 MB
                   1000000000; // 1 GB
+
+  private double lastPeriodicTime = Timer.getFPGATimestamp();
+
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -154,13 +154,21 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
-    tickStart = Timer.getFPGATimestamp();
+    double startTime = Timer.getFPGATimestamp();
     // Runs the Scheduler. This is responsible for polling buttons, adding
     // newly-scheduled commands, running already-scheduled commands, removing
     // finished or interrupted commands, and running subsystem periodic() methods.
     // This must be called from the robot's periodic block in order for anything in
     // the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    double endTime = Timer.getFPGATimestamp();
+
+    double execMs = (endTime - startTime) * 1000.0;
+    double periodMs = (startTime - lastPeriodicTime) * 1000.0;
+    lastPeriodicTime = startTime;
+
+    Logger.recordOutput("Logged Tracer/RobotPeriodic Execution Milliseconds", execMs);
+    Logger.recordOutput("Logged Tracer/RobotPeriodic Period Milliseconds", periodMs);
   }
 
   /** This function is called once when the robot is disabled. */
@@ -220,13 +228,4 @@ public class Robot extends LoggedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
-
-  /**
-   * Utility function to check if a given timestamp is within the current tick.
-   * @param timestamp timestamp to check, in seconds
-   * @return true if the timestamp is within the current tick, false otherwise
-   */
-  public static boolean isTimestampInCurrentTick(double timestamp) {
-    return timestamp >= tickStart && timestamp < tickStart + LOOP_PERIOD_S;
-  }
 }

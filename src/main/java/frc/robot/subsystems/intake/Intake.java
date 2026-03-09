@@ -24,7 +24,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     // Intake constructor
     public Intake(CommandSwerveDrivetrain drivetrain) {
-        super("Intake", new IntakeIO.IntakeIOInputs());
+        super("Intake", new IntakeIOInputsAutoLogged());
         this.drivetrain = drivetrain;
         enable();
     }

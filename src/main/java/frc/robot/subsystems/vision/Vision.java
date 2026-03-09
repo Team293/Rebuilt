@@ -15,7 +15,7 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
     private final CommandSwerveDrivetrain drive;
 
     public Vision(CommandSwerveDrivetrain drive) {
-        super("Vision", new VisionIO.VisionIOInputs());
+        super("Vision", new VisionIOInputsAutoLogged());
 
         this.drive = drive;
     }

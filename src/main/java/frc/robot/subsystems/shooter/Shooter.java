@@ -12,7 +12,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
 
     public Shooter() {
-        super("Shooter", new ShooterIO.ShooterIOInputs());
+        super("Shooter", new ShooterIOInputsAutoLogged());
     }
 
     /**

@@ -125,7 +125,6 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        System.out.println("Updating inputs: turret angle (field-relative) = " + getTurretAngleFieldRelative());
         inputs.turretAngleDegrees = getTurretAngleFieldRelative();
         inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
         inputs.normalizedTurretMotorRotations = this.calculatedMotorOffsetRevs;
