@@ -1,4 +1,4 @@
-package frc.robot.subsystems.turret.calc;
+package frc.robot.subsystems.targeting;
 
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 

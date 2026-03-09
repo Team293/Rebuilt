@@ -1,22 +1,27 @@
 package frc.robot.subsystems.turret;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import frc.lib.subsystem.BaseIO;
 import frc.lib.subsystem.BaseInputClass;
 import frc.lib.subsystem.IORefresher;
 import org.littletonrobotics.junction.AutoLog;
 
-public interface TurretIO extends BaseIO<TurretIO.TurretIOInputs>, IORefresher {
+public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
 
     @AutoLog
     public static class TurretIOInputs extends BaseInputClass {
-        public double turretAngleDegrees = 0.0;
-        public double pinionEncoder = 0.0;
-        public double followerEncoder = 0.0;
-        public double turretSetPointDegrees = 0.0;
-        public Pose2d turretPosition = new Pose2d();
-        public double robotOmegaDegPerSec = 0.0;
+        public double turretAngleDegrees = 0.0; // current angle of the turret, field-relative, in degrees
+        public double targetTurretMotorRotations = 0.0; // target position for the turret motor, in rotations
+        public double normalizedTurretMotorRotations = 0.0; // calculated turret motor rotations, updated when recalculation is called
     }
 
-    void setTurretAngle(double angle);
+    /**
+     * Set the angle of the turret, field-relative, in degrees. 0 degrees is facing straight forward, positive angles are clockwise, and negative angles are counterclockwise. [-180, 180]
+     * @param fieldRelativeAngleDegrees field-relative angle to set the turret to, in degrees. 0 degrees is facing straight forward, positive angles are clockwise, and negative angles are counterclockwise. [-180, 180]
+     */
+    void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees);
+
+    /**
+     * Recalculates the turret motor zero position to fix any encoder drift.
+     */
+    void recalculateTurretMotorZeroPosition();
 }

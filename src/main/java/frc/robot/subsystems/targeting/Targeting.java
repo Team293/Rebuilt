@@ -11,7 +11,6 @@ import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.FieldConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
-import frc.robot.subsystems.turret.calc.ShotCompensation;
 
 public class Targeting extends SubsystemBase {
     private static final double NOMINAL_SHOT_TIME_S = 0.3; // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
