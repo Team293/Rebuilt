@@ -2,7 +2,7 @@ package frc.robot.subsystems.shooter;
 
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.Targeting;
-import frc.robot.subsystems.turret.calc.ShotCompensation;
+import frc.robot.subsystems.targeting.ShotCompensation;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 0.5; // RPS threshold to consider the shooter ready
