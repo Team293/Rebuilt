@@ -6,11 +6,11 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
-import org.graalvm.collections.Pair;
 
 public class TurretIOTalonFX implements TurretIO {
     // KS KV CONSTANTS
@@ -58,8 +58,8 @@ public class TurretIOTalonFX implements TurretIO {
         var turretMotorFeedbackConfig = getTurretMotorFeedbackConfigs();
         var turretSoftwareLimitConfig = getTurretSoftwareLimitConfigs();
 
-        this.turretMotor.getConfigurator().apply(turretMotorConfig.getLeft());
-        this.turretMotor.getConfigurator().apply(turretMotorConfig.getRight());
+        this.turretMotor.getConfigurator().apply(turretMotorConfig.getFirst());
+        this.turretMotor.getConfigurator().apply(turretMotorConfig.getSecond());
         this.turretMotor.getConfigurator().apply(turretMotorFeedbackConfig);
         this.turretMotor.getConfigurator().apply(turretSoftwareLimitConfig);
 
@@ -152,7 +152,7 @@ public class TurretIOTalonFX implements TurretIO {
         mmConfigs.MotionMagicAcceleration = 20; // rotations per second^2
         mmConfigs.MotionMagicCruiseVelocity = 10; // rotations per second
 
-        return Pair.create(configs, mmConfigs);
+        return new Pair<>(configs, mmConfigs);
     }
 
     /**
