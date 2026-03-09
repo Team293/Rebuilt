@@ -32,8 +32,9 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         if (shotData != null) {
             double newTargetAngleDeg = shotData.turretAngleDeg();
             this.targetAngleDeg = newTargetAngleDeg;
-
-            this.turretIO.setTurretAngle(newTargetAngleDeg);
+            Logger.recordOutput("Turret/TargetAngleDeg", newTargetAngleDeg);
+            // this.turretIO.setTurretAngle(newTargetAngleDeg);
+            this.turretIO.setTurretAngle(0);
         }
     }
     

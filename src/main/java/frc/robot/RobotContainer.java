@@ -52,21 +52,21 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-    private final Intake intake;
-    private final Trigger trigger;
-    private final Shooter shooter;
+    // private final Intake intake;
+    // private final Trigger trigger;
+    // private final Shooter shooter;
     private final Targeting targeting;
-    private final Findexer findexer;
+    // private final Findexer findexer;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-        this.intake = new Intake(drive);
-        this.shooter = new Shooter();
+        // this.intake = new Intake(drive);
+        // this.shooter = new Shooter();
         this.targeting = new Targeting(drive);
-        this.trigger = new Trigger(shooter, turret);
-        this.findexer = new Findexer(trigger);
+        // this.trigger = new Trigger(shooter, turret);
+        // this.findexer = new Findexer(trigger);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);

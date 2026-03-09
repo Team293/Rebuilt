@@ -32,6 +32,7 @@ public class Targeting extends SubsystemBase {
      */
     @Override
     public void periodic() {
+        Logger.recordOutput("Targeting/TargetPosition", new Pose2d(targetPos, new Rotation2d()));
         // calculate the adjusted shot parameters based on the current robot movement and the turret's target position
         shotData = ShotCompensation.compensateForMovement(
                 drive.getPose(),
