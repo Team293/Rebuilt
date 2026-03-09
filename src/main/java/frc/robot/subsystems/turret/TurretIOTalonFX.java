@@ -35,6 +35,8 @@ public class TurretIOTalonFX implements TurretIO {
     private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
 
     // VALUES
+    private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
+    private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
     private double targetTurretAngleMotorRevs; // target angle of the turret in motor rotations
     private double calculatedMotorOffsetRevs; // calculated offset in motor rotations based on the current position of the turret and the pinion encoder reading
 
@@ -77,12 +79,14 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees) {
+        this.targetTurretDegreesFieldRelative = fieldRelativeAngleDegrees;
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
         // absolute robot-relative target, in motor rotations
         double targetRobotRelativeDeg = wrap180(fieldRelativeAngleDegrees - currentRobotHeading);
         double targetMotorRotations = targetRobotRelativeDeg / 180.0;
 
+        this.processedTargetTurretDegreesFieldRelative = targetRobotRelativeDeg;
         this.targetTurretAngleMotorRevs = targetMotorRotations;
 
         this.turretMotor.setControl(
@@ -128,6 +132,11 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.turretAngleDegrees = getTurretAngleFieldRelative();
         inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
         inputs.normalizedTurretMotorRotations = this.calculatedMotorOffsetRevs;
+        inputs.targetTurretDegrees = this.targetTurretDegreesFieldRelative;
+        inputs.processedTargetTurretDegrees = this.processedTargetTurretDegreesFieldRelative;
+        inputs.turretMotorPositionRotations = this.turretMotorPosition.getValueAsDouble();
+        inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
+        inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
     }
 
     // CONFIGURATIONS

@@ -10,8 +10,13 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
     @AutoLog
     public static class TurretIOInputs extends BaseInputClass {
         public double turretAngleDegrees = 0.0; // current angle of the turret, field-relative, in degrees
+        public double targetTurretDegrees = 0.0; // target angle for the turret, field-relative, in degrees
+        public double processedTargetTurretDegrees = 0.0; // processed target angle for the turret, field-relative, in degrees, updated when recalculation is called
         public double targetTurretMotorRotations = 0.0; // target position for the turret motor, in rotations
         public double normalizedTurretMotorRotations = 0.0; // calculated turret motor rotations, updated when recalculation is called
+        public double turretMotorPositionRotations = 0.0; // current position of the turret motor, in rotations
+        public double pinionEncoderRotations = 0.0; // current rotations of the pinion encoder
+        public double followerEncoderRotations = 0.0; // current rotations of the follower
     }
 
     /**
