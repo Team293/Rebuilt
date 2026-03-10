@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -33,6 +34,7 @@ public class TurretIOTalonFX implements TurretIO {
     // CALIBRATION STATES (CRT)
     private boolean isInitialized = false; // whether the turret has been initialized with a known position yet
     private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
+    private double lastPinionRevs = 0.0; // last calculated position of the pinion encoder in revolutions
 
     // VALUES
     private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
@@ -73,6 +75,12 @@ public class TurretIOTalonFX implements TurretIO {
         this.pinionEncoderSignal = this.pinionEncoder.getAbsolutePosition();
         this.followerEncoderSignal = this.followerEncoder.getAbsolutePosition();
 
+        BaseStatusSignal.refreshAll(
+            this.turretMotorPosition,
+            this.pinionEncoderSignal,
+            this.followerEncoderSignal
+        );
+
         // ZEROING POSITION
         recalculateTurretMotorZeroPosition();
     }
@@ -92,7 +100,7 @@ public class TurretIOTalonFX implements TurretIO {
         this.turretMotor.setControl(
                 mmRequest
                         .withPosition(targetMotorRotations)
-                        .withFeedForward(calculateFeedforward())
+                        // .withFeedForward(calculateFeedforward())
         );
     }
 
@@ -101,12 +109,16 @@ public class TurretIOTalonFX implements TurretIO {
      */
     @Override
     public void recalculateTurretMotorZeroPosition() {
-        double currentTurretAngle = getTurretAngleRobotRelative(); // get the current angle of the turret in robot frame
 
-        double normalizedPosition = currentTurretAngle / 180.0; // convert to normalized position [-1, 1]
-        this.calculatedMotorOffsetRevs = normalizedPosition; // calculate the offset in motor rotations based on the current turret angle
+        // absolute turret position from CRT
+        double turretRevs = getTurretPositionRevs();
 
-        this.turretMotor.setPosition(normalizedPosition);
+        // mechanism rotations where 1 rotation = 180 degrees
+        double mechanismRotations = turretRevs * 2.0;
+
+        this.calculatedMotorOffsetRevs = mechanismRotations;
+
+        turretMotor.setPosition(mechanismRotations);
     }
 
     /**
@@ -117,9 +129,8 @@ public class TurretIOTalonFX implements TurretIO {
         // get the current angular velocity of the robot in radians per second
         double gyroOmegaRadPerSecond = drive.getState().Speeds.omegaRadiansPerSecond;
 
-        double gyroOmegaDegPerSecond = gyroOmegaRadPerSecond * (180.0 / Math.PI); // convert to degrees per second
-
-        return feedforward.calculate(gyroOmegaDegPerSecond);
+        double mechanismRotationsPerSecond = gyroOmegaRadPerSecond / Math.PI;
+        return feedforward.calculate(-mechanismRotationsPerSecond);
     }
 
     @Override
@@ -129,14 +140,16 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        inputs.turretAngleDegrees = getTurretAngleFieldRelative();
+        inputs.turretAngleDegreesFieldRelative = getTurretAngleFieldRelative();
+        inputs.turretAngleDegreesRobotRelative = getTurretAngleRobotRelative();
         inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
-        inputs.normalizedTurretMotorRotations = this.calculatedMotorOffsetRevs;
+        inputs.turretOffsetRotations = this.calculatedMotorOffsetRevs;
         inputs.targetTurretDegrees = this.targetTurretDegreesFieldRelative;
         inputs.processedTargetTurretDegrees = this.processedTargetTurretDegreesFieldRelative;
         inputs.turretMotorPositionRotations = this.turretMotorPosition.getValueAsDouble();
         inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
         inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
+        inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
     }
 
     // CONFIGURATIONS
@@ -208,14 +221,14 @@ public class TurretIOTalonFX implements TurretIO {
 
     public CANcoderConfiguration getPinionEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
-        configs.MagnetSensor.MagnetOffset = Turret.FOLLOWER_ENCODER_OFFSET;
+        configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
 
         return configs;
     }
 
     public CANcoderConfiguration getFollowerEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
-        configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
+        configs.MagnetSensor.MagnetOffset = Turret.FOLLOWER_ENCODER_OFFSET;
 
         return configs;
     }
@@ -227,30 +240,38 @@ public class TurretIOTalonFX implements TurretIO {
      * @return the continuous position of the pinion encoder in revolutions
      */
     private double getPinionEncoderRevs() {
-        double pinionEncoderReading = positiveMod(this.pinionEncoderSignal.getValueAsDouble(), Turret.NORMALIZED_REVOLUTION);
-        double followerEncoderReading = positiveMod(this.followerEncoderSignal.getValueAsDouble(), Turret.NORMALIZED_REVOLUTION);
+        double pinionEncoderReading = positiveMod(this.pinionEncoderSignal.getValueAsDouble(), 1.0);
+        double followerEncoderReading = positiveMod(this.followerEncoderSignal.getValueAsDouble(), 1.0);
 
         double bestError = Double.MAX_VALUE;
-        double bestPosition = 0.0;
+        double bestPosition = lastPinionRevs;
 
-        int searchCount = (int) Turret.FOLLOWER_ENCODER_TEETH; // number of distinct branches to check (follower encoder teeth)
+        int searchCount = (int) Turret.FOLLOWER_ENCODER_TEETH;
+
         for (int k = 0; k < searchCount; k++) {
             double assumedPinionRevs = pinionEncoderReading + k;
-            double predictedFollowerReading = positiveMod(assumedPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.FOLLOWER_ENCODER_TEETH), Turret.NORMALIZED_REVOLUTION);
+
+            double predictedFollowerReading =
+                positiveMod(assumedPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.FOLLOWER_ENCODER_TEETH), 1.0);
+
             double predictionError = Math.abs(predictedFollowerReading - followerEncoderReading);
 
-            // check wrap-around error
-            if (predictionError > Turret.NORMALIZED_REVOLUTION / 2.0) {
-                predictionError = Turret.NORMALIZED_REVOLUTION - predictionError;
+            if (predictionError > 0.5) {
+                predictionError = 1.0 - predictionError;
             }
 
-            // if this branch has a better prediction error than the best one so far, update the best guess for the pinion encoder position
-            if (predictionError < bestError) {
-                bestError = predictionError;
+            // continuity penalty
+            double continuityError = Math.abs(assumedPinionRevs - lastPinionRevs);
+
+            double score = predictionError + continuityError * 0.1;
+
+            if (score < bestError) {
+                bestError = score;
                 bestPosition = assumedPinionRevs;
             }
         }
 
+        lastPinionRevs = bestPosition;
         return bestPosition;
     }
 
@@ -262,7 +283,7 @@ public class TurretIOTalonFX implements TurretIO {
         double rawPinionRevs = getPinionEncoderRevs();
         double rawTurretRevs = rawPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.TURRET_GEAR_TEETH); // convert pinion revolutions to turret revolutions
 
-        double wrapped = positiveMod(rawTurretRevs, Turret.ENCODER_COMBINED_PERIOD_REV);
+        double wrapped = positiveMod(rawTurretRevs, Turret.ENCODER_COMBINED_PERIOD_TURRET_REV);
 
         if (!isInitialized) {
             this.lastPositionRevs = wrapped;
@@ -273,10 +294,10 @@ public class TurretIOTalonFX implements TurretIO {
         double delta = wrapped - this.lastPositionRevs;
 
         // if the change in position is greater than half the combined period, we have wrapped around the encoder, so we need to adjust the delta accordingly
-        if (delta > Turret.ENCODER_COMBINED_PERIOD_REV / 2.0) {
-            delta -= Turret.ENCODER_COMBINED_PERIOD_REV;
-        } else if (delta < -Turret.ENCODER_COMBINED_PERIOD_REV / 2.0) {
-            delta += Turret.ENCODER_COMBINED_PERIOD_REV;
+        if (delta > Turret.ENCODER_COMBINED_PERIOD_TURRET_REV  / 2.0) {
+            delta -= Turret.ENCODER_COMBINED_PERIOD_TURRET_REV ;
+        } else if (delta < -Turret.ENCODER_COMBINED_PERIOD_TURRET_REV  / 2.0) {
+            delta += Turret.ENCODER_COMBINED_PERIOD_TURRET_REV ;
         }
 
         lastPositionRevs += delta;
@@ -299,9 +320,11 @@ public class TurretIOTalonFX implements TurretIO {
     private double getTurretAngleRobotRelative() {
         double continuousRevs = getTurretPositionRevs();
         double turretAngleDegrees = revsToDegreesContinuous(continuousRevs);
+        
+        double turretAngleWithOffset = turretAngleDegrees - Turret.TURRET_FORWARD_OFFSET_DEG;
 
         // apply offset and wrap to [-180, 180)
-        return wrap180(turretAngleDegrees);
+        return wrap180(turretAngleWithOffset);
     }
 
     /**

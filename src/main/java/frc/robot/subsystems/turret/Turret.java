@@ -21,9 +21,14 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     public static final double ENCODER_COMBINED_TEETH = PINION_ENCODER_TEETH * FOLLOWER_ENCODER_TEETH;
     public static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / PINION_ENCODER_TEETH;
+    public static final double ENCODER_COMBINED_PERIOD_TURRET_REV =
+        ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
 
-    public static final double PINION_ENCODER_OFFSET = 0.0; // offset for pinion encoder in degrees, to be determined by calibration
-    public static final double FOLLOWER_ENCODER_OFFSET = 0.0; // offset for follower encoder in degrees, to be determined by calibration
+    public static final double PINION_ENCODER_OFFSET = 0; // offset for pinion encoder, to be determined by calibration
+    public static final double FOLLOWER_ENCODER_OFFSET = 0; // offset for follower encoder, to be determined by calibration
+
+    public static final double TURRET_FORWARD_OFFSET_DEG = 83.7;
+
 
     private TurretIO turretIO;
 
@@ -34,11 +39,12 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     @Override
     public void onPeriodic() {
         ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
+        turretIO.setTurretAngleFieldRelativeDegrees(0);
 
         if (shotData != null) {
             double newTargetAngleDeg = shotData.turretAngleDeg();
 
-            this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
+            // this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
         }
     }
 
@@ -53,9 +59,9 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
      * @return true if the turret is at the target angle, false otherwise
      */
     public boolean isAtTargetAngle() {
-        double minAngle = io.turretAngleDegrees - TURRET_AIMING_TOLERANCE_DEGREES;
-        double maxAngle = io.turretAngleDegrees + TURRET_AIMING_TOLERANCE_DEGREES;
+        double error =
+            Math.abs(io.turretAngleDegreesFieldRelative - io.targetTurretDegrees);
 
-        return io.targetTurretMotorRotations >= minAngle && io.targetTurretMotorRotations <= maxAngle;
+        return error <= TURRET_AIMING_TOLERANCE_DEGREES;
     }
 }

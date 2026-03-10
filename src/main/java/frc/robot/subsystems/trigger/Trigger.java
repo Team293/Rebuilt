@@ -7,7 +7,7 @@ import frc.robot.subsystems.turret.Turret;
 public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
     private static final int PROXIMITY_SENSOR_CHANNEL = 2; // DIO channel for the proximity sensor
 
-    private final static double TRIGGER_SPEED = 10.0; // Rotations per second
+    private final static double TRIGGER_SPEED = 0; // Rotations per second
 
     private final Shooter shooter;
     private final Turret turret;

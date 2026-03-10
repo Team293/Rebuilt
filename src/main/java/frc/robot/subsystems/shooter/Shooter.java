@@ -27,7 +27,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
             this.targetRPS = newTargetRPS;
 
             shooterIO.setHoodAngle(shotData.hoodAngleDeg());
-            shooterIO.setFlywheelVelocity(newTargetRPS);
+            // shooterIO.setFlywheelVelocity(newTargetRPS);
         }
     }
 
