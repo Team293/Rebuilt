@@ -1,21 +1,28 @@
 package frc.robot.subsystems.turret;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
     // KS KV CONSTANTS
-    private static final double kS = 0.25; // volts needed to overcome static friction
+    private static final double kS = 0.35; // volts needed to overcome static friction
     private static final double kV = 0.20; // volts per (rotation per second) to maintain motion
 
     // SUBSYSTEMS
@@ -66,6 +73,8 @@ public class TurretIOTalonFX implements TurretIO {
         this.turretMotor.getConfigurator().apply(turretMotorConfig.getSecond());
         this.turretMotor.getConfigurator().apply(turretMotorFeedbackConfig);
         this.turretMotor.getConfigurator().apply(turretSoftwareLimitConfig);
+        // invert motor
+        this.turretMotor.getConfigurator().apply(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 
         this.pinionEncoder.getConfigurator().apply(pinionEncoderConfig);
         this.followerEncoder.getConfigurator().apply(followerEncoderConfig);
@@ -91,16 +100,22 @@ public class TurretIOTalonFX implements TurretIO {
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
         // absolute robot-relative target, in motor rotations
-        double targetRobotRelativeDeg = wrap180(fieldRelativeAngleDegrees - currentRobotHeading);
-        double targetMotorRotations = targetRobotRelativeDeg / 180.0;
+        double targetRobotRelativeDeg = fieldRelativeAngleDegrees - currentRobotHeading;
+        this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg);
 
-        this.processedTargetTurretDegreesFieldRelative = targetRobotRelativeDeg;
-        this.targetTurretAngleMotorRevs = targetMotorRotations;
+        setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
+    }
 
+    private void setTurretAngleRobotRelativeDegrees(double robotRelativeAngleDegrees) {
+        setTurretAngleTurretRelativeDegrees(robotRelativeAngleDegrees + Turret.TURRET_ROBOT_OFFSET_DEG);
+    }
+
+    private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
+        angleDegrees = wrap180(angleDegrees);
+        double targetMotorRotations = angleDegrees / 180.0;
+        Logger.recordOutput("Turret/TargetTurretRelativePosition", targetMotorRotations);
         this.turretMotor.setControl(
-                mmRequest
-                        .withPosition(targetMotorRotations)
-                        // .withFeedForward(calculateFeedforward())
+            mmRequest.withPosition(targetMotorRotations)
         );
     }
 
@@ -110,15 +125,9 @@ public class TurretIOTalonFX implements TurretIO {
     @Override
     public void recalculateTurretMotorZeroPosition() {
         // absolute turret position from CRT
-        double turretRevs = getTurretPositionRevs();
-        double correctedRevs = turretRevs - (Turret.TURRET_FORWARD_OFFSET_DEG / 360.0);
+        this.calculatedMotorOffsetRevs = getTurretAngle() / 180.0;
 
-        // mechanism rotations where 1 rotation = 180 degrees
-        double mechanismRotations = correctedRevs * 2.0;
-
-        this.calculatedMotorOffsetRevs = mechanismRotations;
-
-        turretMotor.setPosition(mechanismRotations);
+        turretMotor.setPosition(this.calculatedMotorOffsetRevs);
     }
 
     /**
@@ -141,6 +150,7 @@ public class TurretIOTalonFX implements TurretIO {
     @Override
     public void updateInputs(TurretIOInputs inputs) {
         inputs.turretAngleDegreesFieldRelative = getTurretAngleFieldRelative();
+        inputs.turretAngleDegreesTurretRelative = getTurretAngle();
         inputs.turretAngleDegreesRobotRelative = getTurretAngleRobotRelative();
         inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
         inputs.turretOffsetRotations = this.calculatedMotorOffsetRevs;
@@ -161,17 +171,17 @@ public class TurretIOTalonFX implements TurretIO {
     private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 1;
+        configs.kP = 30;
         configs.kI = 0.0;
-        configs.kD = 0.0;
+        configs.kD = 1;
 
-        configs.kS = kS;
-        configs.kV = kV;
+        configs.kS = 0.4; //kS;
+        configs.kV = 0.2; //kV;
 
         MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
 
-        mmConfigs.MotionMagicAcceleration = 20; // rotations per second^2
-        mmConfigs.MotionMagicCruiseVelocity = 10; // rotations per second
+        mmConfigs.MotionMagicAcceleration = 5; // rotations per second^2
+        mmConfigs.MotionMagicCruiseVelocity = 3; // rotations per second
 
         return new Pair<>(configs, mmConfigs);
     }
@@ -221,14 +231,14 @@ public class TurretIOTalonFX implements TurretIO {
 
     public CANcoderConfiguration getPinionEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
-        configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
+        // configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
 
         return configs;
     }
 
     public CANcoderConfiguration getFollowerEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
-        configs.MagnetSensor.MagnetOffset = Turret.FOLLOWER_ENCODER_OFFSET;
+        // configs.MagnetSensor.MagnetOffset = Turret.FOLLOWER_ENCODER_OFFSET;
 
         return configs;
     }
@@ -239,6 +249,7 @@ public class TurretIOTalonFX implements TurretIO {
      * Calculates the continuous position of the pinion (driving) encoder in revolutions
      * @return the continuous position of the pinion encoder in revolutions
      */
+    @AutoLogOutput(key = "Turret/PinionEncoderRevsCalculated")
     private double getPinionEncoderRevs() {
         double pinionEncoderReading = positiveMod(this.pinionEncoderSignal.getValueAsDouble(), 1.0);
         double followerEncoderReading = positiveMod(this.followerEncoderSignal.getValueAsDouble(), 1.0);
@@ -261,9 +272,9 @@ public class TurretIOTalonFX implements TurretIO {
             }
 
             // continuity penalty
-            double continuityError = Math.abs(assumedPinionRevs - lastPinionRevs);
+            // double continuityError = Math.abs(assumedPinionRevs - lastPinionRevs);
 
-            double score = predictionError + continuityError * 0.1;
+            double score = predictionError * 0.1;
 
             if (score < bestError) {
                 bestError = score;
@@ -317,14 +328,22 @@ public class TurretIOTalonFX implements TurretIO {
      * Gets the angle of the turret in robot space wrapped from [-180, 180)
      * @return the angle of the turret in robot space, wrapped
      */
-    private double getTurretAngleRobotRelative() {
+    private double getTurretAngle() {
         double continuousRevs = getTurretPositionRevs();
         double turretAngleDegrees = revsToDegreesContinuous(continuousRevs);
         
-        double turretAngleWithOffset = turretAngleDegrees - Turret.TURRET_FORWARD_OFFSET_DEG;
+        double turretAngleWithOffset = turretAngleDegrees - Turret.TURRET_CENTER_OFFSET_DEG;
 
         // apply offset and wrap to [-180, 180)
         return wrap180(turretAngleWithOffset);
+    }
+
+    /**
+     * Gets the angle of the turret in robot space, without wrapping, so it can be used for continuous calculations.
+     * @return the angle of the turret in robot space, without wrapping
+     */
+    public double getTurretAngleRobotRelative() {
+        return wrap180(getTurretAngle() - Turret.TURRET_ROBOT_OFFSET_DEG);
     }
 
     /**

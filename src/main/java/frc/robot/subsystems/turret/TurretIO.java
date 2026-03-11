@@ -10,7 +10,8 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
     @AutoLog
     public static class TurretIOInputs extends BaseInputClass {
         public double turretAngleDegreesFieldRelative = 0.0; // current angle of the turret, field-relative, in degrees
-        public double turretAngleDegreesRobotRelative = 0.0; // current angle of the turret, robot-relative, in degrees
+        public double turretAngleDegreesTurretRelative = 0.0; // current angle of the turret, turret-relative, in degrees, after setting a turret center offset
+        public double turretAngleDegreesRobotRelative = 0.0; // current angle of the turret, robot-relative, in degrees, after setting a robot center offset
         public double targetTurretDegrees = 0.0; // target angle for the turret, field-relative, in degrees
         public double processedTargetTurretDegrees = 0.0; // processed target angle for the turret, field-relative, in degrees, updated when recalculation is called
         public double targetTurretMotorRotations = 0.0; // target position for the turret motor, in rotations

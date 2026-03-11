@@ -6,6 +6,9 @@ import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.targeting.ShotCompensation;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 2.0; // degrees within which we consider the turret to be aimed at the target (+-)
 
@@ -24,10 +27,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double ENCODER_COMBINED_PERIOD_TURRET_REV =
         ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
 
-    public static final double PINION_ENCODER_OFFSET = 0; // offset for pinion encoder, to be determined by calibration
-    public static final double FOLLOWER_ENCODER_OFFSET = 0; // offset for follower encoder, to be determined by calibration
-
-    public static final double TURRET_FORWARD_OFFSET_DEG = 83.7;
+    public static final double TURRET_CENTER_OFFSET_DEG = 144; // subtracted from robot relative heading
+    public static final double TURRET_ROBOT_OFFSET_DEG = 120; 
 
 
     private TurretIO turretIO;
@@ -46,6 +47,11 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
             // this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
         }
+
+        
+        Pose2d robotPose = RobotContainer.getDrive().getPose();
+        Pose2d turretTranslatedPose = new Pose2d(robotPose.getTranslation(), new Rotation2d(Math.toRadians(io.turretAngleDegreesFieldRelative)));
+        Logger.recordOutput("Turret/RobotTurretPose", turretTranslatedPose);
     }
 
     @Override
