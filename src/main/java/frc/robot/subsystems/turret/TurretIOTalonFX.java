@@ -109,12 +109,12 @@ public class TurretIOTalonFX implements TurretIO {
      */
     @Override
     public void recalculateTurretMotorZeroPosition() {
-
         // absolute turret position from CRT
         double turretRevs = getTurretPositionRevs();
+        double correctedRevs = turretRevs - (Turret.TURRET_FORWARD_OFFSET_DEG / 360.0);
 
         // mechanism rotations where 1 rotation = 180 degrees
-        double mechanismRotations = turretRevs * 2.0;
+        double mechanismRotations = correctedRevs * 2.0;
 
         this.calculatedMotorOffsetRevs = mechanismRotations;
 
@@ -246,9 +246,9 @@ public class TurretIOTalonFX implements TurretIO {
         double bestError = Double.MAX_VALUE;
         double bestPosition = lastPinionRevs;
 
-        int searchCount = (int) Turret.FOLLOWER_ENCODER_TEETH;
+//        int searchCount = (int) Turret.FOLLOWER_ENCODER_TEETH;
 
-        for (int k = 0; k < searchCount; k++) {
+        for (int k = -20; k < 20; k++) {
             double assumedPinionRevs = pinionEncoderReading + k;
 
             double predictedFollowerReading =
@@ -335,7 +335,7 @@ public class TurretIOTalonFX implements TurretIO {
         double robotRelativeAngle = getTurretAngleRobotRelative();
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
-        double fieldCentricContinuous = robotRelativeAngle - currentRobotHeading;
+        double fieldCentricContinuous = robotRelativeAngle + currentRobotHeading;
 
         return wrap180(fieldCentricContinuous);
     }
