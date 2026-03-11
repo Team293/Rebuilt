@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import frc.lib.FieldConstants;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.Targeting;
@@ -8,6 +9,8 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 2.0; // degrees within which we consider the turret to be aimed at the target (+-)
@@ -28,8 +31,9 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
 
     public static final double TURRET_CENTER_OFFSET_DEG = 144; // subtracted from robot relative heading
-    public static final double TURRET_ROBOT_OFFSET_DEG = 120; 
+    public static final double TURRET_ROBOT_OFFSET_DEG = -61; // subtracted from robot relative heading to get turret relative heading
 
+    public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(-0.3, 0); // distance from the center of the robot to the center of the turret, in meters 
 
     private TurretIO turretIO;
 
@@ -40,18 +44,39 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     @Override
     public void onPeriodic() {
         ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
-        turretIO.setTurretAngleFieldRelativeDegrees(0);
+        // turretIO.setTurretAngleFieldRelativeDegrees(0);
 
-        if (shotData != null) {
-            double newTargetAngleDeg = shotData.turretAngleDeg();
+        // if (shotData != null) {
+        //     double newTargetAngleDeg = shotData.turretAngleDeg();
 
-            // this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
-        }
+        //     this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
+        // }
+
+        this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
 
         
         Pose2d robotPose = RobotContainer.getDrive().getPose();
         Pose2d turretTranslatedPose = new Pose2d(robotPose.getTranslation(), new Rotation2d(Math.toRadians(io.turretAngleDegreesFieldRelative)));
         Logger.recordOutput("Turret/RobotTurretPose", turretTranslatedPose);
+    }
+
+    public double getTurretAngleDegreesFieldRelative() {
+        // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
+        // get pose of robot
+        
+        Pose2d robotPose = RobotContainer.getDrive().getPose();
+        Translation2d turretPose = TURRET_OFFSET_FROM_CENTER.rotateBy(robotPose.getRotation()).plus(robotPose.getTranslation());
+        // get pose of the target
+        Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        // calculate the angle from the robot to the target
+        Translation2d difference = goalPose.minus(turretPose);
+        // add turret offset from center to get the angle from the turret to the target
+        difference = TURRET_OFFSET_FROM_CENTER.rotateBy(robotPose.getRotation()).plus(difference);
+        double angleToTarget = difference.getAngle().getDegrees();
+        Pose2d targetTurretPose = new Pose2d(turretPose, difference.getAngle());
+        Logger.recordOutput("Turret/TargetPose", targetTurretPose);
+        Logger.recordOutput("Turret/AngleToTargetDeg", angleToTarget);
+        return angleToTarget;
     }
 
     @Override

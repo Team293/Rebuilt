@@ -59,7 +59,7 @@ public class CameraManager {
                 "left", 
                 new Transform3d(
                     Inches.of(0),
-                    Inches.of(29/2.0),
+                    Inches.of(-29/2.0),
                     Inches.of(6.75),
                     new Rotation3d(
                         Degrees.of(0),

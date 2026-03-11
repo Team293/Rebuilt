@@ -113,7 +113,7 @@ public class TurretIOTalonFX implements TurretIO {
     private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
         angleDegrees = wrap180(angleDegrees);
         double targetMotorRotations = angleDegrees / 180.0;
-        Logger.recordOutput("Turret/TargetTurretRelativePosition", targetMotorRotations);
+        this.targetTurretAngleMotorRevs = targetMotorRotations;
         this.turretMotor.setControl(
             mmRequest.withPosition(targetMotorRotations)
         );
