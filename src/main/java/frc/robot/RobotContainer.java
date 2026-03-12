@@ -51,21 +51,21 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-    private final Intake intake;
+    // private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
-    private final Targeting targeting;
-    private final Findexer findexer;
+    // private final Targeting targeting;
+    // private final Findexer findexer;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-        this.intake = new Intake(drive);
+        // this.intake = new Intake(drive);
         this.shooter = new Shooter();
-        this.targeting = new Targeting(drive);
+        // this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
-        this.findexer = new Findexer(trigger);
+        // this.findexer = new Findexer(trigger);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
@@ -81,7 +81,7 @@ public class RobotContainer {
         setupSwerveBindings();
         setupIntakeBindings();
         setupTargetingBindings();
-        // setupShooterBindings();
+        setupShooterBindings();
     }
 
     private void setupSwerveBindings() {
@@ -119,13 +119,13 @@ public class RobotContainer {
         
         driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
 
-        operatorController.y().onTrue(vision.runOnce(() -> {
-            var estimatedPose = vision.getEstimatedPositionFromCameras();
-            if (estimatedPose != null) {
-                Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
-                drive.resetPose(estimatedPose);
-            }
-        }));
+        // operatorController.y().onTrue(vision.runOnce(() -> {
+        //     var estimatedPose = vision.getEstimatedPositionFromCameras();
+        //     if (estimatedPose != null) {
+        //         Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
+        //         drive.resetPose(estimatedPose);
+        //     }
+        // }));
     }
 
     private void setupIntakeBindings() {
@@ -134,16 +134,16 @@ public class RobotContainer {
     }
 
     private void setupTargetingBindings() {
-        operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
-        operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
+        // operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
+        // operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
     }
 
-    // private void setupShooterBindings() {
-    //     // toggle shooter on right trigger hold
-    //     driverController.rightTrigger()
-    //             .whileTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
-    //             .whileFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
-    // }
+    private void setupShooterBindings() {
+        // toggle shooter on right trigger hold
+        driverController.rightBumper()
+                .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
+                .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+    }
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();

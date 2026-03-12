@@ -1,18 +1,25 @@
 package frc.robot.subsystems.shooter;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
+
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.targeting.ShotCompensation;
+import frc.robot.subsystems.targeting.ShotData;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
-    private static final double SHOOTER_READY_THRESHOLD_RPS = 0.5; // RPS threshold to consider the shooter ready
+    private static final double SHOOTER_READY_THRESHOLD_RPS = 3.0; // RPS threshold to consider the shooter ready
 
     private ShooterIO shooterIO;
-    private double targetRPS = 0.0; // Target rotations per second
     private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
+        SmartDashboard.putNumber("TargetRPM", 0);
+        SmartDashboard.putNumber("TargetHoodAngle", 0);
     }
 
     /**
@@ -20,15 +27,15 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */ 
     @Override
     public void onPeriodic() {
-        ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
+        double distToTarget = getDistanceToTarget(); // distance in meters
+        // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
+        // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
 
-        if (shotData != null) {
-            double newTargetRPS = shotData.rpm() / 60.0;
-            this.targetRPS = newTargetRPS;
+        double targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
+        double hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
 
-            shooterIO.setHoodAngle(shotData.hoodAngleDeg());
-            shooterIO.setFlywheelVelocity(newTargetRPS);
-        }
+        shooterIO.setHoodAngle(hoodAngle);
+        shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
     }
 
     /**
@@ -44,8 +51,19 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      * Checks if current rps of the motor is within the allowed error bounds 
      * @return if the target is within error bounds 
      */
+    @AutoLogOutput(key="Shooter/IsAtTargetRPS")
     public boolean isAtTargetRPS() {
-        return Math.abs(super.io.motorRPS - targetRPS) < SHOOTER_READY_THRESHOLD_RPS;
+        return Math.abs(super.io.motorRPS - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
+    }
+
+    /**
+     * Returns the distance from the center of the turret to the target in meters
+     * @return
+     */
+    public double getDistanceToTarget() {
+        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
+        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
+        return toGoal.getNorm();
     }
 
     /**

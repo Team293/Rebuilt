@@ -10,6 +10,7 @@ import frc.lib.Elastic;
 import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.FieldConstants;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.Turret;
 
@@ -25,6 +26,24 @@ public class Targeting extends SubsystemBase {
         setTargetingHub();
         Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
+    }
+
+    public static Translation2d differenceBetweenRobotAndTarget() {
+        // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
+        // get pose of robo
+        Pose2d robotPose = RobotContainer.getDrive().getPose();
+
+        // translate robot-center pose to the turret pivot location on the field
+        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
+                .rotateBy(robotPose.getRotation())
+                .plus(robotPose.getTranslation());
+
+        // vector from the turret pivot directly to the goal
+        Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        Translation2d toGoal = goalPose.minus(turretPivot);
+        
+        Logger.recordOutput("Turret/TurretPivot", new Pose2d(turretPivot, toGoal.getAngle()));
+        return toGoal;
     }
     
     /**

@@ -3,29 +3,39 @@ package frc.robot.subsystems.shooter;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.CommutationConfigs;
+import com.ctre.phoenix6.configs.ExternalFeedbackConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.TalonFXS;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorArrangementValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
 public class ShooterIOTalonFX implements IORefresher, ShooterIO {
-    private static final double HOOD_GEAR_RATIO = 1.0/1.0; // hood pulley teeth / motor pulley teeth (motor revs per hood rev)
+    private static final double HOOD_GEAR_RATIO = 1.0 / 1.0; // hood pulley teeth / motor pulley teeth (motor revs per
+                                                             // hood rev)
 
     private final TalonFX flywheelMotor;
     private final TalonFXS hoodMotor;
     private final CANcoder hoodEncoder; // using wcp throughbore; you interface through 'CANcoder' class
 
-    private final double hoodMotorPositionOffset; // offset in motor rotations, calculated at startup, units in motor rotations
-
     private final VelocityVoltage flywheelVelocityControl = new VelocityVoltage(0);
-    private final MotionMagicVelocityVoltage hoodVelocityControl = new MotionMagicVelocityVoltage(0);
+    private final PositionVoltage hoodPositionControl = new PositionVoltage(0);
+    private final StatusSignal<Voltage> hoodMotorVoltage; // volts
     private final StatusSignal<AngularVelocity> motorVelocity; // rps
     private final StatusSignal<Angle> hoodMotorPosition; // motor rotations
     private final StatusSignal<Angle> hoodAngle; // degrees
@@ -36,21 +46,49 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     private double hoodTargetEncoder = 0.0;
 
     public ShooterIOTalonFX() {
-        // hood configs
         this.hoodMotor = new TalonFXS(CanID.HOOD_MOTOR.getID());
-
-        var hoodSlot0 = new Slot0Configs();
-        hoodSlot0.kP = 0.1;
-        hoodSlot0.kI = 0.0;
-        hoodSlot0.kD = 0.0;
-        hoodSlot0.kS = 0.0;
-        hoodSlot0.kV = 0.0;
-
-        this.hoodMotor.getConfigurator().apply(hoodSlot0);
-
-        // flywheel configs
+        this.hoodEncoder = new CANcoder(CanID.HOOD_ENCODER.getID());
         this.flywheelMotor = new TalonFX(CanID.FLYWHEEL_MOTOR.getID());
 
+        // hood encoder configs
+        CANcoderConfiguration hoodEncoderConfig = new CANcoderConfiguration();
+        hoodEncoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+        this.hoodEncoder.getConfigurator().apply(hoodEncoderConfig); // apply default configs to encoder before
+                                                                            // using it for feedback
+        // constrains the range to [0, 1)
+        hoodEncoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
+        this.hoodEncoder.getConfigurator().apply(hoodEncoderConfig);
+
+        // hood configs
+        var hoodSlot0 = new Slot0Configs();
+        hoodSlot0.kP = 100.0;
+        hoodSlot0.kI = 0.0;
+        hoodSlot0.kD = 0.0;
+        hoodSlot0.kS = 20.0;
+        hoodSlot0.kV = 0.0;
+
+        SoftwareLimitSwitchConfigs hoodSoftLimits = new SoftwareLimitSwitchConfigs();
+        hoodSoftLimits.ForwardSoftLimitEnable = true;
+        hoodSoftLimits.ForwardSoftLimitThreshold = 1.1;
+        hoodSoftLimits.ReverseSoftLimitEnable = true;
+        hoodSoftLimits.ReverseSoftLimitThreshold = -0.1;
+
+        MotorOutputConfigs hoodMotorOutputConfigs = new MotorOutputConfigs();
+        hoodMotorOutputConfigs.Inverted = InvertedValue.CounterClockwise_Positive;
+
+        ExternalFeedbackConfigs hoodExternalFeedback = new ExternalFeedbackConfigs();
+        hoodExternalFeedback.withRemoteCANcoder(this.hoodEncoder);
+
+        CommutationConfigs hoodCommutation = new CommutationConfigs();
+        hoodCommutation.MotorArrangement = MotorArrangementValue.Brushed_DC;
+
+        this.hoodMotor.getConfigurator().apply(hoodSlot0);
+        this.hoodMotor.getConfigurator().apply(hoodExternalFeedback);
+        this.hoodMotor.getConfigurator().apply(hoodSoftLimits);
+        this.hoodMotor.getConfigurator().apply(hoodCommutation);
+        this.hoodMotor.getConfigurator().apply(hoodMotorOutputConfigs);
+
+        // flywheel configs
         var flywheelSlot0 = new Slot0Configs();
         flywheelSlot0.kP = 0.15;
         flywheelSlot0.kI = 0.0;
@@ -60,52 +98,46 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
 
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
 
-        this.hoodEncoder = new CANcoder(CanID.HOOD_ENCODER.getID());
-
-        CANcoderConfiguration hoodEncoderConfig = new CANcoderConfiguration();
-        // constrains the range to [0, 1)
-        hoodEncoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
-
-        this.hoodEncoder.getConfigurator().apply(hoodEncoderConfig);
-
         this.motorVelocity = flywheelMotor.getVelocity();
         this.hoodAngle = hoodEncoder.getAbsolutePosition();
         this.hoodMotorPosition = hoodMotor.getPosition();
+        this.hoodMotorVoltage = hoodMotor.getMotorVoltage();
 
         // force refresh before zero calculations
-        BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition);
+        BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition, hoodMotorVoltage);
 
-        // convert hood angle to motor rotations and calculate offset
-        this.hoodMotorPositionOffset = this.hoodMotorPosition.getValueAsDouble() - angleToMotorRotations(this.hoodAngle.getValueAsDouble());
+        this.hoodEncoder.setPosition(-0.005);
 
         flywheelMotor.optimizeBusUtilization();
         hoodMotor.optimizeBusUtilization();
     }
-    
+
     /**
      * Periodically refreshes encoder signal
+     * 
      * @note This is called automatically
      */
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition);
 
-        double current = hoodAngle.getValueAsDouble();
+        // double current = hoodAngle.getValueAsDouble();
 
-        if (Math.abs(current - hoodTargetEncoder) < 0.005) {
-            hoodMotor.stopMotor();
-        }
+        // // if (Math.abs(current - hoodTargetEncoder) < 0.005) {
+        // //     hoodMotor.stopMotor();
+        // // }
     }
 
     /**
      * Periodically called to update the shooter information for logging
+     * 
      * @param inputs ShooterIOInputs object to update
      */
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
         inputs.motorRPS = this.motorVelocity.getValueAsDouble();
-        inputs.hoodAngle = this.hoodAngle.getValueAsDouble() * 360; // convert rotations to degrees
-        inputs.hoodMotorPosition = this.hoodMotorPosition.getValueAsDouble();
+        inputs.hoodAngle = this.hoodAngle.getValueAsDouble() * 30.0 + 15.0; // convert rotations to degrees
+        inputs.hoodMotorPosition = this.hoodAngle.getValueAsDouble();
 
         inputs.flywheelSetPointRPS = this.flywheelRPSSetPoint;
         inputs.hoodSetPointAngle = this.hoodAngleSetPoint;
@@ -113,6 +145,7 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
 
     /**
      * Set the target flywheel velocity
+     * 
      * @param rps - target rotations per second
      */
     @Override
@@ -124,10 +157,11 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     }
 
     /**
-     * Set the target hood angle 
-     * @param angle target angle TODO: relative to what 
+     * Set the target hood angle
+     * 
+     * @param angle target angle TODO: relative to what
      */
-   @Override
+    @Override
     public void setHoodAngle(double angle) {
         angle = Math.max(15, Math.min(45, angle));
         this.hoodAngleSetPoint = angle;
@@ -135,19 +169,12 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         // convert target angle -> encoder rotations
         this.hoodTargetEncoder = angleToEncoder(angle);
 
-        double current = hoodAngle.getValueAsDouble();
-
-        double velocity = 0.5; // rps, tune later
-
-        if (current > hoodTargetEncoder) {
-            velocity = -velocity;
-        }
-
-        hoodMotor.setControl(hoodVelocityControl.withVelocity(velocity));
+        hoodMotor.setControl(hoodPositionControl.withPosition(this.hoodTargetEncoder).withSlot(0));
     }
 
     /**
      * Converts angle in degrees to motor rotations per second
+     * 
      * @param angle Input angle in degrees
      * @return double motor rotations per second
      */
@@ -156,7 +183,22 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         return angle * HOOD_GEAR_RATIO / 360.0;
     }
 
+    /**
+     * Returns a position from zero to 1 representing the position of the hood,
+     * where 0 is 15 degrees and 1 is 45 degrees
+     * 
+     * @param angle
+     * @return
+     */
     private static double angleToEncoder(double angle) {
-        return (45.0 - angle) / 30.0;
+        angle -= 14.0; // shift so that 0 is at 15 degrees
+        angle /= 30.0; // scale so that 1 is at 45 degrees
+        if (angle < 0.0) {
+            return 0.0;
+        } else if (angle > 1.0) {
+            return 1.0;
+        } else {
+            return angle;
+        }
     }
 }

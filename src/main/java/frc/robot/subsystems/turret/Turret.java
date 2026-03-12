@@ -5,6 +5,8 @@ import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.Targeting;
 import frc.robot.subsystems.targeting.ShotCompensation;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -12,7 +14,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 2.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 5.0; // degrees within which we consider the turret to be aimed at the target (+-)
 
     // HARDWARE CONSTANTS
     // gearing
@@ -29,10 +31,10 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double ENCODER_COMBINED_PERIOD_TURRET_REV =
         ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
 
-    public static final double TURRET_CENTER_OFFSET_DEG = 144; // subtracted from robot relative heading
-    public static final double TURRET_ROBOT_OFFSET_DEG = -61; // subtracted from robot relative heading to get turret relative heading
+    public static final double TURRET_CENTER_OFFSET_DEG = -17; // subtracted from robot relative heading
+    public static final double TURRET_ROBOT_OFFSET_DEG = 120; // subtracted from robot relative heading to get turret relative heading
 
-    public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(-0.3, 0); // distance from the center of the robot to the center of the turret, in meters 
+    public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(0.3, 0); // distance from the center of the robot to the center of the turret, in meters 
 
     private TurretIO turretIO;
 
@@ -74,23 +76,10 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     }
 
     public double getTurretAngleDegreesFieldRelative() {
-        // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
-        // get pose of robo
-        Pose2d robotPose = RobotContainer.getDrive().getPose();
-
-        // translate robot-center pose to the turret pivot location on the field
-        Translation2d turretPivot = TURRET_OFFSET_FROM_CENTER
-                .rotateBy(robotPose.getRotation())
-                .plus(robotPose.getTranslation());
-
-        // vector from the turret pivot directly to the goal
-        Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        Translation2d toGoal = goalPose.minus(turretPivot);
+        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
 
         double angleToTarget = toGoal.getAngle().getDegrees();
-
-        Logger.recordOutput("Turret/TurretPivot", new Pose2d(turretPivot, toGoal.getAngle()));
-        Logger.recordOutput("Turret/AngleToTargetDeg", angleToTarget);
+        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
         return angleToTarget;
     }
 
@@ -104,6 +93,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
      * Checks if the turret is at the target angle, within the tolerance defined by TURRET_AIMING_TOLERANCE_DEGREES.
      * @return true if the turret is at the target angle, false otherwise
      */
+    
+    @AutoLogOutput(key="Turret/IsAtTargetAngle")
     public boolean isAtTargetAngle() {
         double error =
             Math.abs(io.turretAngleDegreesFieldRelative - io.targetTurretDegrees);

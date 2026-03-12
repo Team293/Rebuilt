@@ -171,7 +171,7 @@ public class TurretIOTalonFX implements TurretIO {
     private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 30;
+        configs.kP = 50;
         configs.kI = 0.0;
         configs.kD = 1;
 
@@ -180,8 +180,8 @@ public class TurretIOTalonFX implements TurretIO {
 
         MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
 
-        mmConfigs.MotionMagicAcceleration = 5; // rotations per second^2
-        mmConfigs.MotionMagicCruiseVelocity = 3; // rotations per second
+        mmConfigs.MotionMagicAcceleration = 10; // rotations per second^2
+        mmConfigs.MotionMagicCruiseVelocity = 3.5; // rotations per second
 
         return new Pair<>(configs, mmConfigs);
     }
