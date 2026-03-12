@@ -1,6 +1,7 @@
 package frc.robot.subsystems.vision;
 
 import frc.lib.subsystem.SpikeSystem;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 
@@ -46,8 +47,7 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
             drive.addVisionMeasurement(
                     pose.estimatedPose.toPose2d(),
                     pose.timestampSeconds,
-                    // CommandSwerveDrivetrain.kDefaultVisionStdDevs
-                    CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30)) // scale the std devs based on the average distance to the targets (farther targets are less accurate)
+                    CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30))
             );
             index++;
         }
@@ -55,7 +55,7 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
-        this.visionIO = new VisionIOPhotonCamera();
+        this.visionIO = new VisionIOPhotonCamera(() -> RobotContainer.getDrive().getPose());
         return useAsyncDataRefresher(visionIO);
     }
 

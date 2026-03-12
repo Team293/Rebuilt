@@ -10,7 +10,6 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Twist2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 2.0; // degrees within which we consider the turret to be aimed at the target (+-)
@@ -54,27 +53,45 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
         this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
 
-        
+
         Pose2d robotPose = RobotContainer.getDrive().getPose();
         Pose2d turretTranslatedPose = new Pose2d(robotPose.getTranslation(), new Rotation2d(Math.toRadians(io.turretAngleDegreesFieldRelative)));
         Logger.recordOutput("Turret/RobotTurretPose", turretTranslatedPose);
+
+        // Aiming ray: Pose2d[] from turret pivot to hub — renders as a path line in AdvantageScope
+        Translation2d turretPivot = TURRET_OFFSET_FROM_CENTER
+                .rotateBy(robotPose.getRotation())
+                .plus(robotPose.getTranslation());
+        Translation2d hub = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        Translation2d aimVec = hub.minus(turretPivot);
+        Rotation2d aimAngle = aimVec.getAngle();
+
+        final int NUM_POINTS = 6;
+        Pose2d[] aimingRay = new Pose2d[NUM_POINTS];
+        for (int i = 0; i < NUM_POINTS; i++) {
+            double t = (double) i / (NUM_POINTS - 1);
+            aimingRay[i] = new Pose2d(turretPivot.plus(aimVec.times(t)), aimAngle);
+        }
+        Logger.recordOutput("Turret/AimingRay", aimingRay);
     }
 
     public double getTurretAngleDegreesFieldRelative() {
         // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
-        // get pose of robot
-        
+        // get pose of robo
         Pose2d robotPose = RobotContainer.getDrive().getPose();
-        Translation2d turretPose = TURRET_OFFSET_FROM_CENTER.rotateBy(robotPose.getRotation()).plus(robotPose.getTranslation());
-        // get pose of the target
+
+        // translate robot-center pose to the turret pivot location on the field
+        Translation2d turretPivot = TURRET_OFFSET_FROM_CENTER
+                .rotateBy(robotPose.getRotation())
+                .plus(robotPose.getTranslation());
+
+        // vector from the turret pivot directly to the goal
         Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        // calculate the angle from the robot to the target
-        Translation2d difference = goalPose.minus(turretPose);
-        // add turret offset from center to get the angle from the turret to the target
-        difference = TURRET_OFFSET_FROM_CENTER.rotateBy(robotPose.getRotation()).plus(difference);
-        double angleToTarget = difference.getAngle().getDegrees();
-        Pose2d targetTurretPose = new Pose2d(turretPose, difference.getAngle());
-        Logger.recordOutput("Turret/TargetPose", targetTurretPose);
+        Translation2d toGoal = goalPose.minus(turretPivot);
+
+        double angleToTarget = toGoal.getAngle().getDegrees();
+
+        Logger.recordOutput("Turret/TurretPivot", new Pose2d(turretPivot, toGoal.getAngle()));
         Logger.recordOutput("Turret/AngleToTargetDeg", angleToTarget);
         return angleToTarget;
     }
