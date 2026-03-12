@@ -53,12 +53,10 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
         this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
 
-
         Pose2d robotPose = RobotContainer.getDrive().getPose();
         Pose2d turretTranslatedPose = new Pose2d(robotPose.getTranslation(), new Rotation2d(Math.toRadians(io.turretAngleDegreesFieldRelative)));
         Logger.recordOutput("Turret/RobotTurretPose", turretTranslatedPose);
 
-        // Aiming ray: Pose2d[] from turret pivot to hub — renders as a path line in AdvantageScope
         Translation2d turretPivot = TURRET_OFFSET_FROM_CENTER
                 .rotateBy(robotPose.getRotation())
                 .plus(robotPose.getTranslation());
