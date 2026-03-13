@@ -92,12 +92,12 @@ public class RobotContainer {
                 drive.applyRequest(() ->
                         driveCmd.withVelocityX(-driverController.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
                                 .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                                .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                                .withRotationalRate(driverController.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
                 )
         );
 
         // Idle while the robot is disabled. This ensures the configured
-        // neutral mode is applied to the drive motors while disabled.
+        // neutral mode is applied to the drive motors while disabled.  
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
                 drive.applyRequest(() -> idle).ignoringDisable(true)
@@ -140,9 +140,17 @@ public class RobotContainer {
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
-        driverController.rightBumper()
+        operatorController.rightTrigger()
                 .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
                 .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+
+                
+        operatorController.x().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
+
+        operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.5)));
+        operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.5)));
+        operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
+        operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
     }
 
     public Command getAutonomousCommand() {

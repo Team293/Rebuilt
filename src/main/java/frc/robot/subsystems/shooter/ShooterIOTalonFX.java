@@ -11,6 +11,7 @@ import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.hardware.TalonFXS;
@@ -21,6 +22,7 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
@@ -28,6 +30,7 @@ import frc.robot.CanID;
 public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     private static final double HOOD_GEAR_RATIO = 1.0 / 1.0; // hood pulley teeth / motor pulley teeth (motor revs per
                                                              // hood rev)
+    private static final double SOFTWARE_LIMIT_SWITCH_CURRENT_THRESHOLD = 1.75; // amps at which we consider the hood to have hit a limit
 
     private final TalonFX flywheelMotor;
     private final TalonFXS hoodMotor;
@@ -39,11 +42,15 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     private final StatusSignal<AngularVelocity> motorVelocity; // rps
     private final StatusSignal<Angle> hoodMotorPosition; // motor rotations
     private final StatusSignal<Angle> hoodAngle; // degrees
+    private final StatusSignal<Current> hoodMotorCurrent; // amps
 
     private double hoodAngleSetPoint = 0.0;
     private double flywheelRPSSetPoint = 0.0;
 
     private double hoodTargetEncoder = 0.0;
+    private boolean isZeroing = true;
+
+    private double distanceTrim = 0.0; // minor adjustment to the returned distance based on operator controller input, in degrees
 
     public ShooterIOTalonFX() {
         this.hoodMotor = new TalonFXS(CanID.HOOD_MOTOR.getID());
@@ -68,9 +75,9 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         hoodSlot0.kV = 0.0;
 
         SoftwareLimitSwitchConfigs hoodSoftLimits = new SoftwareLimitSwitchConfigs();
-        hoodSoftLimits.ForwardSoftLimitEnable = true;
+        hoodSoftLimits.ForwardSoftLimitEnable = false;
         hoodSoftLimits.ForwardSoftLimitThreshold = 1.1;
-        hoodSoftLimits.ReverseSoftLimitEnable = true;
+        hoodSoftLimits.ReverseSoftLimitEnable = false;
         hoodSoftLimits.ReverseSoftLimitThreshold = -0.1;
 
         MotorOutputConfigs hoodMotorOutputConfigs = new MotorOutputConfigs();
@@ -96,20 +103,49 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         flywheelSlot0.kS = 0.225;
         flywheelSlot0.kV = 0.125;
 
+        // current limits changed from
+        // 120, 70 to 80, 60
+
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
 
         this.motorVelocity = flywheelMotor.getVelocity();
         this.hoodAngle = hoodEncoder.getAbsolutePosition();
         this.hoodMotorPosition = hoodMotor.getPosition();
         this.hoodMotorVoltage = hoodMotor.getMotorVoltage();
+        this.hoodMotorCurrent = hoodMotor.getSupplyCurrent();
 
         // force refresh before zero calculations
-        BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition, hoodMotorVoltage);
+        BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition, hoodMotorVoltage, hoodMotorCurrent);
 
-        this.hoodEncoder.setPosition(-0.005);
+        this.hoodEncoder.setPosition(0);
 
         flywheelMotor.optimizeBusUtilization();
         hoodMotor.optimizeBusUtilization();
+    }
+
+    @Override
+    public void runZeroingHood() {
+        hoodMotor.setControl(new VoltageOut(-4)); // move hood down at a slow speed
+
+        if (hoodMotorCurrent.getValueAsDouble() > SOFTWARE_LIMIT_SWITCH_CURRENT_THRESHOLD) { // if we hit the floor, the current will spike up
+            hoodMotor.stopMotor();
+            hoodEncoder.setPosition(0); // set encoder position to 0 when we hit the limit
+            isZeroing = false;
+        }
+    }
+
+    @Override
+    public void zeroHood() {
+        isZeroing = true;
+    }
+
+    /**
+     * Changes the distance trim by a certain amount of degrees. This is used to make minor adjustments to the distance based on operator controller input.
+     * @param deltaDistance the amount of meters to change the distance trim by. Positive values add to the distance, and negative values subtract from the distance.
+     */
+    @Override
+    public void changeDistanceTrim(double deltaDistance) {
+        this.distanceTrim += deltaDistance;
     }
 
     /**
@@ -119,7 +155,7 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
      */
     @Override
     public void refreshData() {
-        BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition);
+        BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition, hoodMotorCurrent, hoodMotorVoltage);
 
         // double current = hoodAngle.getValueAsDouble();
 
@@ -138,9 +174,12 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         inputs.motorRPS = this.motorVelocity.getValueAsDouble();
         inputs.hoodAngle = this.hoodAngle.getValueAsDouble() * 30.0 + 15.0; // convert rotations to degrees
         inputs.hoodMotorPosition = this.hoodAngle.getValueAsDouble();
+        inputs.hoodMotorCurrent = this.hoodMotorCurrent.getValueAsDouble();
 
         inputs.flywheelSetPointRPS = this.flywheelRPSSetPoint;
         inputs.hoodSetPointAngle = this.hoodAngleSetPoint;
+        inputs.isZeroing = this.isZeroing;
+        inputs.distanceTrim = this.distanceTrim;
     }
 
     /**

@@ -19,7 +19,8 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
         public double turretMotorPositionRotations = 0.0; // current position of the turret motor, in rotations
         public double pinionEncoderRotations = 0.0; // current rotations of the pinion encoder
         public double followerEncoderRotations = 0.0; // current rotations of the follower
-        public double rawTurretMechanismRotations = 0.0; // raw rotations of the entire turret mechanism 
+        public double rawTurretMechanismRotations = 0.0; // raw rotations of the entire turret mechanism
+        public double turretTrimDegrees = 0.0; // minor adjustment to the turret angle based on operator controller input, in degrees
     }
 
     /**
@@ -32,4 +33,10 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
      * Recalculates the turret motor zero position to fix any encoder drift.
      */
     void recalculateTurretMotorZeroPosition();
+
+    /**
+     * Changes the turret trim by a certain amount of degrees. This is used to make minor adjustments to the turret angle based on operator controller input.
+     * @param deltaDegrees the amount of degrees to change the turret trim by, in degrees. Positive values will adjust the turret angle clockwise, and negative values will adjust the turret angle counterclockwise.
+     */
+    void changeTurretTrim(double deltaDegrees);
 }

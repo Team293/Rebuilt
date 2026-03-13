@@ -53,6 +53,8 @@ public class TurretIOTalonFX implements TurretIO {
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
+    private double turretTrimDegrees = 0.0;
+
     public TurretIOTalonFX(CommandSwerveDrivetrain drive) {
         // SUBSYSTEMS
         this.drive = drive;
@@ -111,6 +113,7 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
+        angleDegrees += turretTrimDegrees; // add minor adjustment based on operator controller
         angleDegrees = wrap180(angleDegrees);
         double targetMotorRotations = angleDegrees / 180.0;
         this.targetTurretAngleMotorRevs = targetMotorRotations;
@@ -160,6 +163,7 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
         inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
         inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
+        inputs.turretTrimDegrees = turretTrimDegrees;
     }
 
     // CONFIGURATIONS
@@ -216,6 +220,10 @@ public class TurretIOTalonFX implements TurretIO {
         configs.ReverseSoftLimitThreshold = -1; // 1 rotation of the motor in the opposite direction past the zero point
 
         return configs;
+    }
+
+    public void changeTurretTrim(double deltaDegrees) {
+        this.turretTrimDegrees += deltaDegrees;
     }
 
     /**
