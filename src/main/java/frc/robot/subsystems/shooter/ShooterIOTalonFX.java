@@ -1,5 +1,7 @@
 package frc.robot.subsystems.shooter;
 
+import org.littletonrobotics.junction.Logger;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -9,7 +11,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.controls.PositionVoltage;
-import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -18,6 +20,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -33,7 +36,9 @@ public class ShooterIOTalonFX implements ShooterIO {
     private final TalonFXS hoodMotor;
     private final CANcoder hoodEncoder; // using wcp throughbore; you interface through 'CANcoder' class
 
-    private final VelocityVoltage flywheelVelocityControl = new VelocityVoltage(0);
+    private final VelocityTorqueCurrentFOC flywheelSetPointControl = new VelocityTorqueCurrentFOC(0);
+    private final VelocityTorqueCurrentFOC flywheelRecoveryControl = new VelocityTorqueCurrentFOC(0);
+    
     private final PositionVoltage hoodPositionControl = new PositionVoltage(0);
     private final StatusSignal<Voltage> hoodMotorVoltage; // volts
     private final StatusSignal<AngularVelocity> motorVelocity; // rps
@@ -94,11 +99,11 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         // flywheel configs
         var flywheelSlot0 = new Slot0Configs();
-        flywheelSlot0.kP = 0.15;
+        flywheelSlot0.kP = 20;
         flywheelSlot0.kI = 0.0;
         flywheelSlot0.kD = 0.0;
-        flywheelSlot0.kS = 0.225;
-        flywheelSlot0.kV = 0.133;
+        flywheelSlot0.kS = 0.25;
+        flywheelSlot0.kV = 0.75;
 
         // current limits changed from
         // 120, 70 to 80, 60
@@ -185,11 +190,26 @@ public class ShooterIOTalonFX implements ShooterIO {
      * @param rps - target rotations per second
      */
     @Override
-    public void setFlywheelVelocity(double rps) {
+    public void setFlywheelVelocity(double rps, boolean isRecovery) {
         this.flywheelRPSSetPoint = rps;
-        this.flywheelVelocityControl.withVelocity(rps);
+        if (isRecovery) {
+            this.flywheelRecoveryControl.withVelocity(rps);
 
-        flywheelMotor.setControl(this.flywheelVelocityControl);
+            // calculate the error from set point to current
+            double error = rps - this.motorVelocity.getValueAsDouble();
+            double feedForwardConstantBoost = 6;
+            double ffBost = MathUtil.inputModulus((0.133 * error) + feedForwardConstantBoost, 0.0, 10); // simple proportional feedforward based on velocity error
+            Logger.recordOutput("Shooter/FeedForwardBoost", ffBost);
+
+            if (error >= 1) {
+                this.flywheelRecoveryControl.withFeedForward(ffBost);
+            }
+
+            flywheelMotor.setControl(this.flywheelRecoveryControl);
+        } else {
+            this.flywheelSetPointControl.withVelocity(rps);
+            flywheelMotor.setControl(this.flywheelSetPointControl);
+        }
     }
 
     /**

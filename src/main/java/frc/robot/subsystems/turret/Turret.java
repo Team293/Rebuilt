@@ -54,25 +54,6 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         // }
 
         this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
-
-        Pose2d robotPose = RobotContainer.getDrive().getPose();
-        Pose2d turretTranslatedPose = new Pose2d(robotPose.getTranslation(), new Rotation2d(Math.toRadians(io.turretAngleDegreesFieldRelative)));
-        Logger.recordOutput("Turret/RobotTurretPose", turretTranslatedPose);
-
-        Translation2d turretPivot = TURRET_OFFSET_FROM_CENTER
-                .rotateBy(robotPose.getRotation())
-                .plus(robotPose.getTranslation());
-        Translation2d hub = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        Translation2d aimVec = hub.minus(turretPivot);
-        Rotation2d aimAngle = aimVec.getAngle();
-
-        final int NUM_POINTS = 6;
-        Pose2d[] aimingRay = new Pose2d[NUM_POINTS];
-        for (int i = 0; i < NUM_POINTS; i++) {
-            double t = (double) i / (NUM_POINTS - 1);
-            aimingRay[i] = new Pose2d(turretPivot.plus(aimVec.times(t)), aimAngle);
-        }
-        Logger.recordOutput("Turret/AimingRay", aimingRay);
     }
 
     public double getTurretAngleDegreesFieldRelative() {

@@ -19,9 +19,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
-        SmartDashboard.putNumber("TargetRPM", 0);
-        SmartDashboard.putNumber("TargetHoodAngle", 0);
-        SmartDashboard.putBoolean("ReadFromData", true);
+        // SmartDashboard.putNumber("TargetRPM", 0);
+        // SmartDashboard.putNumber("TargetHoodAngle", 0);
+        // SmartDashboard.putBoolean("ReadFromData", true);
     }
 
     /**
@@ -39,14 +39,14 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         if (readFromData) {
             targetRPM = ShotData.distanceToRPM.get(distToTarget);
         } else {
-            targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
+            // targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
         }
 
         double hoodAngle = 0;
         if (readFromData) {
             hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
         } else {
-            hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
+            // hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
         }
 
         if (io.isZeroing) {
@@ -55,7 +55,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
             shooterIO.setHoodAngle(hoodAngle);
         }
 
-        shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
+        // put to recovery mode if the driver is requesting to shoot
+        // more direct control rather than smooth trajectory generation
+        shooterIO.setFlywheelVelocity(targetRPM / 60.0, driverRequestingShooting); // convert RPM to RPS
     }
 
     /**

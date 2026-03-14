@@ -23,13 +23,11 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     public void onPeriodic() {
-        int index = 0;
         // update drive with vision measurements
         for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
             if (pose == null) {
                 continue;
             }
-            Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
             double avgDist = 0;
 
             // calculate the average distance to the targets
@@ -41,7 +39,6 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
                 }
 
                 avgDist = totalDist / pose.targetsUsed.size();
-                Logger.recordOutput("EstimatedPose/" + index + "/AvgTargetDist", avgDist);
             }
 
             drive.addVisionMeasurement(
@@ -49,7 +46,6 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
                     pose.timestampSeconds,
                     CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30))
             );
-            index++;
         }
     }
 

@@ -15,6 +15,10 @@ public class TriggerIOTalonFX implements IORefresher, TriggerIO {
         this.motor = new TalonFX(CanID.TRIGGER_MOTOR.getID());
         this.motorRps = motor.getRotorVelocity();
         this.proximitySensor = new DigitalInput(proxChannel);
+
+        motorRps.setUpdateFrequency(50);
+
+        motor.optimizeBusUtilization();
     }
 
     // Refresh all signals
