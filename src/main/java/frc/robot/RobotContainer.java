@@ -6,8 +6,6 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import org.littletonrobotics.junction.Logger;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -32,7 +30,8 @@ import frc.robot.subsystems.vision.Vision;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
+                                                                                      // max angular velocity
 
     private final SendableChooser<Command> autoChooser;
 
@@ -43,7 +42,7 @@ public class RobotContainer {
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    // private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController driverController = new SpikeController(0, 0.05);
     private final CommandXboxController operatorController = new SpikeController(1, 0.05);
@@ -89,24 +88,24 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
         drive.setDefaultCommand(
                 // Drivetrain will execute this command periodically
-                drive.applyRequest(() ->
-                        driveCmd.withVelocityX(-driverController.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                                .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                                .withRotationalRate(driverController.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-                )
-        );
+                drive.applyRequest(() -> driveCmd.withVelocityX(-driverController.getLeftY() * MaxSpeed) // Drive
+                                                                                                         // forward with
+                                                                                                         // negative Y
+                                                                                                         // (forward)
+                        .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withRotationalRate(driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
+                                                                                           // with negative X (left)
+                ));
 
         // Idle while the robot is disabled. This ensures the configured
-        // neutral mode is applied to the drive motors while disabled.  
+        // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
-                drive.applyRequest(() -> idle).ignoringDisable(true)
-        );
+                drive.applyRequest(() -> idle).ignoringDisable(true));
 
         driverController.a().whileTrue(drive.applyRequest(() -> brake));
-        driverController.b().whileTrue(drive.applyRequest(() ->
-                point.withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))
-        ));
+        driverController.b().whileTrue(drive.applyRequest(() -> point
+                .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -116,15 +115,15 @@ public class RobotContainer {
         driverController.start().and(driverController.x()).whileTrue(drive.sysIdQuasistatic(Direction.kReverse));
 
         // reset the field-centric heading on left bumper press
-        
+
         driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
 
         // operatorController.y().onTrue(vision.runOnce(() -> {
-        //     var estimatedPose = vision.getEstimatedPositionFromCameras();
-        //     if (estimatedPose != null) {
-        //         Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
-        //         drive.resetPose(estimatedPose);
-        //     }
+        // var estimatedPose = vision.getEstimatedPositionFromCameras();
+        // if (estimatedPose != null) {
+        // Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
+        // drive.resetPose(estimatedPose);
+        // }
         // }));
     }
 
@@ -140,15 +139,14 @@ public class RobotContainer {
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
-        operatorController.rightTrigger()
+        driverController.rightTrigger()
                 .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
                 .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
 
-                
         operatorController.x().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
-        operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.5)));
-        operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.5)));
+        operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
+        operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
     }

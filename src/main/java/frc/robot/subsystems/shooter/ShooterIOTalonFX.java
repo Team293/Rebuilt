@@ -8,7 +8,6 @@ import com.ctre.phoenix6.configs.ExternalFeedbackConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
-import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -19,15 +18,13 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
-import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
-public class ShooterIOTalonFX implements IORefresher, ShooterIO {
+public class ShooterIOTalonFX implements ShooterIO {
     private static final double HOOD_GEAR_RATIO = 1.0 / 1.0; // hood pulley teeth / motor pulley teeth (motor revs per
                                                              // hood rev)
     private static final double SOFTWARE_LIMIT_SWITCH_CURRENT_THRESHOLD = 1.75; // amps at which we consider the hood to have hit a limit
@@ -101,7 +98,7 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
         flywheelSlot0.kI = 0.0;
         flywheelSlot0.kD = 0.0;
         flywheelSlot0.kS = 0.225;
-        flywheelSlot0.kV = 0.125;
+        flywheelSlot0.kV = 0.133;
 
         // current limits changed from
         // 120, 70 to 80, 60
@@ -198,7 +195,7 @@ public class ShooterIOTalonFX implements IORefresher, ShooterIO {
     /**
      * Set the target hood angle
      * 
-     * @param angle target angle TODO: relative to what
+     * @param angle target angle
      */
     @Override
     public void setHoodAngle(double angle) {

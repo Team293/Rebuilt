@@ -6,10 +6,13 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
+import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 2.0; // RPS threshold to consider the shooter ready
+
+    private boolean readFromData = true;
 
     private ShooterIO shooterIO;
     private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
@@ -18,6 +21,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         super("Shooter", new ShooterIOInputsAutoLogged());
         SmartDashboard.putNumber("TargetRPM", 0);
         SmartDashboard.putNumber("TargetHoodAngle", 0);
+        SmartDashboard.putBoolean("ReadFromData", true);
     }
 
     /**
@@ -26,16 +30,28 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     @Override
     public void onPeriodic() {
         double distToTarget = getDistanceToTarget(); // distance in meters
+        readFromData = SmartDashboard.getBoolean("ReadFromData", true);
         // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
         // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
         
-        double targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
-        double hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
+        double targetRPM = 0;
+
+        if (readFromData) {
+            targetRPM = ShotData.distanceToRPM.get(distToTarget);
+        } else {
+            targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
+        }
+
+        double hoodAngle = 0;
+        if (readFromData) {
+            hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
+        } else {
+            hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
+        }
 
         if (io.isZeroing) {
             shooterIO.runZeroingHood();
         } else {
-            // compensate hood angle for rpm of flywheel lowering due to slowdowns 
             shooterIO.setHoodAngle(hoodAngle);
         }
 
