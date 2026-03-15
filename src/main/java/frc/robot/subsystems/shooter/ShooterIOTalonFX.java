@@ -1,7 +1,6 @@
 package frc.robot.subsystems.shooter;
 
 import com.ctre.phoenix6.configs.*;
-import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
@@ -15,7 +14,6 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
@@ -24,6 +22,7 @@ import frc.robot.CanID;
 
 public class ShooterIOTalonFX implements ShooterIO {
     private static final double HOOD_ZERO_CURRENT = 1.75; // amps at which we consider the hood to have hit a limit
+    private static final double FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS = 0.35; // ignore tiny target changes
 
     private final TalonFX flywheelMotor;
     private final TalonFXS hoodMotor;
@@ -42,6 +41,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     private double hoodAngleSetPoint = 0.0;
     private double flywheelRPSSetPoint = 0.0;
+    private double lastAppliedFlywheelRPSSetPoint = Double.NaN;
 
     private double hoodTargetEncoder = 0.0;
     private boolean isZeroing = true;
@@ -148,24 +148,17 @@ public class ShooterIOTalonFX implements ShooterIO {
     }
 
     /**
-     * Periodically refreshes encoder signal
-     * 
-     * @note This is called automatically
+     * Periodically refreshes encoder signals.
+     * Called automatically by the subsystem data refresher.
      */
     @Override
     public void refreshData() {
         BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition, hoodMotorCurrent, hoodMotorVoltage);
-
-        // double current = hoodAngle.getValueAsDouble();
-
-        // // if (Math.abs(current - hoodTargetEncoder) < 0.005) {
-        // //     hoodMotor.stopMotor();
-        // // }
     }
 
     /**
      * Periodically called to update the shooter information for logging
-     * 
+     *
      * @param inputs ShooterIOInputs object to update
      */
     @Override
@@ -182,27 +175,33 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     /**
      * Set the target flywheel velocity
-     * 
+     *
      * @param rps - target rotations per second
      */
     @Override
     public void setFlywheelVelocity(double rps) {
         this.flywheelRPSSetPoint = rps;
 
+        boolean firstCommand = Double.isNaN(lastAppliedFlywheelRPSSetPoint);
+        boolean meaningfulChange = firstCommand
+                || Math.abs(rps - lastAppliedFlywheelRPSSetPoint) >= FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS;
+
+        if (!meaningfulChange) {
+            return;
+        }
+
         this.flywheelControl.withVelocity(rps);
         flywheelMotor.setControl(this.flywheelControl);
+        this.lastAppliedFlywheelRPSSetPoint = rps;
     }
-
     /**
-     * Set the target hood angle
-     * 
+     * Set the target hood angle.
      * @param angle target angle
      */
-    @Override
     public void setHoodAngle(double angle) {
-        angle = Math.max(15, Math.min(45, angle));
+        angle = Math.max(15.0, Math.min(45.0, angle));
         this.hoodAngleSetPoint = angle;
-
+        angle = Math.max(15, Math.min(45, angle));
         // convert target angle -> encoder rotations
         this.hoodTargetEncoder = angleToEncoder(angle);
 
@@ -210,21 +209,16 @@ public class ShooterIOTalonFX implements ShooterIO {
     }
 
     /**
-     * Returns a position from zero to 1 representing the position of the hood,
-     * where 0 is 15 degrees and 1 is 45 degrees
-     * 
-     * @param angle
-     * @return
+     * Returns a position from zero to 1 representing the hood position,
+     * where 0 is 15 degrees and 1 is 45 degrees.
+     * @param angle angle in degrees, expected to be in the range [15, 45]
+     * @return normalized encoder position in the range [0, 1]
      */
-    private static double angleToEncoder(double angle) {
+    private double angleToEncoder(double angle) {
         angle -= 14.0; // shift so that 0 is at 15 degrees
         angle /= 30.0; // scale so that 1 is at 45 degrees
         if (angle < 0.0) {
             return 0.0;
-        } else if (angle > 1.0) {
-            return 1.0;
-        } else {
-            return angle;
-        }
+        } else return Math.min(angle, 1.0);
     }
 }

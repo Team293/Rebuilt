@@ -9,11 +9,11 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
 
     @AutoLog
     public static class TurretIOInputs extends BaseInputClass {
-        public double turretAngleDegreesFieldRelative = 0.0; // measured turret heading on the field, in degrees [-180, 180)
-        public double turretAngleDegreesTurretRelative = 0.0; // measured turret heading in turret-frame (after center-offset), in degrees [-180, 180)
-        public double turretAngleDegreesRobotRelative = 0.0; // measured turret heading in robot-frame (after robot-offset), in degrees [-180, 180)
-        public double targetTurretDegrees = 0.0; // raw field-relative target sent to the turret, in degrees
-        public double processedTargetTurretDegrees = 0.0; // robot-relative target after wrapping and trim applied, in degrees
+        public double fieldRelativeTurretAngleDegrees = 0.0; // measured turret heading on the field, in degrees [-180, 180)
+        public double turretRelativeTurretAngleDegrees = 0.0; // measured turret heading in turret-frame (after center-offset), in degrees [-180, 180)
+        public double robotRelativeTurretAngleDegrees = 0.0; // measured turret heading in robot-frame (after robot-offset), in degrees [-180, 180)
+        public double targetFieldRelativeTurretDegrees = 0.0; // raw field-relative target sent to the turret, in degrees
+        public double targetRobotRelativeTurretDegrees = 0.0; // robot-relative target after wrapping and trim applied, in degrees
         public double targetTurretMotorRotations = 0.0; // setpoint sent to the TalonFX position controller, in motor rotations
         public double turretOffsetRotations = 0.0; // motor position written at last zero/recalibration, in rotations
         public double turretMotorPositionRotations = 0.0; // raw TalonFX rotor position, in rotations
@@ -22,6 +22,8 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
         public double rawTurretMechanismRotations = 0.0; // continuous turret mechanism position from CRT unwrapping, in revolutions
         public double pinionEncoderRevsCalculated = 0.0; // continuous pinion position resolved by the CRT algorithm, in revolutions
         public double turretTrimDegrees = 0.0; // operator-applied fine-trim offset, in degrees
+        public double targetTurretDegreesFilteredFieldRelative = 0.0; // filtered field-relative target angle sent to the turret, in degrees [-180, 180)
+        public double turretAngleDegreesRobotRelativeFiltered = 0.0; // filtered measured turret angle in robot-frame, in degrees [-180, 180)
     }
 
     /**

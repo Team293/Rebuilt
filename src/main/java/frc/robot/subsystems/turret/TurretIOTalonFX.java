@@ -11,10 +11,13 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.AngleUtils;
+import frc.lib.LowPassFilter;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
+    private static final double TURRET_MEASUREMENT_FILTER_ALPHA = 0.25; // smaller = smoother, larger = more responsive
 
     // SUBSYSTEMS
     private final CommandSwerveDrivetrain drive;
@@ -45,6 +48,7 @@ public class TurretIOTalonFX implements TurretIO {
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
 
     private double turretTrimDegrees = 0.0;
+    private final LowPassFilter turretMeasurementFilter = new LowPassFilter(TURRET_MEASUREMENT_FILTER_ALPHA);
 
     public TurretIOTalonFX(CommandSwerveDrivetrain drive) {
         // SUBSYSTEMS
@@ -135,19 +139,26 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void updateInputs(TurretIOInputs inputs) {
-        inputs.turretAngleDegreesFieldRelative = getTurretAngleFieldRelative();
-        inputs.turretAngleDegreesTurretRelative = getTurretAngle();
-        inputs.turretAngleDegreesRobotRelative = getTurretAngleRobotRelative();
+        double robotRelativeAngleDeg = getTurretAngleRobotRelative();
+
+        inputs.fieldRelativeTurretAngleDegrees = getTurretAngleFieldRelative();
+        inputs.turretRelativeTurretAngleDegrees = getTurretAngle();
+        inputs.robotRelativeTurretAngleDegrees = robotRelativeAngleDeg;
+        inputs.turretAngleDegreesRobotRelativeFiltered = calculateFilteredMeasuredAngle(robotRelativeAngleDeg);
         inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
         inputs.turretOffsetRotations = this.calculatedMotorOffsetRevs;
-        inputs.targetTurretDegrees = this.targetTurretDegreesFieldRelative;
-        inputs.processedTargetTurretDegrees = this.processedTargetTurretDegreesFieldRelative;
+        inputs.targetFieldRelativeTurretDegrees = this.targetTurretDegreesFieldRelative;
+        inputs.targetRobotRelativeTurretDegrees = this.processedTargetTurretDegreesFieldRelative;
         inputs.turretMotorPositionRotations = this.turretMotorPosition.getValueAsDouble();
         inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
         inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
         inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
         inputs.pinionEncoderRevsCalculated = this.cachedPinionEncoderRevs;
         inputs.turretTrimDegrees = turretTrimDegrees;
+    }
+
+    private double calculateFilteredMeasuredAngle(double rawMeasuredAngleDeg) {
+        return AngleUtils.filterWrappedAngleDeg(turretMeasurementFilter, rawMeasuredAngleDeg, -180.0, 180.0);
     }
 
     // CONFIGURATIONS

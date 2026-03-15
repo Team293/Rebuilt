@@ -1,5 +1,7 @@
 package frc.robot.subsystems.turret;
 
+import frc.lib.AngleUtils;
+import frc.lib.LowPassFilter;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.Targeting;
@@ -10,6 +12,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 5.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    private static final double TURRET_TARGET_FILTER_ALPHA = 0.15; // smaller = smoother, larger = more responsive
 
     // HARDWARE CONSTANTS
     // gearing
@@ -31,6 +34,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(0.3, 0); // distance from the center of the robot to the center of the turret, in meters 
 
     private TurretIO turretIO;
+    private final LowPassFilter turretTargetFilter = new LowPassFilter(TURRET_TARGET_FILTER_ALPHA);
 
     public Turret() {
         super("Turret", new TurretIOInputsAutoLogged());
@@ -38,7 +42,15 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     @Override
     public void onPeriodic() {
-        this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
+        double rawTargetAngleDeg = getTurretAngleDegreesFieldRelative();
+        double filteredTargetAngleDeg = calculateFilteredTargetAngle(rawTargetAngleDeg);
+
+        io.targetTurretDegreesFilteredFieldRelative = filteredTargetAngleDeg;
+        this.turretIO.setTurretAngleFieldRelativeDegrees(filteredTargetAngleDeg);
+    }
+
+    private double calculateFilteredTargetAngle(double rawTargetAngleDeg) {
+        return AngleUtils.filterWrappedAngleDeg(turretTargetFilter, rawTargetAngleDeg, -180.0, 180.0);
     }
 
     public double getTurretAngleDegreesFieldRelative() {
@@ -56,12 +68,9 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
      * Checks if the turret is at the target angle, within the tolerance defined by TURRET_AIMING_TOLERANCE_DEGREES.
      * @return true if the turret is at the target angle, false otherwise
      */
-    
-    @AutoLogOutput(key="Turret/IsAtTargetAngle")
+    @AutoLogOutput(key = "Turret/IsAtTargetAngle")
     public boolean isAtTargetAngle() {
-        double error =
-            Math.abs(io.turretAngleDegreesRobotRelative - io.processedTargetTurretDegrees);
-
+        double error = Math.abs(io.turretAngleDegreesRobotRelativeFiltered - io.targetRobotRelativeTurretDegrees);
         return error <= TURRET_AIMING_TOLERANCE_DEGREES;
     }
 
