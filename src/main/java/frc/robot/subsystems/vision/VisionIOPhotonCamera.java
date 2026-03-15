@@ -8,6 +8,7 @@ import frc.robot.subsystems.vision.photon.CameraManager;
 import org.photonvision.EstimatedRobotPose;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -15,10 +16,15 @@ import java.util.function.Supplier;
 public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     private final List<EstimatedRobotPose> estimatedRobotPoses;
+    private final List<EstimatedRobotPose> estimatedRobotPosesView; // unmodifiable view
     private final Supplier<Pose2d> odometryPoseSupplier;
+
+    // reused output buffer so we don't allocate a new Pose3d[] on every loop
+    private Pose3d[] poseBuffer = new Pose3d[0];
 
     public VisionIOPhotonCamera(Supplier<Pose2d> odometryPoseSupplier) {
         this.estimatedRobotPoses = new ArrayList<>();
+        this.estimatedRobotPosesView = Collections.unmodifiableList(estimatedRobotPoses);
         this.odometryPoseSupplier = odometryPoseSupplier;
     }
 
@@ -40,14 +46,21 @@ public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     @Override
     public void updateInputs(VisionIOInputs inputs) {
-        inputs.estimatedRobotPoses = estimatedRobotPoses.stream()
-                .map(pose -> pose.estimatedPose)
-                .toArray(Pose3d[]::new);
+        int size = estimatedRobotPoses.size();
+
+        if (poseBuffer.length != size) {
+            poseBuffer = new Pose3d[size];
+        }
+        for (int i = 0; i < size; i++) {
+            poseBuffer[i] = estimatedRobotPoses.get(i).estimatedPose;
+        }
+        inputs.estimatedRobotPoses = poseBuffer;
     }
 
     @Override
     public List<EstimatedRobotPose> getEstimatedRobotPoses() {
-        return new ArrayList<>(estimatedRobotPoses);
+        // return an unmodifiable view
+        return estimatedRobotPosesView;
     }
 }
 

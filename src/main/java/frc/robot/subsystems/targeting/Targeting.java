@@ -40,10 +40,7 @@ public class Targeting extends SubsystemBase {
 
         // vector from the turret pivot directly to the goal
         Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        Translation2d toGoal = goalPose.minus(turretPivot);
-        
-        Logger.recordOutput("Turret/TurretPivot", new Pose2d(turretPivot, toGoal.getAngle()));
-        return toGoal;
+        return goalPose.minus(turretPivot);
     }
     
     /**

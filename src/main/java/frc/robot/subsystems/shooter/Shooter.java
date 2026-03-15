@@ -4,7 +4,6 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
@@ -30,7 +29,6 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     @Override
     public void onPeriodic() {
         double distToTarget = getDistanceToTarget(); // distance in meters
-        readFromData = SmartDashboard.getBoolean("ReadFromData", true);
         // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
         // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
         

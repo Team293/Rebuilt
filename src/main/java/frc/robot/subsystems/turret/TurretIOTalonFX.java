@@ -1,7 +1,6 @@
 package frc.robot.subsystems.turret;
 
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
@@ -13,17 +12,11 @@ import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
-    // KS KV CONSTANTS
-    private static final double kS = 0.35; // volts needed to overcome static friction
-    private static final double kV = 0.20; // volts per (rotation per second) to maintain motion
 
     // SUBSYSTEMS
     private final CommandSwerveDrivetrain drive;
@@ -51,7 +44,6 @@ public class TurretIOTalonFX implements TurretIO {
 
     // COMMANDS
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
-    private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
     private double turretTrimDegrees = 0.0;
 
@@ -66,8 +58,6 @@ public class TurretIOTalonFX implements TurretIO {
 
         // CONFIGURATIONS
         var turretMotorConfig = getTurretMotionConfigs();
-        var pinionEncoderConfig = getPinionEncoderConfigs();
-        var followerEncoderConfig = getFollowerEncoderConfigs();
         var turretMotorFeedbackConfig = getTurretMotorFeedbackConfigs();
         var turretSoftwareLimitConfig = getTurretSoftwareLimitConfigs();
 
@@ -78,8 +68,9 @@ public class TurretIOTalonFX implements TurretIO {
         // invert motor
         this.turretMotor.getConfigurator().apply(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 
-        this.pinionEncoder.getConfigurator().apply(pinionEncoderConfig);
-        this.followerEncoder.getConfigurator().apply(followerEncoderConfig);
+        this.turretMotor.optimizeBusUtilization();
+        this.pinionEncoder.optimizeBusUtilization();
+        this.followerEncoder.optimizeBusUtilization();
 
         // SIGNALS
         this.turretMotorPosition = this.turretMotor.getPosition();
@@ -135,17 +126,6 @@ public class TurretIOTalonFX implements TurretIO {
         turretMotor.setPosition(this.calculatedMotorOffsetRevs);
     }
 
-    /**
-     * Calculates the feedforward voltage to apply to the turret motor to counteract the rotation of the robot, based on the current angular velocity of the robot.
-     * @return the feedforward value to apply to the turret rotation
-     */
-    private double calculateFeedforward() {
-        // get the current angular velocity of the robot in radians per second
-        double gyroOmegaRadPerSecond = drive.getState().Speeds.omegaRadiansPerSecond;
-
-        double mechanismRotationsPerSecond = gyroOmegaRadPerSecond / Math.PI;
-        return feedforward.calculate(-mechanismRotationsPerSecond);
-    }
 
     @Override
     public void refreshData() {
@@ -226,31 +206,6 @@ public class TurretIOTalonFX implements TurretIO {
 
     public void changeTurretTrim(double deltaDegrees) {
         this.turretTrimDegrees += deltaDegrees;
-    }
-
-    /**
-     * Get the encoder configurations for the turret encoders.
-     * @return the encoder configurations for the turret encoders
-     */
-    public CANcoderConfiguration getEncoderConfigs() {
-        CANcoderConfiguration configs = new CANcoderConfiguration();
-        // constrain reading between [0, 1)
-        configs.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
-        return configs;
-    }
-
-    public CANcoderConfiguration getPinionEncoderConfigs() {
-        CANcoderConfiguration configs = getEncoderConfigs();
-        // configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
-
-        return configs;
-    }
-
-    public CANcoderConfiguration getFollowerEncoderConfigs() {
-        CANcoderConfiguration configs = getEncoderConfigs();
-        // configs.MagnetSensor.MagnetOffset = Turret.FOLLOWER_ENCODER_OFFSET;
-
-        return configs;
     }
 
     // CRT METHODS

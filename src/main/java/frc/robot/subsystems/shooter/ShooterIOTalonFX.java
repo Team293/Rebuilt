@@ -38,7 +38,9 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     private final VelocityTorqueCurrentFOC flywheelSetPointControl = new VelocityTorqueCurrentFOC(0);
     private final VelocityTorqueCurrentFOC flywheelRecoveryControl = new VelocityTorqueCurrentFOC(0);
-    
+
+    private final VoltageOut hoodZeroingControl = new VoltageOut(-4); // pre-allocated, reused every loop
+
     private final PositionVoltage hoodPositionControl = new PositionVoltage(0);
     private final StatusSignal<Voltage> hoodMotorVoltage; // volts
     private final StatusSignal<AngularVelocity> motorVelocity; // rps
@@ -127,7 +129,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     @Override
     public void runZeroingHood() {
-        hoodMotor.setControl(new VoltageOut(-4)); // move hood down at a slow speed
+        hoodMotor.setControl(hoodZeroingControl); // move hood down at a slow speed
 
         if (hoodMotorCurrent.getValueAsDouble() > SOFTWARE_LIMIT_SWITCH_CURRENT_THRESHOLD) { // if we hit the floor, the current will spike up
             hoodMotor.stopMotor();

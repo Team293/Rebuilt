@@ -24,7 +24,6 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_GEAR_RATIO = TURRET_GEAR_TEETH / PINION_ENCODER_TEETH; // gear ratio from motor to turret
 
     public static final double DEGREES_PER_REV = 360.0; // degrees in one revolution
-    public static final double NORMALIZED_REVOLUTION = 1.0; // one full revolution in normalized units
 
     public static final double ENCODER_COMBINED_TEETH = PINION_ENCODER_TEETH * FOLLOWER_ENCODER_TEETH;
     public static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / PINION_ENCODER_TEETH;
