@@ -30,7 +30,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     private final VelocityTorqueCurrentFOC flywheelControl = new VelocityTorqueCurrentFOC(0);
 
-    private final VoltageOut hoodZeroingControl = new VoltageOut(-4); // pre-allocated, reused every loop
+    private final VoltageOut hoodZeroingControl = new VoltageOut(-4);
 
     private final PositionVoltage hoodPositionControl = new PositionVoltage(0);
     private final StatusSignal<Voltage> hoodMotorVoltage; // volts

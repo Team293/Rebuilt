@@ -63,13 +63,18 @@ public class TurretIOTalonFX implements TurretIO {
         var turretMotorConfig = getTurretMotionConfigs();
         var turretMotorFeedbackConfig = getTurretMotorFeedbackConfigs();
         var turretSoftwareLimitConfig = getTurretSoftwareLimitConfigs();
+        var encoderConfig = getEncoderConfigs();
 
         this.turretMotor.getConfigurator().apply(turretMotorConfig.getFirst());
         this.turretMotor.getConfigurator().apply(turretMotorConfig.getSecond());
         this.turretMotor.getConfigurator().apply(turretMotorFeedbackConfig);
         this.turretMotor.getConfigurator().apply(turretSoftwareLimitConfig);
+
         // invert motor
         this.turretMotor.getConfigurator().apply(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
+
+        this.pinionEncoder.getConfigurator().apply(encoderConfig);
+        this.followerEncoder.getConfigurator().apply(encoderConfig);
 
         this.turretMotor.optimizeBusUtilization();
         this.pinionEncoder.optimizeBusUtilization();
@@ -198,6 +203,17 @@ public class TurretIOTalonFX implements TurretIO {
         configs.SensorToMechanismRatio = Turret.TURRET_GEAR_RATIO / 2.0;
         configs.RotorToSensorRatio = 1;
 
+        return configs;
+    }
+
+    /**
+     * Get the encoder configurations for the turret encoders.
+     * @return the encoder configurations for the turret encoders
+     */
+    public CANcoderConfiguration getEncoderConfigs() {
+        CANcoderConfiguration configs = new CANcoderConfiguration();
+        // constrain reading between [0, 1)
+        configs.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
         return configs;
     }
 
