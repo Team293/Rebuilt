@@ -17,7 +17,7 @@ public interface ShooterIO extends BaseIO<ShooterIO.ShooterIOInputs>, IORefreshe
         public boolean isZeroing = false; // true while the hood is running its zeroing routine
     }
 
-    void setFlywheelVelocity(double rps, boolean isRecovery);
+    void setFlywheelVelocity(double rps);
     void setHoodAngle(double angle);
     void runZeroingHood();
     void zeroHood();

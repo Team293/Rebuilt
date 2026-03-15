@@ -1,15 +1,10 @@
 package frc.robot.subsystems.shooter;
 
+import com.ctre.phoenix6.configs.*;
 import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.configs.CommutationConfigs;
-import com.ctre.phoenix6.configs.ExternalFeedbackConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -28,16 +23,13 @@ import edu.wpi.first.units.measure.Voltage;
 import frc.robot.CanID;
 
 public class ShooterIOTalonFX implements ShooterIO {
-    private static final double HOOD_GEAR_RATIO = 1.0 / 1.0; // hood pulley teeth / motor pulley teeth (motor revs per
-                                                             // hood rev)
-    private static final double SOFTWARE_LIMIT_SWITCH_CURRENT_THRESHOLD = 1.75; // amps at which we consider the hood to have hit a limit
+    private static final double HOOD_ZERO_CURRENT = 1.75; // amps at which we consider the hood to have hit a limit
 
     private final TalonFX flywheelMotor;
     private final TalonFXS hoodMotor;
     private final CANcoder hoodEncoder; // using wcp throughbore; you interface through 'CANcoder' class
 
-    private final VelocityTorqueCurrentFOC flywheelSetPointControl = new VelocityTorqueCurrentFOC(0);
-    private final VelocityTorqueCurrentFOC flywheelRecoveryControl = new VelocityTorqueCurrentFOC(0);
+    private final VelocityTorqueCurrentFOC flywheelControl = new VelocityTorqueCurrentFOC(0);
 
     private final VoltageOut hoodZeroingControl = new VoltageOut(-4); // pre-allocated, reused every loop
 
@@ -99,18 +91,21 @@ public class ShooterIOTalonFX implements ShooterIO {
         this.hoodMotor.getConfigurator().apply(hoodCommutation);
         this.hoodMotor.getConfigurator().apply(hoodMotorOutputConfigs);
 
-        // flywheel configs
+        // flywheel configs (units in AMPS)
         var flywheelSlot0 = new Slot0Configs();
-        flywheelSlot0.kP = 20;
+        flywheelSlot0.kP = 100; // amps / rps of error
         flywheelSlot0.kI = 0.0;
         flywheelSlot0.kD = 0.0;
-        flywheelSlot0.kS = 0.25;
-        flywheelSlot0.kV = 0.75;
+        flywheelSlot0.kS = 2.0; // amps needed to overcome static friction
+        flywheelSlot0.kV = 0.0; // not used for torque control
 
-        // current limits changed from
-        // 120, 70 to 80, 60
+        var flywheelTorqueConfigs = new TorqueCurrentConfigs();
+        flywheelTorqueConfigs.PeakForwardTorqueCurrent = 120; // amps, could up to 150A if needed
+        flywheelTorqueConfigs.PeakReverseTorqueCurrent = -10; // prevents the motor from braking when overshooting
+        flywheelTorqueConfigs.TorqueNeutralDeadband = 0;
 
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
+        this.flywheelMotor.getConfigurator().apply(flywheelTorqueConfigs);
 
         this.motorVelocity = flywheelMotor.getVelocity();
         this.hoodAngle = hoodEncoder.getAbsolutePosition();
@@ -131,7 +126,7 @@ public class ShooterIOTalonFX implements ShooterIO {
     public void runZeroingHood() {
         hoodMotor.setControl(hoodZeroingControl); // move hood down at a slow speed
 
-        if (hoodMotorCurrent.getValueAsDouble() > SOFTWARE_LIMIT_SWITCH_CURRENT_THRESHOLD) { // if we hit the floor, the current will spike up
+        if (hoodMotorCurrent.getValueAsDouble() > HOOD_ZERO_CURRENT) { // if we hit the floor, the current will spike up
             hoodMotor.stopMotor();
             hoodEncoder.setPosition(0); // set encoder position to 0 when we hit the limit
             isZeroing = false;
@@ -191,26 +186,11 @@ public class ShooterIOTalonFX implements ShooterIO {
      * @param rps - target rotations per second
      */
     @Override
-    public void setFlywheelVelocity(double rps, boolean isRecovery) {
+    public void setFlywheelVelocity(double rps) {
         this.flywheelRPSSetPoint = rps;
-        if (isRecovery) {
-            this.flywheelRecoveryControl.withVelocity(rps);
 
-            // calculate the error from set point to current
-            double error = rps - this.motorVelocity.getValueAsDouble();
-            double feedForwardConstantBoost = 6;
-            double ffBost = MathUtil.inputModulus((0.133 * error) + feedForwardConstantBoost, 0.0, 10); // simple proportional feedforward based on velocity error
-            Logger.recordOutput("Shooter/RecoveryFeedForwardBoost", ffBost);
-
-            if (error >= 1) {
-                this.flywheelRecoveryControl.withFeedForward(ffBost);
-            }
-
-            flywheelMotor.setControl(this.flywheelRecoveryControl);
-        } else {
-            this.flywheelSetPointControl.withVelocity(rps);
-            flywheelMotor.setControl(this.flywheelSetPointControl);
-        }
+        this.flywheelControl.withVelocity(rps);
+        flywheelMotor.setControl(this.flywheelControl);
     }
 
     /**

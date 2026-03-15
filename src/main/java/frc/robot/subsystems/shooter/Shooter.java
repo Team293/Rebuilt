@@ -17,9 +17,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
-        // SmartDashboard.putNumber("TargetRPM", 0);
-        // SmartDashboard.putNumber("TargetHoodAngle", 0);
-        // SmartDashboard.putBoolean("ReadFromData", true);
+//         SmartDashboard.putNumber("TargetRPM", 0);
+//         SmartDashboard.putNumber("TargetHoodAngle", 0);
+//         SmartDashboard.putBoolean("ReadFromData", true);
     }
 
     /**
@@ -54,7 +54,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
         // put to recovery mode if the driver is requesting to shoot
         // more direct control rather than smooth trajectory generation
-        shooterIO.setFlywheelVelocity(targetRPM / 60.0, driverRequestingShooting); // convert RPM to RPS
+        shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
     }
 
     /**
