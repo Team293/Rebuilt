@@ -175,15 +175,14 @@ public class ShooterIOTalonFX implements ShooterIO {
      */
     @Override
     public void updateInputs(ShooterIOInputs inputs) {
-        inputs.motorRPS = this.motorVelocity.getValueAsDouble();
-        inputs.hoodAngle = this.hoodAngle.getValueAsDouble() * 30.0 + 15.0; // convert rotations to degrees
-        inputs.hoodMotorPosition = this.hoodAngle.getValueAsDouble();
-        inputs.hoodMotorCurrent = this.hoodMotorCurrent.getValueAsDouble();
+        inputs.flywheelVelocityRPS = this.motorVelocity.getValueAsDouble();
+        inputs.hoodAngleDeg = this.hoodAngle.getValueAsDouble() * 30.0 + 15.0; // convert [0,1] encoder rotations to degrees [15, 45]
+        inputs.hoodMotorCurrentAmps = this.hoodMotorCurrent.getValueAsDouble();
 
         inputs.flywheelSetPointRPS = this.flywheelRPSSetPoint;
-        inputs.hoodSetPointAngle = this.hoodAngleSetPoint;
+        inputs.hoodAngleSetPointDeg = this.hoodAngleSetPoint;
         inputs.isZeroing = this.isZeroing;
-        inputs.distanceTrim = this.distanceTrim;
+        inputs.distanceTrimMeters = this.distanceTrim;
     }
 
     /**
@@ -201,7 +200,7 @@ public class ShooterIOTalonFX implements ShooterIO {
             double error = rps - this.motorVelocity.getValueAsDouble();
             double feedForwardConstantBoost = 6;
             double ffBost = MathUtil.inputModulus((0.133 * error) + feedForwardConstantBoost, 0.0, 10); // simple proportional feedforward based on velocity error
-            Logger.recordOutput("Shooter/FeedForwardBoost", ffBost);
+            Logger.recordOutput("Shooter/RecoveryFeedForwardBoost", ffBost);
 
             if (error >= 1) {
                 this.flywheelRecoveryControl.withFeedForward(ffBost);
@@ -228,17 +227,6 @@ public class ShooterIOTalonFX implements ShooterIO {
         this.hoodTargetEncoder = angleToEncoder(angle);
 
         hoodMotor.setControl(hoodPositionControl.withPosition(this.hoodTargetEncoder).withSlot(0));
-    }
-
-    /**
-     * Converts angle in degrees to motor rotations per second
-     * 
-     * @param angle Input angle in degrees
-     * @return double motor rotations per second
-     */
-    private static double angleToMotorRotations(double angle) {
-        // rotations = (angle_deg * gear_ratio) / 360
-        return angle * HOOD_GEAR_RATIO / 360.0;
     }
 
     /**

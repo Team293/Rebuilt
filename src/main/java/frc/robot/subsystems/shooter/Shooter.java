@@ -1,7 +1,6 @@
 package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.lib.subsystem.SpikeSystem;
@@ -73,7 +72,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     @AutoLogOutput(key="Shooter/IsAtTargetRPS")
     public boolean isAtTargetRPS() {
-        return Math.abs((super.io.motorRPS - 0.5) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
+        return Math.abs((super.io.flywheelVelocityRPS - 0.5) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
     }
 
     /**
@@ -82,8 +81,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     public double getDistanceToTarget() {
         Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
-        return toGoal.getNorm() + io.distanceTrim; // add distance trim to adjust the distance based on operator controller input
+        return toGoal.getNorm() + io.distanceTrimMeters;
     }
 
     /**

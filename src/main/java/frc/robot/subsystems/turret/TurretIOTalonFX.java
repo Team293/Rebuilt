@@ -1,7 +1,5 @@
 package frc.robot.subsystems.turret;
 
-import org.littletonrobotics.junction.AutoLogOutput;
-
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.*;
@@ -35,6 +33,7 @@ public class TurretIOTalonFX implements TurretIO {
     private boolean isInitialized = false; // whether the turret has been initialized with a known position yet
     private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
     private double lastPinionRevs = 0.0; // last calculated position of the pinion encoder in revolutions
+    private double cachedPinionEncoderRevs = 0.0; // cached result of the CRT pinion calculation, updated each refreshData()
 
     // VALUES
     private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
@@ -120,9 +119,10 @@ public class TurretIOTalonFX implements TurretIO {
      */
     @Override
     public void recalculateTurretMotorZeroPosition() {
+        // ensure the cache is fresh before using it for zeroing
+        this.cachedPinionEncoderRevs = computePinionEncoderRevs();
         // absolute turret position from CRT
         this.calculatedMotorOffsetRevs = getTurretAngle() / 180.0;
-
         turretMotor.setPosition(this.calculatedMotorOffsetRevs);
     }
 
@@ -130,6 +130,7 @@ public class TurretIOTalonFX implements TurretIO {
     @Override
     public void refreshData() {
         StatusSignal.refreshAll(this.turretMotorPosition, this.pinionEncoderSignal, this.followerEncoderSignal);
+        this.cachedPinionEncoderRevs = computePinionEncoderRevs();
     }
 
     @Override
@@ -145,6 +146,7 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
         inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
         inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
+        inputs.pinionEncoderRevsCalculated = this.cachedPinionEncoderRevs;
         inputs.turretTrimDegrees = turretTrimDegrees;
     }
 
@@ -214,8 +216,7 @@ public class TurretIOTalonFX implements TurretIO {
      * Calculates the continuous position of the pinion (driving) encoder in revolutions
      * @return the continuous position of the pinion encoder in revolutions
      */
-    @AutoLogOutput(key = "Turret/PinionEncoderRevsCalculated")
-    private double getPinionEncoderRevs() {
+    private double computePinionEncoderRevs() {
         double pinionEncoderReading = positiveMod(this.pinionEncoderSignal.getValueAsDouble(), 1.0);
         double followerEncoderReading = positiveMod(this.followerEncoderSignal.getValueAsDouble(), 1.0);
 
@@ -256,7 +257,7 @@ public class TurretIOTalonFX implements TurretIO {
      * @return the continuous position of the turret in revolutions.
      */
     private double getTurretPositionRevs() {
-        double rawPinionRevs = getPinionEncoderRevs();
+        double rawPinionRevs = cachedPinionEncoderRevs; // use the value already computed in refreshData()
         double rawTurretRevs = rawPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.TURRET_GEAR_TEETH); // convert pinion revolutions to turret revolutions
 
         double wrapped = positiveMod(rawTurretRevs, Turret.ENCODER_COMBINED_PERIOD_TURRET_REV);

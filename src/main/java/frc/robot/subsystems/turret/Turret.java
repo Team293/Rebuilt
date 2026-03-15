@@ -1,16 +1,11 @@
 package frc.robot.subsystems.turret;
 
-import frc.lib.FieldConstants;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.Targeting;
-import frc.robot.subsystems.targeting.ShotCompensation;
 
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
@@ -43,24 +38,12 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     @Override
     public void onPeriodic() {
-        ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
-        // turretIO.setTurretAngleFieldRelativeDegrees(0);
-
-        // if (shotData != null) {
-        //     double newTargetAngleDeg = shotData.turretAngleDeg();
-
-        //     this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
-        // }
-
         this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
     }
 
     public double getTurretAngleDegreesFieldRelative() {
         Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-
-        double angleToTarget = toGoal.getAngle().getDegrees();
-        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
-        return angleToTarget;
+        return toGoal.getAngle().getDegrees();
     }
 
     @Override

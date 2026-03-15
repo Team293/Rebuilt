@@ -24,8 +24,8 @@ public class Targeting extends SubsystemBase {
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
         setTargetingHub();
-        Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
-        Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
+        Logger.recordOutput("Targeting/HubTarget", FieldConstants.Hub.oppTopCenterPoint);
+        Logger.recordOutput("Targeting/ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
     }
 
     public static Translation2d differenceBetweenRobotAndTarget() {
@@ -62,8 +62,6 @@ public class Targeting extends SubsystemBase {
                 new Pose2d(targetPos, new Rotation2d()),
                 NOMINAL_SHOT_TIME_S
         );
-
-        Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
     }
 
     /**
