@@ -60,9 +60,9 @@ public class RobotContainer {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-         this.intake = new Intake(drive);
+        this.intake = new Intake(drive);
         this.shooter = new Shooter();
-         this.targeting = new Targeting(drive);
+        this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
 
@@ -117,14 +117,6 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
 
         driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
-
-        // operatorController.y().onTrue(vision.runOnce(() -> {
-        // var estimatedPose = vision.getEstimatedPositionFromCameras();
-        // if (estimatedPose != null) {
-        // Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
-        // drive.resetPose(estimatedPose);
-        // }
-        // }));
     }
 
     private void setupIntakeBindings() {
@@ -133,22 +125,22 @@ public class RobotContainer {
     }
 
     private void setupTargetingBindings() {
-        // operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
-        // operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
+         operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
+         operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
     }
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
-        // driverController.rightTrigger()
-        //         .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
-        //         .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+         driverController.rightTrigger()
+                 .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
+                 .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
 
-        // operatorController.x().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
+         operatorController.x().onTrue(shooter.runOnce(shooter::zeroHood));
 
-        // operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
-        // operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
-        // operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
-        // operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
+         operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
+         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
+         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
+         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
     }
 
     public Command getAutonomousCommand() {
