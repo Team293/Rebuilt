@@ -23,7 +23,6 @@ public class SubsystemDataProcessor implements Runnable {
         new Thread(new SubsystemDataProcessor(dataReaderAndLogger, refreshers)).start();
     }
 
-    private double timestamp = 0.0;
     private DataReaderAndLogger dataReaderAndLogger;
     private List<IODataRefresher> IODataRefreshers;
 
@@ -46,21 +45,22 @@ public class SubsystemDataProcessor implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
-            timestamp = System.currentTimeMillis();
+        while (!Thread.currentThread().isInterrupted()) {
+            long startNs = System.nanoTime();
             for (IODataRefresher IODataRefresher : IODataRefreshers) {
                 IODataRefresher.refreshData();
             }
 
             dataReaderAndLogger.readAndLogDataFromIO();
-            try {
-                var difference = System.currentTimeMillis() - timestamp;
-                double sleepTime = LOOP_TIME - difference;
-                if (sleepTime > 0) {
-                    Thread.sleep((long) sleepTime);
-                }
 
-            } catch (InterruptedException e) {
+            long elapsedMs = (System.nanoTime() - startNs) / 1_000_000L;
+            long sleepMs = LOOP_TIME - elapsedMs;
+            if (sleepMs > 0) {
+                try {
+                    Thread.sleep(sleepMs);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt(); // restore interrupt flag so the loop exits cleanly
+                }
             }
         }
     }

@@ -8,17 +8,16 @@ import org.littletonrobotics.junction.AutoLog;
 public interface ShooterIO extends BaseIO<ShooterIO.ShooterIOInputs>, IORefresher {
     @AutoLog
     public static class ShooterIOInputs extends BaseInputClass {
-        public double motorRPS = 0.0; // Motor rotations per second
-        public double hoodAngle = 15; // Hood angle in degrees from 
-        public double hoodMotorPosition = 0.0; // TODO: position is in relation to what?
-        public double flywheelSetPointRPS = 0.0; // Flywheel set point rotations per second
-        public double hoodSetPointAngle = 0.0; // TODO: Hood setpoint in relation to what?
-        public double hoodMotorCurrent = 0.0; // Current being drawn by the hood motor
-        public double distanceTrim = 0.0; // minor adjustment to the returned distance based on operator controller input, in degrees
-        public boolean isZeroing = false;
+        public double flywheelVelocityRPS = 0.0; // measured flywheel speed, in rotations per second
+        public double hoodAngleDeg = 15.0; // measured hood angle, in degrees [15, 45]
+        public double flywheelSetPointRPS = 0.0; // commanded flywheel speed setpoint, in rotations per second
+        public double hoodAngleSetPointDeg = 0.0; // commanded hood angle setpoint, in degrees [15, 45]
+        public double hoodMotorCurrentAmps = 0.0; // measured hood motor supply current, in amps
+        public double distanceTrimMeters = 0.0; // operator fine-trim added to the target distance, in meters
+        public boolean isZeroing = false; // true while the hood is running its zeroing routine
     }
 
-    void setFlywheelVelocity(double rps, boolean isRecovery);
+    void setFlywheelVelocity(double rps);
     void setHoodAngle(double angle);
     void runZeroingHood();
     void zeroHood();

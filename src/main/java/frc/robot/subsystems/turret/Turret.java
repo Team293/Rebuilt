@@ -1,20 +1,18 @@
 package frc.robot.subsystems.turret;
 
-import frc.lib.FieldConstants;
+import frc.lib.AngleUtils;
+import frc.lib.LowPassFilter;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.Targeting;
-import frc.robot.subsystems.targeting.ShotCompensation;
 
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 5.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    private static final double TURRET_TARGET_FILTER_ALPHA = 0.15; // smaller = smoother, larger = more responsive
 
     // HARDWARE CONSTANTS
     // gearing
@@ -24,7 +22,6 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_GEAR_RATIO = TURRET_GEAR_TEETH / PINION_ENCODER_TEETH; // gear ratio from motor to turret
 
     public static final double DEGREES_PER_REV = 360.0; // degrees in one revolution
-    public static final double NORMALIZED_REVOLUTION = 1.0; // one full revolution in normalized units
 
     public static final double ENCODER_COMBINED_TEETH = PINION_ENCODER_TEETH * FOLLOWER_ENCODER_TEETH;
     public static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / PINION_ENCODER_TEETH;
@@ -37,6 +34,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(0.3, 0); // distance from the center of the robot to the center of the turret, in meters 
 
     private TurretIO turretIO;
+    private final LowPassFilter turretTargetFilter = new LowPassFilter(TURRET_TARGET_FILTER_ALPHA);
 
     public Turret() {
         super("Turret", new TurretIOInputsAutoLogged());
@@ -44,24 +42,20 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     @Override
     public void onPeriodic() {
-        ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
-        // turretIO.setTurretAngleFieldRelativeDegrees(0);
+        double rawTargetAngleDeg = getTurretAngleDegreesFieldRelative();
+        double filteredTargetAngleDeg = calculateFilteredTargetAngle(rawTargetAngleDeg);
 
-        // if (shotData != null) {
-        //     double newTargetAngleDeg = shotData.turretAngleDeg();
+        io.targetTurretDegreesFilteredFieldRelative = filteredTargetAngleDeg;
+        this.turretIO.setTurretAngleFieldRelativeDegrees(filteredTargetAngleDeg);
+    }
 
-        //     this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
-        // }
-
-        this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
+    private double calculateFilteredTargetAngle(double rawTargetAngleDeg) {
+        return AngleUtils.filterWrappedAngleDeg(turretTargetFilter, rawTargetAngleDeg, -180.0, 180.0);
     }
 
     public double getTurretAngleDegreesFieldRelative() {
         Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-
-        double angleToTarget = toGoal.getAngle().getDegrees();
-        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
-        return angleToTarget;
+        return toGoal.getAngle().getDegrees();
     }
 
     @Override
@@ -74,12 +68,9 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
      * Checks if the turret is at the target angle, within the tolerance defined by TURRET_AIMING_TOLERANCE_DEGREES.
      * @return true if the turret is at the target angle, false otherwise
      */
-    
-    @AutoLogOutput(key="Turret/IsAtTargetAngle")
+    @AutoLogOutput(key = "Turret/IsAtTargetAngle")
     public boolean isAtTargetAngle() {
-        double error =
-            Math.abs(io.turretAngleDegreesRobotRelative - io.processedTargetTurretDegrees);
-
+        double error = Math.abs(io.turretAngleDegreesRobotRelativeFiltered - io.targetRobotRelativeTurretDegrees);
         return error <= TURRET_AIMING_TOLERANCE_DEGREES;
     }
 

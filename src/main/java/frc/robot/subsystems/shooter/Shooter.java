@@ -1,10 +1,8 @@
 package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
@@ -19,9 +17,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
-        // SmartDashboard.putNumber("TargetRPM", 0);
-        // SmartDashboard.putNumber("TargetHoodAngle", 0);
-        // SmartDashboard.putBoolean("ReadFromData", true);
+//         SmartDashboard.putNumber("TargetRPM", 0);
+//         SmartDashboard.putNumber("TargetHoodAngle", 0);
+//         SmartDashboard.putBoolean("ReadFromData", true);
     }
 
     /**
@@ -30,7 +28,6 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     @Override
     public void onPeriodic() {
         double distToTarget = getDistanceToTarget(); // distance in meters
-        readFromData = SmartDashboard.getBoolean("ReadFromData", true);
         // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
         // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
         
@@ -57,7 +54,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
         // put to recovery mode if the driver is requesting to shoot
         // more direct control rather than smooth trajectory generation
-        shooterIO.setFlywheelVelocity(targetRPM / 60.0, driverRequestingShooting); // convert RPM to RPS
+        shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
     }
 
     /**
@@ -75,7 +72,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     @AutoLogOutput(key="Shooter/IsAtTargetRPS")
     public boolean isAtTargetRPS() {
-        return Math.abs((super.io.motorRPS - 0.5) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
+        return Math.abs((super.io.flywheelVelocityRPS - 0.5) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
     }
 
     /**
@@ -84,8 +81,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     public double getDistanceToTarget() {
         Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
-        return toGoal.getNorm() + io.distanceTrim; // add distance trim to adjust the distance based on operator controller input
+        return toGoal.getNorm() + io.distanceTrimMeters;
     }
 
     /**
