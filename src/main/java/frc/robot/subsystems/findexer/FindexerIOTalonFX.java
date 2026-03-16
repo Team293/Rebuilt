@@ -3,6 +3,7 @@ package frc.robot.subsystems.findexer;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.CanID;
@@ -10,6 +11,7 @@ import frc.robot.CanID;
 public class FindexerIOTalonFX implements FindexerIO {
     private final TalonFX motor;
 
+    private final VelocityVoltage velocityCommand = new VelocityVoltage(0);
     private final StatusSignal<AngularVelocity> motorRps; // Rotations per second
 
     public FindexerIOTalonFX() {
@@ -32,7 +34,9 @@ public class FindexerIOTalonFX implements FindexerIO {
      */
     @Override
     public void setSpeed(double rps) {
-        this.motor.set(rps);
+        this.velocityCommand.withVelocity(rps);
+
+        this.motor.setControl(velocityCommand);
     }
 
     /**

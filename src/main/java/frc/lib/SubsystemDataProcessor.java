@@ -55,9 +55,11 @@ public class SubsystemDataProcessor implements Runnable {
             dataReaderAndLogger.readAndLogDataFromIO();
             try {
                 var difference = System.currentTimeMillis() - timestamp;
-                if (difference < LOOP_TIME) {
-                    Thread.sleep((long) (LOOP_TIME - difference));
+                double sleepTime = LOOP_TIME - difference;
+                if (sleepTime > 0) {
+                    Thread.sleep((long) sleepTime);
                 }
+
             } catch (InterruptedException e) {
             }
         }

@@ -54,7 +54,7 @@ public class RobotContainer {
     private final Trigger trigger;
     private final Shooter shooter;
     // private final Targeting targeting;
-    // private final Findexer findexer;
+    private final Findexer findexer;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
@@ -64,7 +64,7 @@ public class RobotContainer {
         this.shooter = new Shooter();
         // this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
-        // this.findexer = new Findexer(trigger);
+        this.findexer = new Findexer(trigger);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
@@ -139,16 +139,16 @@ public class RobotContainer {
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
-        driverController.rightTrigger()
-                .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
-                .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+        // driverController.rightTrigger()
+        //         .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
+        //         .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
 
-        operatorController.x().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
+        // operatorController.x().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
-        operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
-        operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
-        operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
-        operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
+        // operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
+        // operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
+        // operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
+        // operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
     }
 
     public Command getAutonomousCommand() {
