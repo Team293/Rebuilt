@@ -36,7 +36,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
  * the package after creating this project, you must also update the build.gradle file in the
  * project.
  */
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
 
@@ -57,7 +57,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     // Setup log directory and free up space if needed
-    // SetupLog();
+    SetupLog();
     //Pathfinding.setPathfinder(new LocalADStarAK());
 
     // Record metadata
@@ -104,7 +104,7 @@ public class Robot extends TimedRobot {
     // Logger.disableDeterministicTimestamps()
 
     // Start AdvantageKit logger
-    // Logger.start();
+    Logger.start();
 
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
