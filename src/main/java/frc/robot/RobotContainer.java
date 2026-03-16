@@ -42,7 +42,7 @@ public class RobotContainer {
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    // private final Telemetry logger = new Telemetry(MaxSpeed);
+    private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController driverController = new SpikeController(0, 0.05);
     private final CommandXboxController operatorController = new SpikeController(1, 0.05);
@@ -50,19 +50,19 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-    // private final Intake intake;
+     private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
-    // private final Targeting targeting;
+     private final Targeting targeting;
     private final Findexer findexer;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-        // this.intake = new Intake(drive);
+         this.intake = new Intake(drive);
         this.shooter = new Shooter();
-        // this.targeting = new Targeting(drive);
+         this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
 
