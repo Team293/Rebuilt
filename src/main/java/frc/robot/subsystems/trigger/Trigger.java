@@ -28,9 +28,9 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
             // run the indexer if the mechanisms are ready for balls
             // run it regardless of ball in indexer, so that it can feed a ball in if there is one queued up
             triggerIO.setSpeed(TRIGGER_SPEED);
-        // } else if (needsFeeding()) {
-        //     // bring the ball to the indexer and stop once we see a ball
-        //     triggerIO.setSpeed(TRIGGER_SPEED);
+         } else if (needsFeeding()) {
+             // bring the ball to the indexer and stop once we see a ball
+             triggerIO.setSpeed(TRIGGER_SPEED);
         } else {
             // stop the indexer if the mechanisms aren't ready and we have a ball queued
             triggerIO.setSpeed(0.0);
@@ -42,8 +42,7 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
      * @return true if there is a ball in the indexer, false otherwise
      */
     private boolean hasBallQueued() {
-        // return super.io.proximitySensor;
-        return false;
+         return super.io.proximitySensor;
     }
 
     /**
