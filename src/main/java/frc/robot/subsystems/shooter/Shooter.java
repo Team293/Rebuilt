@@ -10,16 +10,11 @@ import frc.robot.subsystems.targeting.Targeting;
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 2.0; // RPS threshold to consider the shooter ready
 
-    private boolean readFromData = true;
-
     private ShooterIO shooterIO;
     private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
-//         SmartDashboard.putNumber("TargetRPM", 0);
-//         SmartDashboard.putNumber("TargetHoodAngle", 0);
-//         SmartDashboard.putBoolean("ReadFromData", true);
     }
 
     /**
@@ -28,23 +23,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     @Override
     public void onPeriodic() {
         double distToTarget = getDistanceToTarget(); // distance in meters
-        // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
-        // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
-        
-        double targetRPM = 0;
 
-        if (readFromData) {
-            targetRPM = ShotData.distanceToRPM.get(distToTarget);
-        } else {
-            // targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
-        }
-
-        double hoodAngle = 0;
-        if (readFromData) {
-            hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
-        } else {
-            // hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
-        }
+        double targetRPM = ShotData.distanceToRPM.get(distToTarget);
+        double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
 
         if (io.isZeroing) {
             shooterIO.runZeroingHood();
