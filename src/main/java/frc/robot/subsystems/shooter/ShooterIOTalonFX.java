@@ -184,7 +184,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         boolean firstCommand = Double.isNaN(lastAppliedFlywheelRPSSetPoint);
         boolean meaningfulChange = firstCommand
-                || Math.abs(rps - lastAppliedFlywheelRPSSetPoint) >= FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS;
+                || (Math.abs(rps - lastAppliedFlywheelRPSSetPoint) >= FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS);
 
         if (!meaningfulChange) {
             return;
