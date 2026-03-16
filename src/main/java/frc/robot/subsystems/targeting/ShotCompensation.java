@@ -1,4 +1,4 @@
-package frc.robot.subsystems.turret.calc;
+package frc.robot.subsystems.targeting;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -86,30 +86,5 @@ public class ShotCompensation {
 
         return new AdjustedShot(baseRPM, hoodDeg, effectiveTurretDeg,
                 turretFF_deg_s, rangeFF_m_s);
-    }
-
-    /**
-     * Calculate a feedforward term to compensate for the robot's velocity toward the target, which reduces effective range and thus shot time.
-     * @param velocity current robot velocity in field-relative coordinates
-     * @param directionToTarget unit vector pointing from robot to target in field-relative coordinates
-     * @return feedforward term to add to shot speed (in whatever units the caller expects, legacy scaling applies)
-     */
-    private static double calculateVelocityCompensation(
-            ChassisSpeeds velocity,
-            Translation2d directionToTarget) {
-
-        // project robot velocity onto the direction to target to get speed toward target
-        double robotSpeedTowardTarget =
-                velocity.vxMetersPerSecond * Math.cos(directionToTarget.getAngle().getRadians()) +
-                        velocity.vyMetersPerSecond * Math.sin(directionToTarget.getAngle().getRadians());
-
-        // multiply by 100 to convert to whatever unit the caller expects (legacy scaling)
-        return robotSpeedTowardTarget * 100.0;
-    }
-
-    private static double rpmToVelocity(double rpm) {
-        // convert wheel rpm to linear m/s
-        // wheel diameter 4 inches => 0.1016 m
-        return rpm * (Math.PI * 0.1016) / 60.0;
     }
 }

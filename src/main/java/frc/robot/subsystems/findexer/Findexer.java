@@ -4,14 +4,14 @@ import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.trigger.Trigger;
 
 public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
-    private static final double FEEDING_RPS = 20.0; // feeding velocity in rotations per second
+    private static final double FEEDING_RPS = -20.0; // feeding velocity in rotations per second
 
     private final Trigger trigger;
 
     private FindexerIO findexerIO;
 
     public Findexer(Trigger trigger) {
-        super("Findexer", new FindexerIO.FindexerIOInputs());
+        super("Findexer", new FindexerIOInputsAutoLogged());
 
         this.trigger = trigger;
     }

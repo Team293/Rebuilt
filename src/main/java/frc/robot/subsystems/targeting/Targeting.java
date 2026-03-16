@@ -10,21 +10,37 @@ import frc.lib.Elastic;
 import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.FieldConstants;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
-import frc.robot.subsystems.turret.calc.ShotCompensation;
+import frc.robot.subsystems.turret.Turret;
 
 public class Targeting extends SubsystemBase {
     private static final double NOMINAL_SHOT_TIME_S = 0.3; // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
     private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
 
-    private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+    private Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
     private final CommandSwerveDrivetrain drive;
 
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
         setTargetingHub();
-        Logger.recordOutput("HubTarget", FieldConstants.Hub.innerCenterPoint);
-        Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
+        Logger.recordOutput("Targeting/HubTarget", FieldConstants.Hub.oppTopCenterPoint);
+        Logger.recordOutput("Targeting/ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
+    }
+
+    public static Translation2d differenceBetweenRobotAndTarget() {
+        // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
+        // get pose of robo
+        Pose2d robotPose = RobotContainer.getDrive().getPose();
+
+        // translate robot-center pose to the turret pivot location on the field
+        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
+                .rotateBy(robotPose.getRotation())
+                .plus(robotPose.getTranslation());
+
+        // vector from the turret pivot directly to the goal
+        Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        return goalPose.minus(turretPivot);
     }
     
     /**
@@ -32,9 +48,16 @@ public class Targeting extends SubsystemBase {
      */
     @Override
     public void periodic() {
-        // calculate the adjusted shot parameters based on the current robot movement and the turret's target position
+        Pose2d robotPose = drive.getPose();
+
+        // compute the turret pivot location in field coordinates so ShotCompensation
+        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
+                .rotateBy(robotPose.getRotation())
+                .plus(robotPose.getTranslation());
+        Pose2d turretPivotPose = new Pose2d(turretPivot, robotPose.getRotation());
+
         shotData = ShotCompensation.compensateForMovement(
-                drive.getPose(),
+                turretPivotPose,
                 drive.getState().Speeds,
                 new Pose2d(targetPos, new Rotation2d()),
                 NOMINAL_SHOT_TIME_S

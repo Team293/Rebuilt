@@ -2,155 +2,390 @@ package frc.robot.subsystems.turret;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.Angle;
+import frc.lib.AngleUtils;
+import frc.lib.LowPassFilter;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
-import frc.robot.subsystems.turret.calc.TurretMath;
 
 public class TurretIOTalonFX implements TurretIO {
-    private final TalonFX turretMotor;
+    private static final double TURRET_MEASUREMENT_FILTER_ALPHA = 0.25; // smaller = smoother, larger = more responsive
+
+    // SUBSYSTEMS
     private final CommandSwerveDrivetrain drive;
 
-    private final MotionMagicVoltage mmVoltage = new MotionMagicVoltage(0);
-    private final StatusSignal<Angle> encoderSignal;
-    private final BaseStatusSignal pinionEncoderSignal;
-    private final BaseStatusSignal followerEncoderSignal;
+    // HARDWARE
+    private final TalonFX turretMotor; // kraken x44
+    private final CANcoder pinionEncoder; // wcp throughbore
+    private final CANcoder followerEncoder; // wcp throughbore
 
-    private static final double kTurretGearRatio = 140/10; // turret ring: 140 teeth, motor pinion: 10 teeth
+    // SIGNALS
+    private final StatusSignal<Angle> turretMotorPosition;
+    private final StatusSignal<Angle> pinionEncoderSignal;
+    private final StatusSignal<Angle> followerEncoderSignal;
 
-    private final double turretRotationOffset; // offset in motor rotations, calculated at startup, units in motor rotations
-    private final double turretDegreesOffset = 246.7; // offset in degrees to align turret with front of robot
+    // CALIBRATION STATES (CRT)
+    private boolean isInitialized = false; // whether the turret has been initialized with a known position yet
+    private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
+    private double lastPinionRevs = 0.0; // last calculated position of the pinion encoder in revolutions
+    private double cachedPinionEncoderRevs = 0.0; // cached result of the CRT pinion calculation, updated each refreshData()
 
-    private double targetAngleDeg = 0.0; // target angle of the turret in degrees
+    // VALUES
+    private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
+    private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
+    private double targetTurretAngleMotorRevs; // target angle of the turret in motor rotations
+    private double calculatedMotorOffsetRevs; // calculated offset in motor rotations based on the current position of the turret and the pinion encoder reading
+
+    // COMMANDS
+    private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
+
+    private double turretTrimDegrees = 0.0;
+    private final LowPassFilter turretMeasurementFilter = new LowPassFilter(TURRET_MEASUREMENT_FILTER_ALPHA);
 
     public TurretIOTalonFX(CommandSwerveDrivetrain drive) {
+        // SUBSYSTEMS
         this.drive = drive;
+
+        // HARDWARE
         this.turretMotor = new TalonFX(CanID.TURRET_MOTOR.getID());
+        this.pinionEncoder = new CANcoder(CanID.TURRET_PINION_CANCODER.getID());
+        this.followerEncoder = new CANcoder(CanID.TURRET_FOLLOWER_CANCODER.getID());
 
-        MotionMagicConfigs mm = new MotionMagicConfigs();
-        mm.MotionMagicAcceleration = 60; // rot/sec^2
-        mm.MotionMagicCruiseVelocity = 30; // rot/sec
+        // CONFIGURATIONS
+        var turretMotorConfig = getTurretMotionConfigs();
+        var turretMotorFeedbackConfig = getTurretMotorFeedbackConfigs();
+        var turretSoftwareLimitConfig = getTurretSoftwareLimitConfigs();
+        var encoderConfig = getEncoderConfigs();
 
-        // Motor configuration
-        Slot0Configs config = new Slot0Configs();
-        config.kP = 1;
-        config.kI = 0.01;
-        config.kD = 0.3;
-        config.kS = 0.194;
-        config.kV = 0.1167;
+        this.turretMotor.getConfigurator().apply(turretMotorConfig.getFirst());
+        this.turretMotor.getConfigurator().apply(turretMotorConfig.getSecond());
+        this.turretMotor.getConfigurator().apply(turretMotorFeedbackConfig);
+        this.turretMotor.getConfigurator().apply(turretSoftwareLimitConfig);
 
-        this.turretMotor.getConfigurator().apply(config);
-        this.turretMotor.getConfigurator().apply(mm);
+        // invert motor
+        this.turretMotor.getConfigurator().apply(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 
-        CANcoder pinionEncoder = new CANcoder(CanID.TURRET_PINION_CANCODER.getID());
-        CANcoder followerEncoder = new CANcoder(CanID.TURRET_FOLLOWER_CANCODER.getID());
+        this.pinionEncoder.getConfigurator().apply(encoderConfig);
+        this.followerEncoder.getConfigurator().apply(encoderConfig);
 
-        this.pinionEncoderSignal = pinionEncoder.getAbsolutePosition();
-        this.followerEncoderSignal = followerEncoder.getAbsolutePosition();
+        this.turretMotor.optimizeBusUtilization();
+        this.pinionEncoder.optimizeBusUtilization();
+        this.followerEncoder.optimizeBusUtilization();
 
-        this.encoderSignal = this.turretMotor.getPosition();
+        // SIGNALS
+        this.turretMotorPosition = this.turretMotor.getPosition();
+        this.pinionEncoderSignal = this.pinionEncoder.getAbsolutePosition();
+        this.followerEncoderSignal = this.followerEncoder.getAbsolutePosition();
 
-        double pinionEncoderValue = this.pinionEncoderSignal.getValueAsDouble();
-        double followerEncoderValue = this.followerEncoderSignal.getValueAsDouble();
-
-        // set offset of the turret on startup
-        double turretRotations = TurretMath.getTurretAngleRevs(pinionEncoderValue, followerEncoderValue);
-    
-        double turretDegrees = TurretMath.normalizeTurretHeading(
-            TurretMath.toDegreesWrapped(turretRotations),
-            this.turretDegreesOffset
+        BaseStatusSignal.refreshAll(
+            this.turretMotorPosition,
+            this.pinionEncoderSignal,
+            this.followerEncoderSignal
         );
 
-        double currentMotorRevs = this.turretMotor.getPosition().getValueAsDouble();
-        double toZeroRevs = TurretMath.degreesToMotorPosition(turretDegrees);
-
-        this.turretRotationOffset = currentMotorRevs + toZeroRevs;
+        // ZEROING POSITION
+        recalculateTurretMotorZeroPosition();
     }
 
-    /**
-     * Set the turret angle to a target field angle
-     * @param fieldTargetHeadingDeg field relative angle to set turret to 
-     */
     @Override
-    public void setTurretAngle(double fieldTargetHeadingDeg) {
-        this.targetAngleDeg = fieldTargetHeadingDeg;
-        fieldTargetHeadingDeg = MathUtil.inputModulus(fieldTargetHeadingDeg, 0.0, 360.0);
+    public void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees) {
+        this.targetTurretDegreesFieldRelative = fieldRelativeAngleDegrees;
+        double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
-        // convert robot heading to [0, 360) range
-        double robotHeadingDeg =
-            MathUtil.inputModulus(
-                drive.getPose().getRotation().getDegrees(),
-                0.0, 360.0
-            );
+        // absolute robot-relative target, in motor rotations
+        double targetRobotRelativeDeg = fieldRelativeAngleDegrees - currentRobotHeading;
+        this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg + turretTrimDegrees);
 
-        // dt = time we expect turret to reach commanded angle, tunable
-        double dt = 0.025;
-        double predictedHeadingDeg =
-            robotHeadingDeg + this.drive.getRobotOmegaDegPerSec() * dt;
+        setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
+    }
 
-        // turret angle in (-180, 180] range, where positive is counterclockwise relative to the robot's forward direction, and negative is clockwise
-        double turretAngleDeg =
-            MathUtil.inputModulus(
-                fieldTargetHeadingDeg - predictedHeadingDeg,
-                -180.0, 180.0
-            );
+    private void setTurretAngleRobotRelativeDegrees(double robotRelativeAngleDegrees) {
+        setTurretAngleTurretRelativeDegrees(robotRelativeAngleDegrees + Turret.TURRET_ROBOT_OFFSET_DEG);
+    }
 
-        // convert turret angle to motor rotations, accounting for gear ratio and offset
-        double rotations = (turretAngleDeg / 360.0) * kTurretGearRatio;
-        rotations = -rotations + this.turretRotationOffset;
-
-        // calculate feedforward to counteract robot rotation, using a simple linear model with gain determined empirically
-        double motorRps =
-            -(this.drive.getRobotOmegaDegPerSec() / 360.0) * kTurretGearRatio;
-
-        // set the motor to the desired position with feedforward to counteract robot rotation
+    private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
+        angleDegrees += turretTrimDegrees;
+        angleDegrees = wrap180(angleDegrees);
+        double targetMotorRotations = angleDegrees / 180.0;
+        this.targetTurretAngleMotorRevs = targetMotorRotations;
+        
+        mmRequest.Position = targetMotorRotations;
         this.turretMotor.setControl(
-            this.mmVoltage
-                .withPosition(rotations)
-                    // 0.1167 is an empirically determined gain to convert from motor RPS to voltage needed to hold position against rotation
-                .withFeedForward(motorRps * 0.1167)
+            mmRequest
         );
     }
-    
-    
+
     /**
-     * Periodically called to update the Turret information for logging
-     * @param inputs TurretIOInputs object to update
+     * @inheritDoc
      */
     @Override
-    public void updateInputs(TurretIOInputs inputs) {
-        inputs.pinionEncoder = this.pinionEncoderSignal.getValueAsDouble();
-        inputs.followerEncoder = this.followerEncoderSignal.getValueAsDouble();
-        inputs.turretSetPointDegrees = this.targetAngleDeg;
-
-        double turretRotations = TurretMath.getTurretAngleRevs(inputs.pinionEncoder, inputs.followerEncoder);
-
-        inputs.robotOmegaDegPerSec = this.drive.getRobotOmegaDegPerSec();
-
-        // convert raw encoder readings to turret angle in degrees, accounting for gear ratio and offset
-        inputs.turretAngleDegrees = TurretMath.normalizeTurretHeading(
-            TurretMath.toDegreesWrapped(turretRotations),
-            turretDegreesOffset
-        );
-
-        // creates a position for the turret based on robot position, rotated by turret angle for logging
-        inputs.turretPosition = new Pose2d(drive.getPose().getTranslation(), new Rotation2d(TurretMath.toRad(inputs.turretAngleDegrees)));
+    public void recalculateTurretMotorZeroPosition() {
+        // ensure the cache is fresh before using it for zeroing
+        this.cachedPinionEncoderRevs = computePinionEncoderRevs();
+        // absolute turret position from CRT
+        this.calculatedMotorOffsetRevs = getTurretAngle() / 180.0;
+        turretMotor.setPosition(this.calculatedMotorOffsetRevs);
     }
 
-    /**
-     * Periodically refreshes encoder signal
-     * @note This is called automatically
-     */
+
     @Override
     public void refreshData() {
-        BaseStatusSignal.refreshAll(encoderSignal, pinionEncoderSignal, followerEncoderSignal);
+        StatusSignal.refreshAll(this.turretMotorPosition, this.pinionEncoderSignal, this.followerEncoderSignal);
+        this.cachedPinionEncoderRevs = computePinionEncoderRevs();
+    }
+
+    @Override
+    public void updateInputs(TurretIOInputs inputs) {
+        double robotRelativeAngleDeg = getTurretAngleRobotRelative();
+
+        inputs.fieldRelativeTurretAngleDegrees = getTurretAngleFieldRelative();
+        inputs.turretRelativeTurretAngleDegrees = getTurretAngle();
+        inputs.robotRelativeTurretAngleDegrees = robotRelativeAngleDeg;
+        inputs.turretAngleDegreesRobotRelativeFiltered = calculateFilteredMeasuredAngle(robotRelativeAngleDeg);
+        inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
+        inputs.turretOffsetRotations = this.calculatedMotorOffsetRevs;
+        inputs.targetFieldRelativeTurretDegrees = this.targetTurretDegreesFieldRelative;
+        inputs.targetRobotRelativeTurretDegrees = this.processedTargetTurretDegreesFieldRelative;
+        inputs.turretMotorPositionRotations = this.turretMotorPosition.getValueAsDouble();
+        inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
+        inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
+        inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
+        inputs.pinionEncoderRevsCalculated = this.cachedPinionEncoderRevs;
+        inputs.turretTrimDegrees = turretTrimDegrees;
+    }
+
+    private double calculateFilteredMeasuredAngle(double rawMeasuredAngleDeg) {
+        return AngleUtils.filterWrappedAngleDeg(turretMeasurementFilter, rawMeasuredAngleDeg, -180.0, 180.0);
+    }
+
+    // CONFIGURATIONS
+
+    /**
+     * Get the motor configurations for the turret motor.
+     * @return the motor configurations for the turret motor
+     */
+    private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
+        Slot0Configs configs = new Slot0Configs();
+
+        configs.kP = 50;
+        configs.kI = 0.0;
+        configs.kD = 1;
+
+        configs.kS = 0.4; //kS;
+        configs.kV = 0.2; //kV;
+
+        MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
+
+        mmConfigs.MotionMagicAcceleration = 10; // rotations per second^2
+        mmConfigs.MotionMagicCruiseVelocity = 3.5; // rotations per second
+
+        return new Pair<>(configs, mmConfigs);
+    }
+
+    /**
+     * Get the feedback configurations for the turret motor, which define the relationship between the motor rotations, the pinion encoder rotations, and the follower encoder rotations.
+     * @return the feedback configurations for the turret motor
+     */
+    private FeedbackConfigs getTurretMotorFeedbackConfigs() {
+        FeedbackConfigs configs = new FeedbackConfigs();
+
+        // SensorToMechanismRatio = GR/2 means the motor completes 2 mechanism rotations per
+        // full turret revolution, so 1 mechanism rotation = 180 degrees of turret travel.
+        // Soft limits at +-1 mechanism rotation enforce the +-180 degrees physical range of the turret.
+        configs.SensorToMechanismRatio = Turret.TURRET_GEAR_RATIO / 2.0;
+        configs.RotorToSensorRatio = 1;
+
+        return configs;
+    }
+
+    /**
+     * Get the encoder configurations for the turret encoders.
+     * @return the encoder configurations for the turret encoders
+     */
+    public CANcoderConfiguration getEncoderConfigs() {
+        CANcoderConfiguration configs = new CANcoderConfiguration();
+        // constrain reading between [0, 1)
+        configs.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(1.0);
+        return configs;
+    }
+
+    /**
+     * Get the software limit switch configurations for the turret motor, which define the forward and reverse limits of the turret based on the motor position.
+     * @return the software limit switch configurations for the turret motor
+     */
+    private SoftwareLimitSwitchConfigs getTurretSoftwareLimitConfigs() {
+        SoftwareLimitSwitchConfigs configs = new SoftwareLimitSwitchConfigs();
+
+        configs.ForwardSoftLimitEnable = true;
+        configs.ForwardSoftLimitThreshold = 1; // 1 rotation of the motor past the zero point
+
+        configs.ReverseSoftLimitEnable = true;
+        configs.ReverseSoftLimitThreshold = -1; // 1 rotation of the motor in the opposite direction past the zero point
+
+        return configs;
+    }
+
+    public void changeTurretTrim(double deltaDegrees) {
+        this.turretTrimDegrees += deltaDegrees;
+    }
+
+    // CRT METHODS
+
+    /**
+     * Calculates the continuous position of the pinion (driving) encoder in revolutions
+     * @return the continuous position of the pinion encoder in revolutions
+     */
+    private double computePinionEncoderRevs() {
+        double pinionEncoderReading = positiveMod(this.pinionEncoderSignal.getValueAsDouble(), 1.0);
+        double followerEncoderReading = positiveMod(this.followerEncoderSignal.getValueAsDouble(), 1.0);
+
+        double bestError = Double.MAX_VALUE;
+        double bestPosition = lastPinionRevs;
+
+//        int searchCount = (int) Turret.FOLLOWER_ENCODER_TEETH;
+
+        for (int k = -20; k < 20; k++) {
+            double assumedPinionRevs = pinionEncoderReading + k;
+
+            double predictedFollowerReading =
+                positiveMod(assumedPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.FOLLOWER_ENCODER_TEETH), 1.0);
+
+            double predictionError = Math.abs(predictedFollowerReading - followerEncoderReading);
+
+            if (predictionError > 0.5) {
+                predictionError = 1.0 - predictionError;
+            }
+
+            // continuity penalty
+            // double continuityError = Math.abs(assumedPinionRevs - lastPinionRevs);
+
+            double score = predictionError * 0.1;
+
+            if (score < bestError) {
+                bestError = score;
+                bestPosition = assumedPinionRevs;
+            }
+        }
+
+        lastPinionRevs = bestPosition;
+        return bestPosition;
+    }
+
+    /**
+     * Calculates the continuous position of  the turret in revolutions of the entire mechanism.
+     * @return the continuous position of the turret in revolutions.
+     */
+    private double getTurretPositionRevs() {
+        double rawPinionRevs = cachedPinionEncoderRevs; // use the value already computed in refreshData()
+        double rawTurretRevs = rawPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.TURRET_GEAR_TEETH); // convert pinion revolutions to turret revolutions
+
+        double wrapped = positiveMod(rawTurretRevs, Turret.ENCODER_COMBINED_PERIOD_TURRET_REV);
+
+        if (!isInitialized) {
+            this.lastPositionRevs = wrapped;
+            isInitialized = true;
+            return wrapped;
+        }
+
+        double delta = wrapped - this.lastPositionRevs;
+
+        // if the change in position is greater than half the combined period, we have wrapped around the encoder, so we need to adjust the delta accordingly
+        if (delta > Turret.ENCODER_COMBINED_PERIOD_TURRET_REV  / 2.0) {
+            delta -= Turret.ENCODER_COMBINED_PERIOD_TURRET_REV ;
+        } else if (delta < -Turret.ENCODER_COMBINED_PERIOD_TURRET_REV  / 2.0) {
+            delta += Turret.ENCODER_COMBINED_PERIOD_TURRET_REV ;
+        }
+
+        lastPositionRevs += delta;
+        return lastPositionRevs;
+    }
+
+    /**
+     * Converts rotations of the turret mechanism to degrees (heading) of the turret.
+     * @param turretRevs continuous revolutions of the turret
+     * @return degrees of the turret from revolutions, continuous and unwrapped
+     */
+    private double revsToDegreesContinuous(double turretRevs) {
+        return turretRevs * Turret.DEGREES_PER_REV;
+    }
+
+    /**
+     * Gets the angle of the turret in robot space wrapped from [-180, 180)
+     * @return the angle of the turret in robot space, wrapped
+     */
+    private double getTurretAngle() {
+        double continuousRevs = getTurretPositionRevs();
+        double turretAngleDegrees = revsToDegreesContinuous(continuousRevs);
+        
+        double turretAngleWithOffset = turretAngleDegrees - Turret.TURRET_CENTER_OFFSET_DEG;
+
+        // apply offset and wrap to [-180, 180)
+        return wrap180(turretAngleWithOffset);
+    }
+
+    /**
+     * Gets the angle of the turret in robot space, without wrapping, so it can be used for continuous calculations.
+     * @return the angle of the turret in robot space, without wrapping
+     */
+    public double getTurretAngleRobotRelative() {
+        return wrap180(getTurretAngle() - Turret.TURRET_ROBOT_OFFSET_DEG);
+    }
+
+    /**
+     * Gets the angle of the turret in field space, wrapped from [-180, 180)
+     * @return the angle of the turret in field space, wrapped
+     */
+    private double getTurretAngleFieldRelative() {
+        double robotRelativeAngle = getTurretAngleRobotRelative();
+        double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
+
+        double fieldCentricContinuous = robotRelativeAngle + currentRobotHeading;
+
+        return wrap180(fieldCentricContinuous);
+    }
+
+    // UTILITY METHODS
+
+    /**
+     * Wraps the input angle to be within the range [min, max).
+     * @param input the angle to wrap
+     * @param min the minimum angle of the range (inclusive)
+     * @param max the maximum angle of the range (exclusive)
+     * @return the wrapped angle within the range [min, max)
+     */
+    private double wrap(double input, double min, double max) {
+        // input modulo the range size
+        return MathUtil.inputModulus(
+                input,
+                min,
+                max
+        );
+    }
+
+    /**
+     * Wraps the input angle to be within the range [-180, 180).
+     * @param input the angle to wrap
+     * @return the wrapped angle within the range [-180, 180)
+     */
+    private double wrap180(double input) {
+        return wrap(input, -180.0, 180.0);
+    }
+
+    /**
+     * A positive modulus function that wraps x into the range [0, m).
+     * @param x the value to wrap
+     * @param m the modulus
+     * @return the wrapped value in the range [0, m)
+     */
+    private double positiveMod(double x, double m) {
+        return ((x % m) + m) % m;
     }
 }

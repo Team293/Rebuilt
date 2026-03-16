@@ -1,52 +1,80 @@
 package frc.robot.subsystems.turret;
 
+import frc.lib.AngleUtils;
+import frc.lib.LowPassFilter;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
-
 import frc.robot.subsystems.targeting.Targeting;
-import frc.robot.subsystems.turret.calc.ShotCompensation;
+
+import org.littletonrobotics.junction.AutoLogOutput;
+
+import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    private static final double TURRET_ANGLE_THRESHOLD_DEG = 3.0; // degrees within target angle to be considered "at target"
-    
+    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 5.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    private static final double TURRET_TARGET_FILTER_ALPHA = 0.15; // smaller = smoother, larger = more responsive
+
+    // HARDWARE CONSTANTS
+    // gearing
+    public static final double TURRET_GEAR_TEETH = 84.0; // number of teeth on fixed turret gear
+    public static final double PINION_ENCODER_TEETH = 10.0; // number of teeth on pinion gear (driving turret)
+    public static final double FOLLOWER_ENCODER_TEETH = 13.0; // number of teeth on follower gear
+    public static final double TURRET_GEAR_RATIO = TURRET_GEAR_TEETH / PINION_ENCODER_TEETH; // gear ratio from motor to turret
+
+    public static final double DEGREES_PER_REV = 360.0; // degrees in one revolution
+
+    public static final double ENCODER_COMBINED_TEETH = PINION_ENCODER_TEETH * FOLLOWER_ENCODER_TEETH;
+    public static final double ENCODER_COMBINED_PERIOD_REV = ENCODER_COMBINED_TEETH / PINION_ENCODER_TEETH;
+    public static final double ENCODER_COMBINED_PERIOD_TURRET_REV =
+        ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
+
+    public static final double TURRET_CENTER_OFFSET_DEG = -17; // subtracted from robot relative heading
+    public static final double TURRET_ROBOT_OFFSET_DEG = 120; // subtracted from robot relative heading to get turret relative heading
+
+    public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(0.3, 0); // distance from the center of the robot to the center of the turret, in meters 
+
     private TurretIO turretIO;
-    private double targetAngleDeg = 0.0;
+    private final LowPassFilter turretTargetFilter = new LowPassFilter(TURRET_TARGET_FILTER_ALPHA);
 
     public Turret() {
-        super("Turret", new TurretIO.TurretIOInputs());
+        super("Turret", new TurretIOInputsAutoLogged());
     }
-    
-    /**
-     *  Continuously sets the turret angle to point at the target position
-     */ 
+
     @Override
     public void onPeriodic() {
-        // compensate for robot movement
-        ShotCompensation.AdjustedShot shotData = Targeting.getShotData();
+        double rawTargetAngleDeg = getTurretAngleDegreesFieldRelative();
+        double filteredTargetAngleDeg = calculateFilteredTargetAngle(rawTargetAngleDeg);
 
-        if (shotData != null) {
-            double newTargetAngleDeg = shotData.turretAngleDeg();
-            this.targetAngleDeg = newTargetAngleDeg;
-
-            this.turretIO.setTurretAngle(newTargetAngleDeg);
-        }
+        io.targetTurretDegreesFilteredFieldRelative = filteredTargetAngleDeg;
+        this.turretIO.setTurretAngleFieldRelativeDegrees(filteredTargetAngleDeg);
     }
-    
-    /**
-     * Sets up the data refresher for 
-     */
+
+    private double calculateFilteredTargetAngle(double rawTargetAngleDeg) {
+        return AngleUtils.filterWrappedAngleDeg(turretTargetFilter, rawTargetAngleDeg, -180.0, 180.0);
+    }
+
+    public double getTurretAngleDegreesFieldRelative() {
+        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
+        return toGoal.getAngle().getDegrees();
+    }
+
     @Override
     protected Runnable setupDataRefresher() {
-        this.turretIO = new TurretIOTalonFX(RobotContainer.getDrive());
-        return useAsyncDataRefresher(this.turretIO);
+        turretIO = new TurretIOTalonFX(RobotContainer.getDrive());
+        return useAsyncDataRefresher(turretIO);
     }
 
     /**
-     * Determines if turret is at target angle within error bounds 
-     * @return if turret is at angle within bounds 
+     * Checks if the turret is at the target angle, within the tolerance defined by TURRET_AIMING_TOLERANCE_DEGREES.
+     * @return true if the turret is at the target angle, false otherwise
      */
+    @AutoLogOutput(key = "Turret/IsAtTargetAngle")
     public boolean isAtTargetAngle() {
-        double angleError = Math.abs(super.io.turretAngleDegrees - targetAngleDeg);
-        return angleError < TURRET_ANGLE_THRESHOLD_DEG;
+        double error = Math.abs(io.turretAngleDegreesRobotRelativeFiltered - io.targetRobotRelativeTurretDegrees);
+        return error <= TURRET_AIMING_TOLERANCE_DEGREES;
+    }
+
+    public void changeTrim(double deltaDegrees) {
+        turretIO.changeTurretTrim(deltaDegrees);
     }
 }

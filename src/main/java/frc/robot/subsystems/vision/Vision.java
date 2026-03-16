@@ -1,11 +1,14 @@
 package frc.robot.subsystems.vision;
 
 import frc.lib.subsystem.SpikeSystem;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
+
+import edu.wpi.first.math.geometry.Pose2d;
 
 public class Vision extends SpikeSystem<VisionIOInputs> {
 
@@ -13,17 +16,18 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
     private final CommandSwerveDrivetrain drive;
 
     public Vision(CommandSwerveDrivetrain drive) {
-        super("Vision", new VisionIO.VisionIOInputs());
+        super("Vision", new VisionIOInputsAutoLogged());
 
         this.drive = drive;
     }
 
     @Override
     public void onPeriodic() {
-        int index = 0;
         // update drive with vision measurements
-        for (EstimatedRobotPose pose : io.estimatedRobotPoses) {
-            Logger.recordOutput("EstimatedPose/" + index, pose.estimatedPose.toPose2d());
+        for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
+            if (pose == null) {
+                continue;
+            }
             double avgDist = 0;
 
             // calculate the average distance to the targets
@@ -35,21 +39,32 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
                 }
 
                 avgDist = totalDist / pose.targetsUsed.size();
-                Logger.recordOutput("EstimatedPose/" + index + "/AvgTargetDist", avgDist);
             }
 
             drive.addVisionMeasurement(
                     pose.estimatedPose.toPose2d(),
                     pose.timestampSeconds,
-                    CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30)) // scale the std devs based on the average distance to the targets (farther targets are less accurate)
+                    CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30))
             );
-            index++;
         }
     }
 
     @Override
     protected Runnable setupDataRefresher() {
-        this.visionIO = new VisionIOPhotonCamera();
+        this.visionIO = new VisionIOPhotonCamera(() -> RobotContainer.getDrive().getPose());
         return useAsyncDataRefresher(visionIO);
+    }
+
+    public Pose2d getEstimatedPositionFromCameras() {
+        if (visionIO.getEstimatedRobotPoses().isEmpty()) {
+            return null;
+        }
+
+        for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
+            if (pose != null) {
+                return pose.estimatedPose.toPose2d();
+            }
+        }
+        return null;
     }
 }
