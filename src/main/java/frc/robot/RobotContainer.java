@@ -50,21 +50,21 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-    // private final Intake intake;
+    private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
-    // private final Targeting targeting;
-    // private final Findexer findexer;
+    private final Targeting targeting;
+    private final Findexer findexer;
 
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-        // this.intake = new Intake(drive);
+        this.intake = new Intake(drive);
         this.shooter = new Shooter();
-        // this.targeting = new Targeting(drive);
+        this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
-        // this.findexer = new Findexer(trigger);
+        this.findexer = new Findexer(trigger);
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
@@ -93,7 +93,7 @@ public class RobotContainer {
                                                                                                          // negative Y
                                                                                                          // (forward)
                         .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
+                        .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
                                                                                            // with negative X (left)
                 ));
 
@@ -128,13 +128,14 @@ public class RobotContainer {
     }
 
     private void setupIntakeBindings() {
-        // toggle intake on B press
-        // operatorController.b().onTrue(intake.run(intake::toggleIntake));
+        // toggle intake on A press
+        // operatorController.a().onTrue(intake.run(intake::toggleIntake));
     }
 
     private void setupTargetingBindings() {
-        // operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
-        // operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
+        operatorController.y().onTrue(targeting.run(targeting::setTargetingHub));
+        operatorController.x().onTrue(targeting.runOnce(targeting::setTargetingShuttleLeft));
+        operatorController.b().onTrue(targeting.runOnce(targeting::setTargetingShuttleRight));
     }
 
     private void setupShooterBindings() {
@@ -142,8 +143,14 @@ public class RobotContainer {
         driverController.rightTrigger()
                 .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
                 .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+        driverController.leftTrigger()
+                .onTrue(shooter.run(() -> shooter.setRequestingWithForce(true)))
+                .onFalse(shooter.run(() -> shooter.setRequestingWithForce(false)));
 
-        operatorController.x().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
+        operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
+
+        operatorController.leftStick().onTrue(trigger.run(() -> trigger.setReverseTrigger(true)));
+        operatorController.leftStick().onFalse(trigger.run(() -> trigger.setReverseTrigger(false)));
 
         operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));

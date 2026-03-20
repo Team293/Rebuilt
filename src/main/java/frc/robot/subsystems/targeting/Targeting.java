@@ -5,6 +5,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.Elastic;
 import frc.lib.Elastic.Notification;
@@ -20,6 +21,9 @@ public class Targeting extends SubsystemBase {
 
     private Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
     private final CommandSwerveDrivetrain drive;
+
+    private static final double FIELD_WIDTH = 8.07; // meters
+    private static final double FIELD_LENGTH = 16.54; // meters
 
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
@@ -67,6 +71,8 @@ public class Targeting extends SubsystemBase {
         );
 
         Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
+        
+        Logger.recordOutput("Targeting/TargetPose", new Pose2d(targetPos, new Rotation2d()));
     }
 
     /**
@@ -77,18 +83,38 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
         );
         Elastic.selectTab("Scoring Mode");
-        targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+        if (DriverStation.getAlliance().isPresent() &&DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
+            targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        } else {
+            targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+        }
     }
 
     /**
      * Set the target location to 0, 0
      */
-    public void setTargetingShuttle() {
+    public void setTargetingShuttleRight() {
         Elastic.sendNotification(
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
-        targetPos = new Translation2d(0, 0);
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
+            targetPos = new Translation2d(FIELD_WIDTH, FIELD_LENGTH);
+        } else {
+            targetPos = new Translation2d(0, 0);
+        }
+    }
+
+    public void setTargetingShuttleLeft() {
+        Elastic.sendNotification(
+                new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
+        );
+        Elastic.selectTab("Shuttling Mode");
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
+            targetPos = new Translation2d(0, FIELD_LENGTH);
+        } else {
+            targetPos = new Translation2d(FIELD_WIDTH, 0);
+        }
     }
     
     /**

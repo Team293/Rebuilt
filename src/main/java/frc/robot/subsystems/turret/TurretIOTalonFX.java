@@ -10,6 +10,7 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
@@ -48,6 +49,7 @@ public class TurretIOTalonFX implements TurretIO {
     private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
     private double targetTurretAngleMotorRevs; // target angle of the turret in motor rotations
     private double calculatedMotorOffsetRevs; // calculated offset in motor rotations based on the current position of the turret and the pinion encoder reading
+    private double targetTurretDegreesTurretRelative = 0;
 
     // COMMANDS
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
@@ -113,10 +115,13 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
+        this.targetTurretDegreesTurretRelative = angleDegrees;
+
         angleDegrees += turretTrimDegrees;
         angleDegrees = wrap180(angleDegrees);
         double targetMotorRotations = angleDegrees / 180.0;
         this.targetTurretAngleMotorRevs = targetMotorRotations;
+        
         
         mmRequest.Position = targetMotorRotations;
         this.turretMotor.setControl(
@@ -159,7 +164,7 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.turretAngleDegreesRobotRelative = getTurretAngleRobotRelative();
         inputs.targetTurretMotorRotations = this.targetTurretAngleMotorRevs;
         inputs.turretOffsetRotations = this.calculatedMotorOffsetRevs;
-        inputs.targetTurretDegrees = this.targetTurretDegreesFieldRelative;
+        inputs.targetTurretDegrees = this.targetTurretDegreesTurretRelative;
         inputs.processedTargetTurretDegrees = this.processedTargetTurretDegreesFieldRelative;
         inputs.turretMotorPositionRotations = this.turretMotorPosition.getValueAsDouble();
         inputs.pinionEncoderRotations = this.pinionEncoderSignal.getValueAsDouble();
@@ -182,7 +187,7 @@ public class TurretIOTalonFX implements TurretIO {
         configs.kD = 1;
 
         configs.kS = 0.4; //kS;
-        configs.kV = 0.2; //kV;
+        configs.kV = 0.4; //kV;
 
         MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
 
@@ -242,6 +247,7 @@ public class TurretIOTalonFX implements TurretIO {
     public CANcoderConfiguration getPinionEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
         // configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
+        configs.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
 
         return configs;
     }
@@ -249,6 +255,7 @@ public class TurretIOTalonFX implements TurretIO {
     public CANcoderConfiguration getFollowerEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
         // configs.MagnetSensor.MagnetOffset = Turret.FOLLOWER_ENCODER_OFFSET;
+        configs.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
 
         return configs;
     }
@@ -267,24 +274,19 @@ public class TurretIOTalonFX implements TurretIO {
         double bestError = Double.MAX_VALUE;
         double bestPosition = lastPinionRevs;
 
-//        int searchCount = (int) Turret.FOLLOWER_ENCODER_TEETH;
-
-        for (int k = -20; k < 20; k++) {
+        for (int k = -15; k <= 15; k++) {
             double assumedPinionRevs = pinionEncoderReading + k;
 
             double predictedFollowerReading =
                 positiveMod(assumedPinionRevs * (Turret.PINION_ENCODER_TEETH / Turret.FOLLOWER_ENCODER_TEETH), 1.0);
 
             double predictionError = Math.abs(predictedFollowerReading - followerEncoderReading);
-
             if (predictionError > 0.5) {
                 predictionError = 1.0 - predictionError;
             }
 
-            // continuity penalty
-            // double continuityError = Math.abs(assumedPinionRevs - lastPinionRevs);
-
-            double score = predictionError * 0.1;
+            double continuityError = Math.abs(assumedPinionRevs - lastPinionRevs);
+            double score = predictionError + continuityError * 0.001;   
 
             if (score < bestError) {
                 bestError = score;

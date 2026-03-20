@@ -22,49 +22,34 @@ public class CameraManager {
 
     static {
         // register cameras
-        // registerCamera(
-        //     new Camera(
-        //         "left", 
-        //         new Transform3d(
-        //             Inches.of(-13.8),
-        //             Inches.of(7.5),
-        //             Inches.of(22.3/4),
-        //             new Rotation3d(
-        //                 Degrees.of(0),
-        //                 Degrees.of(60),
-        //                 Degrees.of(90)
-        //             )
-        //         )   
-        //     )
-        // );
-
-        // registerCamera(
-        //     new Camera(
-        //         "right",
-        //          new Transform3d(
-        //             Inches.of(13.8),
-        //             Inches.of(5),
-        //             Inches.of(6.3/4),
-        //             new Rotation3d(
-        //                 Degrees.of(0),
-        //                 Degrees.of(60),
-        //                 Degrees.of(-90)
-        //             )
-        //          )
-        //     )
-        // );
 
         registerCamera(
             new Camera(
-                "left",
-                new Transform3d(
-                    Inches.of(-29.5/2),
-                    Inches.of(0),
-                    Inches.of(6.75),
+                "back",
+                 new Transform3d(
+                    Inches.of(-13.75),
+                    Inches.of(-0.2),
+                    Inches.of(8.475),
                     new Rotation3d(
                         Degrees.of(0),
-                        Degrees.of(-60), // negative pitch = tilted upward
+                        Degrees.of(-65),
                         Degrees.of(180)
+                    )
+                 )
+            )
+        );
+
+        registerCamera(
+            new Camera(
+                "right",
+                new Transform3d(
+                    Inches.of(-0.95),
+                    Inches.of(-13.75),
+                    Inches.of(8.475),
+                    new Rotation3d(
+                        Degrees.of(0),
+                        Degrees.of(-65), // negative pitch = tilted upward
+                        Degrees.of(-90)
                     )
                 )
             )
