@@ -129,11 +129,13 @@ public class RobotContainer {
 
     private void setupIntakeBindings() {
         // toggle intake on A press
-        // operatorController.a().onTrue(intake.run(intake::toggleIntake));
+        operatorController.rightBumper().onTrue(intake.runOnce(intake::toggleIntake));
+        
+        operatorController.a().onTrue(intake.runOnce(intake::switchDirection));
     }
 
     private void setupTargetingBindings() {
-        operatorController.y().onTrue(targeting.run(targeting::setTargetingHub));
+        operatorController.y().onTrue(targeting.runOnce(targeting::setTargetingHub));
         operatorController.x().onTrue(targeting.runOnce(targeting::setTargetingShuttleLeft));
         operatorController.b().onTrue(targeting.runOnce(targeting::setTargetingShuttleRight));
     }
@@ -148,6 +150,8 @@ public class RobotContainer {
                 .onFalse(shooter.run(() -> shooter.setRequestingWithForce(false)));
 
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
+
+        operatorController.leftBumper().onTrue(turret.runOnce(turret::toggleAimingOverride));
 
         operatorController.leftStick().onTrue(trigger.run(() -> trigger.setReverseTrigger(true)));
         operatorController.leftStick().onFalse(trigger.run(() -> trigger.setReverseTrigger(false)));

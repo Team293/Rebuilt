@@ -19,7 +19,7 @@ public class Targeting extends SubsystemBase {
     private static final double NOMINAL_SHOT_TIME_S = 0.3; // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
     private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
 
-    private Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+    private static Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
     private final CommandSwerveDrivetrain drive;
 
     private static final double FIELD_WIDTH = 8.07; // meters
@@ -43,10 +43,11 @@ public class Targeting extends SubsystemBase {
                 .plus(robotPose.getTranslation());
 
         // vector from the turret pivot directly to the goal
-        Translation2d goalPose = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        Translation2d goalPose = targetPos;
         Translation2d toGoal = goalPose.minus(turretPivot);
         
         Logger.recordOutput("Turret/TurretPivot", new Pose2d(turretPivot, toGoal.getAngle()));
+        Logger.recordOutput("Targeting/TargetPose", new Pose2d(goalPose, new Rotation2d()));
         return toGoal;
     }
     
@@ -71,8 +72,6 @@ public class Targeting extends SubsystemBase {
         );
 
         Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
-        
-        Logger.recordOutput("Targeting/TargetPose", new Pose2d(targetPos, new Rotation2d()));
     }
 
     /**
@@ -83,7 +82,7 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
         );
         Elastic.selectTab("Scoring Mode");
-        if (DriverStation.getAlliance().isPresent() &&DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
+        if (DriverStation.getAlliance().isPresent() &&DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
         } else {
             targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
@@ -98,8 +97,8 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
-        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
-            targetPos = new Translation2d(FIELD_WIDTH, FIELD_LENGTH);
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
+            targetPos = new Translation2d(FIELD_LENGTH, FIELD_WIDTH);
         } else {
             targetPos = new Translation2d(0, 0);
         }
@@ -110,10 +109,10 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
-        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().equals(DriverStation.Alliance.Red)) {
-            targetPos = new Translation2d(0, FIELD_LENGTH);
+        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
+            targetPos = new Translation2d(FIELD_LENGTH, 0);
         } else {
-            targetPos = new Translation2d(FIELD_WIDTH, 0);
+            targetPos = new Translation2d(0, FIELD_WIDTH);
         }
     }
     

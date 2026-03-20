@@ -34,6 +34,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(-0.3, -0.2); // distance from the center of the robot to the center of the turret, in meters 
 
+    private boolean overrideAutomaticAiming = false;
+
     private TurretIO turretIO;
 
     public Turret() {
@@ -51,8 +53,12 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         //     this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
         // }
 
-        this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
-        // this.turretIO.setTurretAngleFieldRelativeDegrees(0);
+        if (this.overrideAutomaticAiming) {
+            this.turretIO.setTurretAngleRobotRelativeDegrees(0);
+        } else {
+            this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
+        }
+
     }
 
     public double getTurretAngleDegreesFieldRelative() {
@@ -63,10 +69,15 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         return angleToTarget;
     }
 
+
     @Override
     protected Runnable setupDataRefresher() {
         turretIO = new TurretIOTalonFX(RobotContainer.getDrive());
         return useAsyncDataRefresher(turretIO);
+    }
+
+    public void toggleAimingOverride() {
+        this.overrideAutomaticAiming = !this.overrideAutomaticAiming;
     }
 
     /**

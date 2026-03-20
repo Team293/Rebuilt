@@ -30,6 +30,11 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
     void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees);
 
     /**
+     * Set the angle of the turret relative to the robot.
+     */
+    void setTurretAngleRobotRelativeDegrees(double robotRelativeDegrees);
+
+    /**
      * Recalculates the turret motor zero position to fix any encoder drift.
      */
     void recalculateTurretMotorZeroPosition();

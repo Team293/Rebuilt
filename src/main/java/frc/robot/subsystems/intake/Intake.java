@@ -20,7 +20,8 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     private IntakeIO intakeIO;
     private final CommandSwerveDrivetrain drivetrain;
 
-    private boolean running = false; // True if the intake is running, False otherwise
+    private boolean running = true; // True if the intake is running, False otherwise
+    private boolean forward = true;
 
     // Intake constructor
     public Intake(CommandSwerveDrivetrain drivetrain) {
@@ -57,6 +58,8 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
             //         break;
             // }
             doDeployedState();
+        } else {
+            doRetractedState();
         }
     }
 
@@ -83,6 +86,10 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         // Adjust the intake speed, increase the intake as the robot moves faster
         // Cap at MAX_SPEED
         double speed = Math.min(BASE_SPEED_INTAKE + robotAbsoluteVelocity * SPEED_PER_MPS, MAX_SPEED);
+
+        if (forward == false) {
+            speed *= -1;
+        }
 
         // Update the intakeIO on speed
         intakeIO.setIntakeSpeed(speed);
@@ -116,6 +123,10 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     // Enables the intake
     public void enable() {
         running = true;
+    }
+
+    public void switchDirection() {
+        forward = !forward;
     }
 
     // Disables the intake
@@ -154,10 +165,11 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     // Toggles the intake between deployed and retracted states
     public void toggleIntake() {
-        if (intakeIO.getIntakeState() == IntakeState.DEPLOYED || intakeIO.getIntakeState() == IntakeState.DEPLOYING) {
-            retract();
-        } else {
-            deploy();
-        }
+        this.running = !this.running;
+        // if (intakeIO.getIntakeState() == IntakeState.DEPLOYED || intakeIO.getIntakeState() == IntakeState.DEPLOYING) {
+        //     retract();
+        // } else {
+        //     deploy();
+        // }
     }
 }

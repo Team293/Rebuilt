@@ -110,7 +110,7 @@ public class TurretIOTalonFX implements TurretIO {
         setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
     }
 
-    private void setTurretAngleRobotRelativeDegrees(double robotRelativeAngleDegrees) {
+    public void setTurretAngleRobotRelativeDegrees(double robotRelativeAngleDegrees) {
         setTurretAngleTurretRelativeDegrees(robotRelativeAngleDegrees + Turret.TURRET_ROBOT_OFFSET_DEG);
     }
 
