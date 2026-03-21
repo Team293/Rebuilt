@@ -25,6 +25,9 @@ public class Targeting extends SubsystemBase {
     private static final double FIELD_WIDTH = 8.07; // meters
     private static final double FIELD_LENGTH = 16.54; // meters
 
+    private static final double shuttlingXOffset = 1.5;
+    private static final double shuttlingYOffset = 1.5;
+
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
         setTargetingHub();
@@ -98,9 +101,9 @@ public class Targeting extends SubsystemBase {
         );
         Elastic.selectTab("Shuttling Mode");
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
-            targetPos = new Translation2d(FIELD_LENGTH, FIELD_WIDTH);
+            targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         } else {
-            targetPos = new Translation2d(0, 0);
+            targetPos = new Translation2d(0 + shuttlingXOffset, 0 + shuttlingYOffset);
         }
     }
 
@@ -110,9 +113,9 @@ public class Targeting extends SubsystemBase {
         );
         Elastic.selectTab("Shuttling Mode");
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
-            targetPos = new Translation2d(FIELD_LENGTH, 0);
+            targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, 0 + shuttlingYOffset);
         } else {
-            targetPos = new Translation2d(0, FIELD_WIDTH);
+            targetPos = new Translation2d(0 + shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         }
     }
     

@@ -73,7 +73,7 @@ public class RobotContainer {
 
         configureBindings();
 
-        NamedCommands.registerCommand("emptyHopper", new EmptyHopper(shooter, 15));
+        NamedCommands.registerCommand("emptyHopper", new EmptyHopper(shooter, targeting, 15));
     }
 
     public static CommandSwerveDrivetrain getDrive() {
