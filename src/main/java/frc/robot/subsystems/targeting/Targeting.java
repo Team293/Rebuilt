@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.Elastic;
 import frc.lib.Elastic.Notification;
@@ -28,11 +29,18 @@ public class Targeting extends SubsystemBase {
     private static final double shuttlingXOffset = 1.5;
     private static final double shuttlingYOffset = 1.5;
 
+    private boolean overrideRedAlliance = false;
+    private boolean overrideBlueAlliance = false;
+    
+
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
         setTargetingHub();
         Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
+
+        SmartDashboard.putBoolean("OverrideBlueAlliance", overrideBlueAlliance);
+        SmartDashboard.putBoolean("OverrideRedAlliance", overrideRedAlliance);
     }
 
     public static Translation2d differenceBetweenRobotAndTarget() {
@@ -67,12 +75,16 @@ public class Targeting extends SubsystemBase {
                 .plus(robotPose.getTranslation());
         Pose2d turretPivotPose = new Pose2d(turretPivot, robotPose.getRotation());
 
-        shotData = ShotCompensation.compensateForMovement(
-                turretPivotPose,
-                drive.getState().Speeds,
-                new Pose2d(targetPos, new Rotation2d()),
-                NOMINAL_SHOT_TIME_S
-        );
+        // shotData = ShotCompensation.compensateForMovement(
+        //         turretPivotPose,
+        //         drive.getState().Speeds,
+        //         new Pose2d(targetPos, new Rotation2d()),
+        //         NOMINAL_SHOT_TIME_S
+        // );
+
+        if (DriverStation.isAutonomous()) {
+            setTargetingHub();
+        }
 
         Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
     }
@@ -85,10 +97,37 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
         );
         Elastic.selectTab("Scoring Mode");
-        if (DriverStation.getAlliance().isPresent() &&DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
+
+        overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
+        overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
+
+        // if (!DriverStation.getAlliance().isPresent() && isRedAlliance) {
+        //     if (isRedAlliance) {
+        //         targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+        //     } else {
+        //         targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+        //     }
+        //     return;
+        // }
+
+        if (overrideRedAlliance) {
             targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        } else {
+            return;
+        }
+
+        if (overrideBlueAlliance) {
             targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+            return;
+        }
+
+
+        if (DriverStation.getAlliance().isPresent()) {
+            if (DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
+                targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+            }
+            if (DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
+                targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+            }
         }
     }
 

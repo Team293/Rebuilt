@@ -19,13 +19,17 @@ public class EmptyHopper extends Command {
         this.scoringTime = forTime;
 
         this.shooter.setDriverRequestingShooting(true);
+        
+        this.targeting.setTargetingHub();
     }
 
+    @Override
     public void initialize() {
         this.scoringTimer.restart();
         this.targeting.setTargetingHub();
     }
 
+    @Override
     public void execute() {
         this.targeting.setTargetingHub();
     }
