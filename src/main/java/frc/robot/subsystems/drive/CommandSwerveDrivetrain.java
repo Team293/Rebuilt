@@ -2,6 +2,7 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -336,7 +337,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                             new PIDConstants(5.0, 0, 0, 0)
                     ),
                     config,
-                    () -> false,
+                    () -> {
+                        Optional<Alliance> alliance = DriverStation.getAlliance();
+                        if (alliance.isPresent()) {
+                            return alliance.get() == DriverStation.Alliance.Red;
+                        }
+                        return false;
+                    },
                     this
             );
             Pathfinding.setPathfinder(new LocalADStarAK());

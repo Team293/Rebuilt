@@ -26,6 +26,10 @@ public class EmptyHopper extends Command {
         this.targeting.setTargetingHub();
     }
 
+    public void execute() {
+        this.targeting.setTargetingHub();
+    }
+
     @Override
     public boolean isFinished() {
         return this.scoringTimer.hasElapsed(scoringTime);

@@ -20,14 +20,13 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     private IntakeIO intakeIO;
     private final CommandSwerveDrivetrain drivetrain;
 
-    private boolean running = true; // True if the intake is running, False otherwise
+    private boolean running = false; // True if the intake is running, False otherwise
     private boolean forward = true;
 
     // Intake constructor
     public Intake(CommandSwerveDrivetrain drivetrain) {
         super("Intake", new IntakeIOInputsAutoLogged());
         this.drivetrain = drivetrain;
-        enable();
     }
 
     // Intake periodic function

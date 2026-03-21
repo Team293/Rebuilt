@@ -147,18 +147,18 @@ public class RobotContainer {
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
         driverController.rightTrigger()
-                .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
-                .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+                .onTrue(shooter.runOnce(() -> shooter.setDriverRequestingShooting(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setDriverRequestingShooting(false)));
         driverController.leftTrigger()
-                .onTrue(shooter.run(() -> shooter.setRequestingWithForce(true)))
-                .onFalse(shooter.run(() -> shooter.setRequestingWithForce(false)));
+                .onTrue(shooter.runOnce(() -> shooter.setRequestingWithForce(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setRequestingWithForce(false)));
 
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
         operatorController.leftBumper().onTrue(turret.runOnce(turret::toggleAimingOverride));
 
-        operatorController.leftStick().onTrue(trigger.run(() -> trigger.setReverseTrigger(true)));
-        operatorController.leftStick().onFalse(trigger.run(() -> trigger.setReverseTrigger(false)));
+        operatorController.leftStick().onTrue(trigger.runOnce(() -> trigger.setReverseTrigger(true)));
+        operatorController.leftStick().onFalse(trigger.runOnce(() -> trigger.setReverseTrigger(false)));
 
         operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
