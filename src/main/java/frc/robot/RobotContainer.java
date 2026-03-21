@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -18,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.SpikeController;
+import frc.robot.commands.EmptyHopper;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
@@ -70,6 +72,8 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
+
+        NamedCommands.registerCommand("emptyHopper", new EmptyHopper(shooter, 15));
     }
 
     public static CommandSwerveDrivetrain getDrive() {
