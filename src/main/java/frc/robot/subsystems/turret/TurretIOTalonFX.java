@@ -15,10 +15,7 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
-import frc.lib.AngleUtils;
 import frc.lib.LowPassFilter;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
@@ -154,25 +151,10 @@ public class TurretIOTalonFX implements TurretIO {
         return feedforward.calculate(-mechanismRotationsPerSecond);
     }
 
-    @Override
-    public void refreshData() {
-        StatusSignal.refreshAll(this.turretMotorPosition, this.pinionEncoderSignal, this.followerEncoderSignal);
-    }
-
-    @Override
-    public void recalculateTurretMotorZeroPosition() {
-        // ensure the cache is fresh before using it for zeroing
-        this.cachedPinionEncoderRevs = computePinionEncoderRevs();
-        // absolute turret position from CRT
-        this.calculatedMotorOffsetRevs = getTurretAngle() / 180.0;
-        turretMotor.setPosition(this.calculatedMotorOffsetRevs);
-    }
-
 
     @Override
     public void refreshData() {
         StatusSignal.refreshAll(this.turretMotorPosition, this.pinionEncoderSignal, this.followerEncoderSignal);
-        this.cachedPinionEncoderRevs = computePinionEncoderRevs();
     }
 
     @Override
