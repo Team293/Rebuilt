@@ -79,19 +79,19 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     // Run the DEPLOYED state periodic actions
     private void doDeployedState() {
-        // Get the absolute velocity of the entire robot
-        double robotAbsoluteVelocity = Math.abs(drivetrain.getState().Speeds.vxMetersPerSecond);
+        // // Get the absolute velocity of the entire robot
+        // double robotAbsoluteVelocity = Math.abs(drivetrain.getState().Speeds.vxMetersPerSecond);
 
-        // Adjust the intake speed, increase the intake as the robot moves faster
-        // Cap at MAX_SPEED
-        double speed = Math.min(BASE_SPEED_INTAKE + robotAbsoluteVelocity * SPEED_PER_MPS, MAX_SPEED);
+        // // Adjust the intake speed, increase the intake as the robot moves faster
+        // // Cap at MAX_SPEED
+        // double speed = Math.min(BASE_SPEED_INTAKE + robotAbsoluteVelocity * SPEED_PER_MPS, MAX_SPEED);
 
-        if (forward == false) {
-            speed *= -1;
-        }
+        // if (forward == false) {
+        //     speed *= -1;
+        // }
 
         // Update the intakeIO on speed
-        intakeIO.setIntakeSpeed(speed);
+        intakeIO.setIntakeSpeed(70);
     }
 
     // Run the RETRACTING state periodic actions

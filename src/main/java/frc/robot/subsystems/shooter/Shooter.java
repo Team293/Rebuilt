@@ -64,7 +64,11 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
         // put to recovery mode if the driver is requesting to shoot
         // more direct control rather than smooth trajectory generation
-        shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
+        if (driverRequestingShooting) {
+            shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
+        } else {
+            shooterIO.setFlywheelVelocity(0);
+        }
     }
 
     /**

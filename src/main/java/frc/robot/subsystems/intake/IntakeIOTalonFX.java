@@ -70,7 +70,9 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     // double speed - Speed to set the motor to in Rotations Per Second
     @Override
     public void setIntakeSpeed(double speed) {
-        intakeMotor.set(speed);
+        // intakeMotor.set(speed);
+        this.velocityControl.withVelocity(speed);
+        intakeMotor.setControl(this.velocityControl);
     }
 
     // Set the speed of the deploy motor
@@ -107,9 +109,11 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         intakeConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
         // Intake motor PID values
-        intakeConfig.Slot0.kP = 1;
+        intakeConfig.Slot0.kP = 0.6;
         intakeConfig.Slot0.kI = 0.0;
         intakeConfig.Slot0.kD = 0.0;
+
+        intakeConfig.Slot0.kV = 0.15;
 
         return intakeConfig;
     }
