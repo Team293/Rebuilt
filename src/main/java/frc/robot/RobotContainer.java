@@ -52,10 +52,10 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-    private final Intake intake;
+     private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
-    private final Targeting targeting;
+     private final Targeting targeting;
     private final Findexer findexer;
 
     public RobotContainer() {
