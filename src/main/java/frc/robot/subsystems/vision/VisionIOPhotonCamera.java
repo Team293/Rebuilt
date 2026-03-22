@@ -16,15 +16,10 @@ import java.util.function.Supplier;
 public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     private final List<EstimatedRobotPose> estimatedRobotPoses;
-    private final List<EstimatedRobotPose> estimatedRobotPosesView; // unmodifiable view
     private final Supplier<Pose2d> odometryPoseSupplier;
-
-    // reused output buffer so we don't allocate a new Pose3d[] on every loop
-    private Pose3d[] poseBuffer = new Pose3d[0];
 
     public VisionIOPhotonCamera(Supplier<Pose2d> odometryPoseSupplier) {
         this.estimatedRobotPoses = new ArrayList<>();
-        this.estimatedRobotPosesView = Collections.unmodifiableList(estimatedRobotPoses);
         this.odometryPoseSupplier = odometryPoseSupplier;
     }
 
@@ -46,21 +41,14 @@ public class VisionIOPhotonCamera implements VisionIO, IORefresher {
 
     @Override
     public void updateInputs(VisionIOInputs inputs) {
-        int size = estimatedRobotPoses.size();
-
-        if (poseBuffer.length != size) {
-            poseBuffer = new Pose3d[size];
-        }
-        for (int i = 0; i < size; i++) {
-            poseBuffer[i] = estimatedRobotPoses.get(i).estimatedPose;
-        }
-        inputs.estimatedRobotPoses = poseBuffer;
+        inputs.estimatedRobotPoses = estimatedRobotPoses.stream()
+                .map(pose -> pose.estimatedPose)
+                .toArray(Pose3d[]::new);
     }
 
     @Override
     public List<EstimatedRobotPose> getEstimatedRobotPoses() {
-        // return an unmodifiable view
-        return estimatedRobotPosesView;
+        return new ArrayList<>(estimatedRobotPoses);
     }
 }
 

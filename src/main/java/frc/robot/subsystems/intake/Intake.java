@@ -21,12 +21,12 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     private final CommandSwerveDrivetrain drivetrain;
 
     private boolean running = false; // True if the intake is running, False otherwise
+    private boolean forward = true;
 
     // Intake constructor
     public Intake(CommandSwerveDrivetrain drivetrain) {
         super("Intake", new IntakeIOInputsAutoLogged());
         this.drivetrain = drivetrain;
-        enable();
     }
 
     // Intake periodic function
@@ -57,6 +57,8 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
             //         break;
             // }
             doDeployedState();
+        } else {
+            doRetractedState();
         }
     }
 
@@ -77,15 +79,19 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     // Run the DEPLOYED state periodic actions
     private void doDeployedState() {
-        // Get the absolute velocity of the entire robot
-        double robotAbsoluteVelocity = Math.abs(drivetrain.getState().Speeds.vxMetersPerSecond);
+        // // Get the absolute velocity of the entire robot
+        // double robotAbsoluteVelocity = Math.abs(drivetrain.getState().Speeds.vxMetersPerSecond);
 
-        // Adjust the intake speed, increase the intake as the robot moves faster
-        // Cap at MAX_SPEED
-        double speed = Math.min(BASE_SPEED_INTAKE + robotAbsoluteVelocity * SPEED_PER_MPS, MAX_SPEED);
+        // // Adjust the intake speed, increase the intake as the robot moves faster
+        // // Cap at MAX_SPEED
+        // double speed = Math.min(BASE_SPEED_INTAKE + robotAbsoluteVelocity * SPEED_PER_MPS, MAX_SPEED);
+
+        // if (forward == false) {
+        //     speed *= -1;
+        // }
 
         // Update the intakeIO on speed
-        intakeIO.setIntakeSpeed(speed);
+        intakeIO.setIntakeSpeed(70);
     }
 
     // Run the RETRACTING state periodic actions
@@ -116,6 +122,10 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     // Enables the intake
     public void enable() {
         running = true;
+    }
+
+    public void switchDirection() {
+        forward = !forward;
     }
 
     // Disables the intake
@@ -154,10 +164,11 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     // Toggles the intake between deployed and retracted states
     public void toggleIntake() {
-        if (intakeIO.getIntakeState() == IntakeState.DEPLOYED || intakeIO.getIntakeState() == IntakeState.DEPLOYING) {
-            retract();
-        } else {
-            deploy();
-        }
+        this.running = !this.running;
+        // if (intakeIO.getIntakeState() == IntakeState.DEPLOYED || intakeIO.getIntakeState() == IntakeState.DEPLOYING) {
+        //     retract();
+        // } else {
+        //     deploy();
+        // }
     }
 }

@@ -1,8 +1,11 @@
 package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
@@ -10,11 +13,17 @@ import frc.robot.subsystems.targeting.Targeting;
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 2.0; // RPS threshold to consider the shooter ready
 
+    private boolean readFromData = true;
+
     private ShooterIO shooterIO;
     private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
+    private boolean requestingWithForce = false; // Whether the driver is requesting to shoot with force, which bypasses the normal checks for whether the shooter is ready and just runs the flywheel and hood at the target values
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
+        SmartDashboard.putNumber("TargetRPM", 0);
+        SmartDashboard.putNumber("TargetHoodAngle", 0);
+        SmartDashboard.putBoolean("ReadFromData", true);
     }
 
     /**
@@ -22,20 +31,44 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */ 
     @Override
     public void onPeriodic() {
-        double distToTarget = getDistanceToTarget(); // distance in meters
 
-        double targetRPM = ShotData.distanceToRPM.get(distToTarget);
-        double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
+        double distToTarget = getDistanceToTarget(); // distance in meters
+        readFromData = SmartDashboard.getBoolean("ReadFromData", true);
+        // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
+        // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
+        
+        double targetRPM = 0;
+
+        if (readFromData) {
+            targetRPM = ShotData.distanceToRPM.get(distToTarget);
+        } else {
+            targetRPM = SmartDashboard.getNumber("TargetRPM", 0);
+        }
+
+        double hoodAngle = 0;
+        if (readFromData) {
+            hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
+        } else {
+            hoodAngle = SmartDashboard.getNumber("TargetHoodAngle", 0);
+        }
 
         if (io.isZeroing) {
             shooterIO.runZeroingHood();
         } else {
-            shooterIO.setHoodAngle(hoodAngle);
+            if (driverRequestingShooting) {
+                shooterIO.setHoodAngle(hoodAngle);
+            } else {
+                shooterIO.setHoodAngle(15); // set hood to default position when not shooting
+            }
         }
 
         // put to recovery mode if the driver is requesting to shoot
         // more direct control rather than smooth trajectory generation
-        shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
+        if (driverRequestingShooting) {
+            shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
+        } else {
+            shooterIO.setFlywheelVelocity(0);
+        }
     }
 
     /**
@@ -62,7 +95,8 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     public double getDistanceToTarget() {
         Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-        return toGoal.getNorm() + io.distanceTrimMeters;
+        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
+        return toGoal.getNorm() + io.distanceTrimMeters; // add distance trim to adjust the distance based on operator controller input
     }
 
     /**
@@ -73,6 +107,10 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         this.driverRequestingShooting = isRequesting;
     }
 
+    public void setRequestingWithForce(boolean isRequestingWithForce) {
+        this.requestingWithForce = isRequestingWithForce;
+    }
+
     public void zeroHood() {
         shooterIO.zeroHood();
     }
@@ -81,9 +119,18 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      * Returns whether the driver is currently requesting to shoot.
      * @return true if the driver is requesting to shoot, false otherwise
      */
-    public boolean isDriverRequestingShooting() {
+    public boolean isShootingRequested() {
         return this.driverRequestingShooting;
     }
+
+    public boolean isRequestingWithForce() {
+        return this.requestingWithForce;
+    }
+
+     /**
+     * Changes the distance trim by a certain amount of meters. This is used to make minor adjustments to the distance based on operator controller input.
+     * @param deltaDistance the amount of meters to change the distance trim by. Positive values add to the distance, and negative values subtract from the distance.
+     */
 
     public void changeDistanceTrim(double deltaDistance) {
         shooterIO.changeDistanceTrim(deltaDistance);

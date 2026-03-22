@@ -55,7 +55,7 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         // hood encoder configs
         CANcoderConfiguration hoodEncoderConfig = new CANcoderConfiguration();
-        hoodEncoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+        hoodEncoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         this.hoodEncoder.getConfigurator().apply(hoodEncoderConfig); // apply default configs to encoder before
                                                                             // using it for feedback
         // constrains the range to [0, 1)
@@ -93,19 +93,13 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         // flywheel configs (units in AMPS)
         var flywheelSlot0 = new Slot0Configs();
-        flywheelSlot0.kP = 100; // amps / rps of error
+        flywheelSlot0.kP = 20; // amps / rps of error
         flywheelSlot0.kI = 0.0;
         flywheelSlot0.kD = 0.0;
-        flywheelSlot0.kS = 2.0; // amps needed to overcome static friction
+        flywheelSlot0.kS = 0.0; // amps needed to overcome static friction
         flywheelSlot0.kV = 0.0; // not used for torque control
 
-        var flywheelTorqueConfigs = new TorqueCurrentConfigs();
-        flywheelTorqueConfigs.PeakForwardTorqueCurrent = 120; // amps, could up to 150A if needed
-        flywheelTorqueConfigs.PeakReverseTorqueCurrent = -10; // prevents the motor from braking when overshooting
-        flywheelTorqueConfigs.TorqueNeutralDeadband = 0;
-
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
-        this.flywheelMotor.getConfigurator().apply(flywheelTorqueConfigs);
 
         this.motorVelocity = flywheelMotor.getVelocity();
         this.hoodAngle = hoodEncoder.getAbsolutePosition();
@@ -115,8 +109,6 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         // force refresh before zero calculations
         BaseStatusSignal.refreshAll(motorVelocity, hoodAngle, hoodMotorPosition, hoodMotorVoltage, hoodMotorCurrent);
-
-        this.hoodEncoder.setPosition(0);
 
         flywheelMotor.optimizeBusUtilization();
         hoodMotor.optimizeBusUtilization();
@@ -182,13 +174,13 @@ public class ShooterIOTalonFX implements ShooterIO {
     public void setFlywheelVelocity(double rps) {
         this.flywheelRPSSetPoint = rps;
 
-        boolean firstCommand = Double.isNaN(lastAppliedFlywheelRPSSetPoint);
-        boolean meaningfulChange = firstCommand
-                || (Math.abs(rps - lastAppliedFlywheelRPSSetPoint) >= FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS);
+        // boolean firstCommand = Double.isNaN(lastAppliedFlywheelRPSSetPoint);
+        // boolean meaningfulChange = firstCommand
+        //         || (Math.abs(rps - lastAppliedFlywheelRPSSetPoint) >= FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS);
 
-        if (!meaningfulChange) {
-            return;
-        }
+        // if (!meaningfulChange) {
+        //     return;
+        // }
 
         this.flywheelControl.withVelocity(rps);
         flywheelMotor.setControl(this.flywheelControl);

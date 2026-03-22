@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -18,6 +19,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.SpikeController;
+import frc.robot.commands.EmptyHopper;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
@@ -42,7 +44,7 @@ public class RobotContainer {
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+    // private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController driverController = new SpikeController(0, 0.05);
     private final CommandXboxController operatorController = new SpikeController(1, 0.05);
@@ -70,6 +72,8 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
+
+        NamedCommands.registerCommand("emptyHopper", new EmptyHopper(shooter, targeting, 15));
     }
 
     public static CommandSwerveDrivetrain getDrive() {
@@ -93,7 +97,7 @@ public class RobotContainer {
                                                                                                          // negative Y
                                                                                                          // (forward)
                         .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
+                        .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
                                                                                            // with negative X (left)
                 ));
 
@@ -117,30 +121,49 @@ public class RobotContainer {
         // reset the field-centric heading on left bumper press
 
         driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
+
+        // operatorController.y().onTrue(vision.runOnce(() -> {
+        // var estimatedPose = vision.getEstimatedPositionFromCameras();
+        // if (estimatedPose != null) {
+        // Logger.recordOutput("Vision/SnapshotEstimate", estimatedPose);
+        // drive.resetPose(estimatedPose);
+        // }
+        // }));
     }
 
     private void setupIntakeBindings() {
-        // toggle intake on B press
-        // operatorController.b().onTrue(intake.run(intake::toggleIntake));
+        // toggle intake on A press
+        operatorController.rightBumper().onTrue(intake.runOnce(intake::toggleIntake));
+        
+        operatorController.a().onTrue(intake.runOnce(intake::switchDirection));
     }
 
     private void setupTargetingBindings() {
-         operatorController.rightBumper().onTrue(targeting.run(targeting::setTargetingHub));
-         operatorController.leftBumper().onTrue(targeting.run(targeting::setTargetingShuttle));
+        operatorController.y().onTrue(targeting.runOnce(targeting::setTargetingHub));
+        operatorController.x().onTrue(targeting.runOnce(targeting::setTargetingShuttleLeft));
+        operatorController.b().onTrue(targeting.runOnce(targeting::setTargetingShuttleRight));
     }
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
-         driverController.rightTrigger()
-                 .onTrue(shooter.run(() -> shooter.setDriverRequestingShooting(true)))
-                 .onFalse(shooter.run(() -> shooter.setDriverRequestingShooting(false)));
+        driverController.rightTrigger()
+                .onTrue(shooter.runOnce(() -> shooter.setDriverRequestingShooting(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setDriverRequestingShooting(false)));
+        driverController.leftTrigger()
+                .onTrue(shooter.runOnce(() -> shooter.setRequestingWithForce(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setRequestingWithForce(false)));
 
-         operatorController.x().onTrue(shooter.runOnce(shooter::zeroHood));
+        operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
-         operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
-         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
-         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
-         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
+        operatorController.leftBumper().onTrue(turret.runOnce(turret::toggleAimingOverride));
+
+        operatorController.leftStick().onTrue(trigger.runOnce(() -> trigger.setReverseTrigger(true)));
+        operatorController.leftStick().onFalse(trigger.runOnce(() -> trigger.setReverseTrigger(false)));
+
+        operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
+        operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
+        operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
+        operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
     }
 
     public Command getAutonomousCommand() {

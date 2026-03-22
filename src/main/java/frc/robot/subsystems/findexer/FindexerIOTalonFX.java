@@ -11,18 +11,20 @@ import frc.robot.CanID;
 public class FindexerIOTalonFX implements FindexerIO {
     private final TalonFX motor;
 
-    private final VelocityVoltage velocityCommand = new VelocityVoltage(0);
+    private final VelocityVoltage velocityControl = new VelocityVoltage(0.0);
     private final StatusSignal<AngularVelocity> motorRps; // Rotations per second
 
     public FindexerIOTalonFX() {
         this.motor = new TalonFX(CanID.FINDEXER_MOTOR.getID());
         this.motorRps = motor.getVelocity();
         Slot0Configs config = new Slot0Configs();
-        config.kP = 0.5;
+        config.kP = 0.1;
         config.kI = 0.0;
         config.kD = 0.0;
         
         config.kS = 0.0;
+        config.kV = 0.1;
+
         this.motor.getConfigurator().apply(config);
 
         this.motor.optimizeBusUtilization();
@@ -34,9 +36,8 @@ public class FindexerIOTalonFX implements FindexerIO {
      */
     @Override
     public void setSpeed(double rps) {
-        this.velocityCommand.withVelocity(rps);
-
-        this.motor.setControl(velocityCommand);
+        this.velocityControl.Velocity = rps;
+        this.motor.setControl(velocityControl);
     }
 
     /**
