@@ -5,6 +5,7 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -47,19 +48,53 @@ public class Targeting extends SubsystemBase {
         // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
         // get pose of robo
         Pose2d robotPose = RobotContainer.getDrive().getPose();
+        Translation2d robotPos = robotPose.getTranslation();
 
-        // translate robot-center pose to the turret pivot location on the field
-        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
+        Translation2d goalPose = targetPos;
+
+        Translation2d turretPivotNow = Turret.TURRET_OFFSET_FROM_CENTER
                 .rotateBy(robotPose.getRotation())
                 .plus(robotPose.getTranslation());
 
-        // vector from the turret pivot directly to the goal
-        Translation2d goalPose = targetPos;
-        Translation2d toGoal = goalPose.minus(turretPivot);
+        double staticDistance = goalPose.getDistance(turretPivotNow);
+        double tof = ShotData.distanceToTOFConstant.get(staticDistance);
+        // translate robot-center pose to the turret pivot location on the field
+
+        ChassisSpeeds robotRelSpeeds = RobotContainer.getDrive().getState().Speeds;
+
+        ChassisSpeeds speeds =
+            ChassisSpeeds.fromRobotRelativeSpeeds(
+                robotRelSpeeds.vxMetersPerSecond,
+                robotRelSpeeds.vyMetersPerSecond,
+                robotRelSpeeds.omegaRadiansPerSecond,
+                robotPose.getRotation()
+            );
+
+        double vx = speeds.vxMetersPerSecond;
+        double vy = speeds.vyMetersPerSecond;
+
+        Translation2d predictedRobotPos = robotPos.plus(
+            new Translation2d(vx * tof, vy * tof)
+        );
+
+        Rotation2d predictedHeading =
+            robotPose.getRotation().plus(
+                Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * tof)
+            );
+
+        Translation2d predictedTurretPivot = Turret.TURRET_OFFSET_FROM_CENTER
+            .rotateBy(predictedHeading)
+            .plus(predictedRobotPos);
+
+        Translation2d toGoalComp = goalPose.minus(predictedTurretPivot);
         
-        Logger.recordOutput("Turret/TurretPivot", new Pose2d(turretPivot, toGoal.getAngle()));
-        Logger.recordOutput("Targeting/TargetPose", new Pose2d(goalPose, new Rotation2d()));
-        return toGoal;
+        Logger.recordOutput("Targeting/StaticDistance", staticDistance);
+        Logger.recordOutput("Targeting/PredictedRobotPos", new Pose2d(predictedRobotPos, predictedHeading));
+        Logger.recordOutput("Targeting/PredictedTurretPivot", new Pose2d(predictedTurretPivot, predictedHeading));
+        Logger.recordOutput("Targeting/ToGoalCompensation", toGoalComp);
+        Logger.recordOutput("Targeting/TimeOfFlight", tof);
+
+        return toGoalComp;
     }
     
     /**
@@ -74,13 +109,6 @@ public class Targeting extends SubsystemBase {
                 .rotateBy(robotPose.getRotation())
                 .plus(robotPose.getTranslation());
         Pose2d turretPivotPose = new Pose2d(turretPivot, robotPose.getRotation());
-
-        // shotData = ShotCompensation.compensateForMovement(
-        //         turretPivotPose,
-        //         drive.getState().Speeds,
-        //         new Pose2d(targetPos, new Rotation2d()),
-        //         NOMINAL_SHOT_TIME_S
-        // );
 
         if (DriverStation.isAutonomous()) {
             setTargetingHub();

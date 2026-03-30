@@ -54,7 +54,7 @@ public class TurretIOTalonFX implements TurretIO {
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
-    private double turretTrimDegrees = 0.0;
+    private double turretTrimDegrees = -4.0;
 
     public TurretIOTalonFX(CommandSwerveDrivetrain drive) {
         // SUBSYSTEMS

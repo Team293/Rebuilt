@@ -93,10 +93,10 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         // flywheel configs (units in AMPS)
         var flywheelSlot0 = new Slot0Configs();
-        flywheelSlot0.kP = 20; // amps / rps of error
+        flywheelSlot0.kP = 14; // amps / rps of error
         flywheelSlot0.kI = 0.0;
         flywheelSlot0.kD = 0.0;
-        flywheelSlot0.kS = 0.0; // amps needed to overcome static friction
+        flywheelSlot0.kS = 15.0; // amps needed to overcome static friction
         flywheelSlot0.kV = 0.0; // not used for torque control
 
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
@@ -173,6 +173,12 @@ public class ShooterIOTalonFX implements ShooterIO {
     @Override
     public void setFlywheelVelocity(double rps) {
         this.flywheelRPSSetPoint = rps;
+
+        if (rps == 0) {
+            flywheelMotor.stopMotor();
+            this.lastAppliedFlywheelRPSSetPoint = 0.0;
+            return;
+        }
 
         // boolean firstCommand = Double.isNaN(lastAppliedFlywheelRPSSetPoint);
         // boolean meaningfulChange = firstCommand

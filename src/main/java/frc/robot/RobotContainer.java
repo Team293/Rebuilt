@@ -52,7 +52,7 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-     private final Intake intake;
+    //  private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
      private final Targeting targeting;
@@ -62,7 +62,7 @@ public class RobotContainer {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-        this.intake = new Intake(drive);
+        // this.intake = new Intake(drive);
         this.shooter = new Shooter();
         this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
@@ -73,7 +73,8 @@ public class RobotContainer {
 
         configureBindings();
 
-        NamedCommands.registerCommand("emptyHopper", new EmptyHopper(shooter, targeting, 15));
+        NamedCommands.registerCommand("ShootAtHub10s", new EmptyHopper(shooter, targeting, 10, true));
+        NamedCommands.registerCommand("ShuttleRightSide10s", new EmptyHopper(shooter, targeting, 10, false));
     }
 
     public static CommandSwerveDrivetrain getDrive() {
@@ -91,16 +92,17 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drive.setDefaultCommand(
-                // Drivetrain will execute this command periodically
-                drive.applyRequest(() -> driveCmd.withVelocityX(-driverController.getLeftY() * MaxSpeed) // Drive
-                                                                                                         // forward with
-                                                                                                         // negative Y
-                                                                                                         // (forward)
-                        .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
-                                                                                           // with negative X (left)
-                ));
+            drive.applyRequest(() -> {
 
+                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+
+                return driveCmd
+                    .withVelocityX(-driverController.getLeftY() * MaxSpeed * speedMultiplier)
+                    .withVelocityY(-driverController.getLeftX() * MaxSpeed * speedMultiplier)
+                    .withRotationalRate(-driverController.getRightX() * MaxAngularRate * angularMultiplier);
+            })
+        );
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
@@ -133,9 +135,7 @@ public class RobotContainer {
 
     private void setupIntakeBindings() {
         // toggle intake on A press
-        operatorController.rightBumper().onTrue(intake.runOnce(intake::toggleIntake));
-        
-        operatorController.a().onTrue(intake.runOnce(intake::switchDirection));
+        // operatorController.rig-.onTrue(intake.runOnce(intake::switchDirection));
     }
 
     private void setupTargetingBindings() {

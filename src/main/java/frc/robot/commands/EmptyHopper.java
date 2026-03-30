@@ -12,7 +12,7 @@ public class EmptyHopper extends Command {
     private double scoringTime;
     private Timer scoringTimer = new Timer();
 
-    public EmptyHopper(Shooter shooter, Targeting targeting, double forTime) {
+    public EmptyHopper(Shooter shooter, Targeting targeting, double forTime, boolean targetHub) {
         this.shooter = shooter;
         this.targeting = targeting;
 
@@ -20,7 +20,11 @@ public class EmptyHopper extends Command {
 
         this.shooter.setDriverRequestingShooting(true);
         
-        this.targeting.setTargetingHub();
+        if (targetHub) {
+            this.targeting.setTargetingHub();
+        } else {
+            this.targeting.setTargetingShuttleRight(); // TODO: Allow for left selection as well
+        }
     }
 
     @Override
@@ -32,6 +36,10 @@ public class EmptyHopper extends Command {
     @Override
     public void execute() {
         this.targeting.setTargetingHub();
+
+        if (this.scoringTimer.hasElapsed(3.0)) {
+            this.shooter.setRequestingWithForce(true);
+        }
     }
 
     @Override
@@ -43,5 +51,6 @@ public class EmptyHopper extends Command {
     public void end(boolean interrupted) {
         // TODO Auto-generated method stub
         this.shooter.setDriverRequestingShooting(false);
+        this.shooter.setRequestingWithForce(false);
     }
 }
