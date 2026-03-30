@@ -33,7 +33,6 @@ public class Targeting extends SubsystemBase {
     private boolean overrideRedAlliance = false;
     private boolean overrideBlueAlliance = false;
     
-
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
         setTargetingHub();
@@ -96,7 +95,7 @@ public class Targeting extends SubsystemBase {
 
         return toGoalComp;
     }
-    
+
     /**
      * Periodically calculate the shot data given the target position and robot movement
      */
@@ -115,6 +114,7 @@ public class Targeting extends SubsystemBase {
         }
 
         Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
+        Logger.recordOutput("Targeting/TargetPosition", new Pose2d(targetPos, new Rotation2d()));
     }
 
     /**

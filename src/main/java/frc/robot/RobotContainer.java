@@ -94,8 +94,8 @@ public class RobotContainer {
         drive.setDefaultCommand(
             drive.applyRequest(() -> {
 
-                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
-                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.4 : 1.0;
+                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.4 : 1.0;
 
                 return driveCmd
                     .withVelocityX(-driverController.getLeftY() * MaxSpeed * speedMultiplier)
