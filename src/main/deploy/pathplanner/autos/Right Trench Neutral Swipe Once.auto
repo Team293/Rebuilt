@@ -11,13 +11,13 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Outpost Center Path Sweep"
+                  "pathName": "Right Double Neutral Swipe 1"
                 }
               },
               {
                 "type": "named",
                 "data": {
-                  "name": "ShuttleRightSide10s"
+                  "name": "emptyHopper"
                 }
               }
             ]
