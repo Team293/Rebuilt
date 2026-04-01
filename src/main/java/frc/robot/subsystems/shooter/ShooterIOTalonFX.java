@@ -176,20 +176,11 @@ public class ShooterIOTalonFX implements ShooterIO {
 
         if (rps == 0) {
             flywheelMotor.stopMotor();
-            this.lastAppliedFlywheelRPSSetPoint = 0.0;
-            return;
+        } else {
+            this.flywheelControl.withVelocity(rps);
+            flywheelMotor.setControl(this.flywheelControl);
         }
 
-        // boolean firstCommand = Double.isNaN(lastAppliedFlywheelRPSSetPoint);
-        // boolean meaningfulChange = firstCommand
-        //         || (Math.abs(rps - lastAppliedFlywheelRPSSetPoint) >= FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS);
-
-        // if (!meaningfulChange) {
-        //     return;
-        // }
-
-        this.flywheelControl.withVelocity(rps);
-        flywheelMotor.setControl(this.flywheelControl);
         this.lastAppliedFlywheelRPSSetPoint = rps;
     }
     /**

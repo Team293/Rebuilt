@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.SpikeController;
-import frc.robot.commands.EmptyHopper;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
@@ -52,7 +51,7 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-    //  private final Intake intake;
+     private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
      private final Targeting targeting;
@@ -62,7 +61,7 @@ public class RobotContainer {
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
-        // this.intake = new Intake(drive);
+        this.intake = new Intake(drive);
         this.shooter = new Shooter();
         this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
@@ -72,9 +71,6 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
-
-        NamedCommands.registerCommand("ShootAtHub10s", new EmptyHopper(shooter, targeting, 10, true));
-        NamedCommands.registerCommand("ShuttleRightSide10s", new EmptyHopper(shooter, targeting, 10, false));
     }
 
     public static CommandSwerveDrivetrain getDrive() {
