@@ -109,10 +109,6 @@ public class Targeting extends SubsystemBase {
                 .plus(robotPose.getTranslation());
         Pose2d turretPivotPose = new Pose2d(turretPivot, robotPose.getRotation());
 
-        if (DriverStation.isAutonomous()) {
-            setTargetingHub();
-        }
-
         Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
         Logger.recordOutput("Targeting/TargetPosition", new Pose2d(targetPos, new Rotation2d()));
     }

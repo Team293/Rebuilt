@@ -4,6 +4,7 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.targeting.Targeting;
 
@@ -20,28 +21,29 @@ public class EmptyHopper extends Command {
 
         this.scoringTime = forTime;
 
-        this.shooter.setDriverRequestingShooting(true);
-        
         // if (targetHub) {
         //     this.targeting.setTargetingHub();
         // } else {
         //     this.targeting.setTargetingShuttleRight(); // TODO: Allow for left selection as well
         // }
-        this.targeting.setTargetingShuttleRight();
+        this.targeting.setTargetingHub();
+
+        addRequirements(shooter, targeting);
     }
 
     @Override
     public void initialize() {
         this.scoringTimer.restart();
-        this.targeting.setTargetingShuttleRight();
+
+        this.shooter.setDriverRequestingShooting(true);
+        this.targeting.setTargetingHub();
     }
 
     @Override
     public void execute() {
-        this.targeting.setTargetingShuttleRight();
+        this.targeting.setTargetingHub();
 
-
-        if (this.scoringTimer.hasElapsed(2.0)) {
+        if (this.scoringTimer.hasElapsed(3)) {
             this.shooter.setRequestingWithForce(true);
         }
     }

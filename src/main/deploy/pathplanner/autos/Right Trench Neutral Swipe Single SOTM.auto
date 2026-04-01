@@ -11,21 +11,28 @@
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "emptyHopper"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Trench To Hub Target"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "ShootAtHub5s"
+                }
+              }
+            ]
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Right Double Neutral Swipe 2"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "emptyHopper"
+            "pathName": "Hub To Trench Target"
           }
         }
       ]

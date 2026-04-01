@@ -22,8 +22,8 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
     // KS KV CONSTANTS
-    private static final double kS = 0.35; // volts needed to overcome static friction
-    private static final double kV = 0.20; // volts per (rotation per second) to maintain motion
+    private static final double kS = 0.4; // volts needed to overcome static friction
+    private static final double kV = 0.50; // volts per (rotation per second) to maintain motion
 
     // SUBSYSTEMS
     private final CommandSwerveDrivetrain drive;
@@ -53,6 +53,9 @@ public class TurretIOTalonFX implements TurretIO {
     // COMMANDS
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
+
+    // FILTERS
+    private final LowPassFilter currentFilter = new LowPassFilter(0.15);
 
     private double turretTrimDegrees = -4.0;
 
@@ -97,7 +100,7 @@ public class TurretIOTalonFX implements TurretIO {
         recalculateTurretMotorZeroPosition();
     }
 
-    @Override
+     @Override
     public void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees) {
         this.targetTurretDegreesFieldRelative = fieldRelativeAngleDegrees;
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
@@ -182,17 +185,17 @@ public class TurretIOTalonFX implements TurretIO {
     private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 50;
+        configs.kP = 8;
         configs.kI = 0.0;
         configs.kD = 1;
 
         configs.kS = 0.4; //kS;
-        configs.kV = 0.4; //kV;
+        configs.kV = 0.5; //kV;
 
         MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
 
-        mmConfigs.MotionMagicAcceleration = 10; // rotations per second^2
-        mmConfigs.MotionMagicCruiseVelocity = 3.5; // rotations per second
+        mmConfigs.MotionMagicAcceleration = 20; // rotations per second^2
+        mmConfigs.MotionMagicCruiseVelocity = 10; // rotations per second
 
         return new Pair<>(configs, mmConfigs);
     }
@@ -343,11 +346,12 @@ public class TurretIOTalonFX implements TurretIO {
     private double getTurretAngle() {
         double continuousRevs = getTurretPositionRevs();
         double turretAngleDegrees = revsToDegreesContinuous(continuousRevs);
-        
+
         double turretAngleWithOffset = turretAngleDegrees - Turret.TURRET_CENTER_OFFSET_DEG;
 
-        // apply offset and wrap to [-180, 180)
-        return wrap180(turretAngleWithOffset);
+        double filtered = currentFilter.calculate(turretAngleWithOffset);
+
+        return wrap180(filtered);
     }
 
     /**

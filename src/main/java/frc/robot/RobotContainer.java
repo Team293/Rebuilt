@@ -6,14 +6,18 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Set;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -41,6 +45,12 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric driveCmd = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+
+        private final SwerveRequest.FieldCentricFacingAngle snapCmd = new SwerveRequest.FieldCentricFacingAngle()
+            .withDeadband(MaxSpeed * 0.1)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+            .withHeadingPID(6, 0, 0.2);
+
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
@@ -68,13 +78,27 @@ public class RobotContainer {
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
 
+        configureBindings();
+
+        NamedCommands.registerCommand(
+            "ShootAtHub10s",
+            Commands.defer(() -> new EmptyHopper(shooter, targeting, 10, true), Set.of(shooter, targeting))
+        );
+
+        NamedCommands.registerCommand(
+            "ShootAtHub5s",
+            Commands.defer(() -> new EmptyHopper(shooter, targeting, 5, true), Set.of(shooter, targeting))
+        );
+
+        NamedCommands.registerCommand(
+            "ShuttleRightSide10s",
+            Commands.defer(() -> new EmptyHopper(shooter, targeting, 10, false), Set.of(shooter, targeting))
+        );
+
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
 
-        configureBindings();
-
-        NamedCommands.registerCommand("ShootAtHub10s", new EmptyHopper(shooter, targeting, 10, true));
-        NamedCommands.registerCommand("ShuttleRightSide10s", new EmptyHopper(shooter, targeting, 10, false));
+        SignalLogger.stop();
     }
 
     public static CommandSwerveDrivetrain getDrive() {
@@ -95,11 +119,41 @@ public class RobotContainer {
             drive.applyRequest(() -> {
 
                 double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.4 : 1.0;
+
+                double vx = -driverController.getLeftY() * MaxSpeed * speedMultiplier;
+                double vy = -driverController.getLeftX() * MaxSpeed * speedMultiplier;
+
+                // Snap angles 
+                if (driverController.y().getAsBoolean()) { // Up
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(0));
+                } 
+                else if (driverController.b().getAsBoolean()) { // Right
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(270));
+                } 
+                else if (driverController.a().getAsBoolean()) { // Down
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(180));
+                } 
+                else if (driverController.x().getAsBoolean()) { // Left
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(90));
+                }
+
                 double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.4 : 1.0;
 
                 return driveCmd
-                    .withVelocityX(-driverController.getLeftY() * MaxSpeed * speedMultiplier)
-                    .withVelocityY(-driverController.getLeftX() * MaxSpeed * speedMultiplier)
+                    .withVelocityX(vx)
+                    .withVelocityY(vy)
                     .withRotationalRate(-driverController.getRightX() * MaxAngularRate * angularMultiplier);
             })
         );
@@ -109,8 +163,8 @@ public class RobotContainer {
         RobotModeTriggers.disabled().whileTrue(
                 drive.applyRequest(() -> idle).ignoringDisable(true));
 
-        driverController.a().whileTrue(drive.applyRequest(() -> brake));
-        driverController.b().whileTrue(drive.applyRequest(() -> point
+        driverController.leftStick().whileTrue(drive.applyRequest(() -> brake));
+        driverController.rightStick().whileTrue(drive.applyRequest(() -> point
                 .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
