@@ -89,7 +89,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     
     @AutoLogOutput(key="Turret/IsAtTargetAngle")
     public boolean isAtTargetAngle() {
-        return Math.abs(io.turretAngularVelocityDegreesPerSecond) < 30.0;
+        return Math.abs(io.turretAngularVelocityDegreesPerSecond) < 200.0;
     }
 
     public void changeTrim(double deltaDegrees) {

@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.targeting.Targeting;
+import frc.robot.subsystems.targeting.Targeting.Target;
 
 public class EmptyHopper extends Command {
     private Shooter shooter;
@@ -26,7 +27,7 @@ public class EmptyHopper extends Command {
         // } else {
         //     this.targeting.setTargetingShuttleRight(); // TODO: Allow for left selection as well
         // }
-        this.targeting.setTargetingHub();
+        this.targeting.setTarget(Target.HUB);
 
         addRequirements(shooter, targeting);
     }
@@ -35,16 +36,16 @@ public class EmptyHopper extends Command {
     public void initialize() {
         this.scoringTimer.restart();
 
-        this.shooter.setDriverRequestingShooting(true);
-        this.targeting.setTargetingHub();
+        this.shooter.setDriverSpinUpFlywheel(true);
+        this.targeting.setTarget(Target.HUB);
     }
 
     @Override
     public void execute() {
-        this.targeting.setTargetingHub();
+        this.targeting.setTarget(Target.HUB);
 
         if (this.scoringTimer.hasElapsed(3)) {
-            this.shooter.setRequestingWithForce(true);
+            this.shooter.setActuateHoodAndLaunch(true);
         }
     }
 
@@ -56,7 +57,7 @@ public class EmptyHopper extends Command {
     @Override
     public void end(boolean interrupted) {
         // TODO Auto-generated method stub
-        this.shooter.setDriverRequestingShooting(false);
-        this.shooter.setRequestingWithForce(false);
+        this.shooter.setDriverSpinUpFlywheel(false);
+        this.shooter.setActuateHoodAndLaunch(false);
     }
 }
