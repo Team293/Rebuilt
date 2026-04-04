@@ -4,7 +4,8 @@ import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.trigger.Trigger;
 
 public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
-    private static final double FEEDING_RPS = -30.0 * 9; // feeding velocity in rotations per second
+    // multiplied by the gear ratio of the findexer (36:1)
+    private static final double FEEDING_RPS = -3*36; // feeding velocity in rotations per second
 
     private final Trigger trigger;
 

@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.SpikeController;
-import frc.robot.commands.EmptyHopper;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
@@ -41,6 +40,12 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric driveCmd = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+
+    private final SwerveRequest.FieldCentricFacingAngle snapCmd = new SwerveRequest.FieldCentricFacingAngle()
+            .withDeadband(MaxSpeed * 0.1)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
+            .withHeadingPID(6, 0, 0.2);
+
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
@@ -52,10 +57,10 @@ public class RobotContainer {
     public static CommandSwerveDrivetrain drive;
     private final Vision vision;
     private final Turret turret;
-     private final Intake intake;
+    private final Intake intake;
     private final Trigger trigger;
     private final Shooter shooter;
-     private final Targeting targeting;
+    private final Targeting targeting;
     private final Findexer findexer;
 
     public RobotContainer() {
@@ -72,8 +77,6 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
-
-        NamedCommands.registerCommand("emptyHopper", new EmptyHopper(shooter, targeting, 15));
     }
 
     public static CommandSwerveDrivetrain getDrive() {
@@ -91,24 +94,55 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drive.setDefaultCommand(
-                // Drivetrain will execute this command periodically
-                drive.applyRequest(() -> driveCmd.withVelocityX(-driverController.getLeftY() * MaxSpeed) // Drive
-                                                                                                         // forward with
-                                                                                                         // negative Y
-                                                                                                         // (forward)
-                        .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive counterclockwise
-                                                                                           // with negative X (left)
-                ));
+            drive.applyRequest(() -> {
 
+                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+
+                double vx = -driverController.getLeftY() * MaxSpeed * speedMultiplier;
+                double vy = -driverController.getLeftX() * MaxSpeed * speedMultiplier;
+
+                // Snap angles 
+                if (driverController.y().getAsBoolean()) { // Up
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(0));
+                } 
+                else if (driverController.b().getAsBoolean()) { // Right
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(270));
+                } 
+                else if (driverController.a().getAsBoolean()) { // Down
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(180));
+                } 
+                else if (driverController.x().getAsBoolean()) { // Left
+                    return snapCmd
+                        .withVelocityX(vx)
+                        .withVelocityY(vy)
+                        .withTargetDirection(Rotation2d.fromDegrees(90));
+                }
+
+                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+
+                return driveCmd
+                    .withVelocityX(vx)
+                    .withVelocityY(vy)
+                    .withRotationalRate(-driverController.getRightX() * MaxAngularRate * angularMultiplier);
+            })
+        );
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
                 drive.applyRequest(() -> idle).ignoringDisable(true));
 
-        driverController.a().whileTrue(drive.applyRequest(() -> brake));
-        driverController.b().whileTrue(drive.applyRequest(() -> point
+        driverController.leftTrigger().whileTrue(drive.applyRequest(() -> brake));
+        driverController.rightTrigger().whileTrue(drive.applyRequest(() -> point
                 .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
@@ -133,9 +167,8 @@ public class RobotContainer {
 
     private void setupIntakeBindings() {
         // toggle intake on A press
-        operatorController.rightBumper().onTrue(intake.runOnce(intake::toggleIntake));
-        
-        operatorController.a().onTrue(intake.runOnce(intake::switchDirection));
+        driverController.leftBumper().onTrue(intake.runOnce(intake::toggle));
+        driverController.povUp().onTrue(intake.runOnce(intake::switchDirection));
     }
 
     private void setupTargetingBindings() {
@@ -146,10 +179,10 @@ public class RobotContainer {
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
-        driverController.rightTrigger()
+        operatorController.rightTrigger()
                 .onTrue(shooter.runOnce(() -> shooter.setDriverRequestingShooting(true)))
                 .onFalse(shooter.runOnce(() -> shooter.setDriverRequestingShooting(false)));
-        driverController.leftTrigger()
+        operatorController.leftTrigger()
                 .onTrue(shooter.runOnce(() -> shooter.setRequestingWithForce(true)))
                 .onFalse(shooter.runOnce(() -> shooter.setRequestingWithForce(false)));
 
@@ -162,8 +195,8 @@ public class RobotContainer {
 
         operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
-        operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(2)));
-        operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-2)));
+        operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(1)));
+        operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-1)));
     }
 
     public Command getAutonomousCommand() {

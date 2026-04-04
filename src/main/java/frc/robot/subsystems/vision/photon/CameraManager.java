@@ -43,14 +43,30 @@ public class CameraManager {
             new Camera(
                 "right",
                 new Transform3d(
-                    Inches.of(-0.95),
+                    Inches.of(-1.5),
                     Inches.of(-13.75),
-                    Inches.of(8.475),
+                    Inches.of(8.625),
                     new Rotation3d(
                         Degrees.of(0),
                         Degrees.of(-65), // negative pitch = tilted upward
                         Degrees.of(-90)
                     )
+                )
+            )
+        );
+
+        registerCamera(
+            new Camera(
+                "left",
+                 new Transform3d(
+                    Inches.of(-2.5),
+                    Inches.of(-13.75),
+                    Inches.of(8.5625),
+                 new Rotation3d(
+                    Degrees.of(0),
+                    Degrees.of(-65), // negative pitch = tilted upward
+                    Degrees.of(90)
+                 )
                 )
             )
         );

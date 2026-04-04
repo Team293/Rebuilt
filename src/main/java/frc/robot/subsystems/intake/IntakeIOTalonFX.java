@@ -70,6 +70,11 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     // double speed - Speed to set the motor to in Rotations Per Second
     @Override
     public void setIntakeSpeed(double speed) {
+        if (speed == 0) {
+            intakeMotor.stopMotor();
+            return;
+        }
+        
         // intakeMotor.set(speed);
         this.velocityControl.withVelocity(speed);
         intakeMotor.setControl(this.velocityControl);

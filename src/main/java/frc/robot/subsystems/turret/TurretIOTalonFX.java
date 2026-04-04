@@ -104,7 +104,7 @@ public class TurretIOTalonFX implements TurretIO {
 
         // absolute robot-relative target, in motor rotations
         double targetRobotRelativeDeg = fieldRelativeAngleDegrees - currentRobotHeading;
-        this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg + turretTrimDegrees);
+        this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg);
 
         setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
     }
