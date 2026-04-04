@@ -114,6 +114,7 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
         );
         Elastic.selectTab("Scoring Mode");
+        RobotContainer.getLEDController().switchPreset("hub");
 
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
@@ -156,6 +157,7 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
+        RobotContainer.getLEDController().switchPreset("shuttle");
 
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
@@ -169,6 +171,7 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
+        RobotContainer.getLEDController().switchPreset("shuttle");
 
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, 0 + shuttlingYOffset);
