@@ -91,6 +91,10 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         // }
 
         // Update the intakeIO on speed
+        if (forward == false) {
+            intakeIO.setIntakeSpeed(-70);
+            return;
+        }
         intakeIO.setIntakeSpeed(70);
     }
 
@@ -126,6 +130,10 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     public void switchDirection() {
         forward = !forward;
+    }
+
+    public void toggle() {
+        running = !running;
     }
 
     // Disables the intake

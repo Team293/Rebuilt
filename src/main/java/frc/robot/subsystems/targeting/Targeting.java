@@ -101,20 +101,9 @@ public class Targeting extends SubsystemBase {
      */
     @Override
     public void periodic() {
-        Pose2d robotPose = drive.getPose();
-
-        // compute the turret pivot location in field coordinates so ShotCompensation
-        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
-                .rotateBy(robotPose.getRotation())
-                .plus(robotPose.getTranslation());
-        Pose2d turretPivotPose = new Pose2d(turretPivot, robotPose.getRotation());
-
         if (DriverStation.isAutonomous()) {
             setTargetingHub();
         }
-
-        Logger.recordOutput("Targeting/TurretPivot", turretPivotPose);
-        Logger.recordOutput("Targeting/TargetPosition", new Pose2d(targetPos, new Rotation2d()));
     }
 
     /**
@@ -125,6 +114,7 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
         );
         Elastic.selectTab("Scoring Mode");
+        RobotContainer.getLEDController().switchPreset("hub");
 
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
@@ -167,6 +157,8 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
+        RobotContainer.getLEDController().switchPreset("shuttle");
+
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         } else {
@@ -179,6 +171,8 @@ public class Targeting extends SubsystemBase {
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
         Elastic.selectTab("Shuttling Mode");
+        RobotContainer.getLEDController().switchPreset("shuttle");
+
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, 0 + shuttlingYOffset);
         } else {
