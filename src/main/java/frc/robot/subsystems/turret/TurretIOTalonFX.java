@@ -1,5 +1,6 @@
 package frc.robot.subsystems.turret;
 
+import com.ctre.phoenix6.controls.PositionVoltage;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -18,45 +19,70 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.units.measure.Angle;
 import frc.lib.LowPassFilter;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
-    // KS KV CONSTANTS
-    private static final double kS = 0.35; // volts needed to overcome static friction
-    private static final double kV = 0.20; // volts per (rotation per second) to maintain motion
+    /** Volts needed to overcome static friction */
+    private static final double kS = 0.35;
+    
+    /** Volts per (rotation per second) to maintain motion */
+    private static final double kV = 0.20;
+    
+    /** Proportional gain - increase for snappier response, decrease if oscillating */
+    private static final double kP = 20.0;
+    
+    /** Integral gain - typically leave at 0 for position control */
+    private static final double kI = 0.0;
+    
+    /** Derivative gain - increase to dampen oscillations */
+    private static final double kD = 2.0;
+    
+    /** Static friction compensation for slot 0 */
+    private static final double SLOT_kS = 0.4;
+    
+    /** Velocity feedforward for slot 0 */
+    private static final double SLOT_kV = 0.4;
 
-    // SUBSYSTEMS
+    // ==================== WRAP BOUNDARY HYSTERESIS ====================
+    
+    /** Hysteresis band in degrees to prevent oscillation at turret wrap boundaries.
+     *  When within this many degrees of the limit, the turret will not wrap until
+     *  it moves past limit + hysteresis in the opposite direction. */
+    private static final double WRAP_HYSTERESIS_DEGREES = 15.0;
+    // ==================== SUBSYSTEMS ====================
     private final CommandSwerveDrivetrain drive;
 
-    // HARDWARE
+    // ==================== HARDWARE ====================
     private final TalonFX turretMotor; // kraken x44
     private final CANcoder pinionEncoder; // wcp throughbore
     private final CANcoder followerEncoder; // wcp throughbore
 
-    // SIGNALS
+    // ==================== SIGNALS ====================
     private final StatusSignal<Angle> turretMotorPosition;
     private final StatusSignal<Angle> pinionEncoderSignal;
     private final StatusSignal<Angle> followerEncoderSignal;
 
-    // CALIBRATION STATES (CRT)
+    // ==================== CALIBRATION STATES (CRT) ====================
     private boolean isInitialized = false; // whether the turret has been initialized with a known position yet
     private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
     private double lastPinionRevs = 0.0; // last calculated position of the pinion encoder in revolutions
 
     private double lastTurretAngleDegrees = 0.0; // last calculated angle of the turret in degrees, used for calculating angular velocity
 
-    // VALUES
+    // ==================== VALUES ====================
     private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
     private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
     private double targetTurretAngleMotorRevs; // target angle of the turret in motor rotations
     private double calculatedMotorOffsetRevs; // calculated offset in motor rotations based on the current position of the turret and the pinion encoder reading
     private double targetTurretDegreesTurretRelative = 0;
 
-    // COMMANDS
-    private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
+    // ==================== COMMANDS ====================
+    private final PositionVoltage mmRequest = new PositionVoltage(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
     private double turretTrimDegrees = 0.0;
+    private double externalFeedforwardVoltage = 0.0; // feedforward voltage from moving shot compensation
 
     public TurretIOTalonFX(CommandSwerveDrivetrain drive) {
         // SUBSYSTEMS
@@ -74,10 +100,10 @@ public class TurretIOTalonFX implements TurretIO {
         var turretMotorFeedbackConfig = getTurretMotorFeedbackConfigs();
         var turretSoftwareLimitConfig = getTurretSoftwareLimitConfigs();
 
-        this.turretMotor.getConfigurator().apply(turretMotorConfig.getFirst());
-        this.turretMotor.getConfigurator().apply(turretMotorConfig.getSecond());
+        this.turretMotor.getConfigurator().apply(turretMotorConfig);
         this.turretMotor.getConfigurator().apply(turretMotorFeedbackConfig);
         this.turretMotor.getConfigurator().apply(turretSoftwareLimitConfig);
+        this.turretMotor.getConfigurator().apply(MotorCurrentLimits.TURRET.toCurrentLimitsConfigs());
         // invert motor
         this.turretMotor.getConfigurator().apply(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 
@@ -104,8 +130,10 @@ public class TurretIOTalonFX implements TurretIO {
         this.targetTurretDegreesFieldRelative = fieldRelativeAngleDegrees;
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
-        // absolute robot-relative target, in motor rotations
+        // Calculate robot-relative target angle
         double targetRobotRelativeDeg = fieldRelativeAngleDegrees - currentRobotHeading;
+        
+        // Normalize to [-180, 180] first for logging/display purposes
         this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg);
 
         setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
@@ -119,15 +147,36 @@ public class TurretIOTalonFX implements TurretIO {
         this.targetTurretDegreesTurretRelative = angleDegrees;
 
         angleDegrees += turretTrimDegrees;
-        angleDegrees = wrap180(angleDegrees);
+        
+        // Get current turret position for hysteresis calculation
+        double currentAngle = getTurretAngle();
+        
+        // Apply wrapping with hysteresis to prevent oscillation at boundaries
+        angleDegrees = wrapToTurretRange(angleDegrees, currentAngle);
+        
+        // Final clamp to ensure we never exceed the physical limits
+        angleDegrees = MathUtil.clamp(angleDegrees, 
+            -Turret.TURRET_MAX_ANGLE_DEGREES, 
+            Turret.TURRET_MAX_ANGLE_DEGREES);
+        
+        // Convert degrees to mechanism rotations (1 mechanism rotation = 180 degrees)
         double targetMotorRotations = angleDegrees / 180.0;
         this.targetTurretAngleMotorRevs = targetMotorRotations;
         
         
         mmRequest.Position = targetMotorRotations;
+        mmRequest.FeedForward = externalFeedforwardVoltage; // Apply moving shot feedforward compensation
         this.turretMotor.setControl(
             mmRequest
         );
+    }
+
+    @Override
+    public void setTurretFeedforward(double feedforwardDegPerSec) {
+        // Convert deg/sec to mechanism rotations/sec (1 mechanism rotation = 180 degrees)
+        double mechanismRotationsPerSec = feedforwardDegPerSec / 180.0;
+        // Use the existing feedforward calculator to get voltage
+        this.externalFeedforwardVoltage = feedforward.calculate(mechanismRotationsPerSec);
     }
 
     /**
@@ -201,22 +250,17 @@ public class TurretIOTalonFX implements TurretIO {
      * Get the motor configurations for the turret motor.
      * @return the motor configurations for the turret motor
      */
-    private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
+    private Slot0Configs getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 50;
-        configs.kI = 0.0;
-        configs.kD = 1;
+        configs.kP = kP;
+        configs.kI = kI;
+        configs.kD = kD;
 
-        configs.kS = 0.4; //kS;
-        configs.kV = 0.4; //kV;
+        configs.kS = SLOT_kS;
+        configs.kV = SLOT_kV;
 
-        MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
-
-        mmConfigs.MotionMagicAcceleration = 10; // rotations per second^2
-        mmConfigs.MotionMagicCruiseVelocity = 3.5; // rotations per second
-
-        return new Pair<>(configs, mmConfigs);
+        return configs;
     }
 
     /**
@@ -236,17 +280,23 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     /**
-     * Get the software limit switch configurations for the turret motor, which define the forward and reverse limits of the turret based on the motor position.
+     * Get the software limit switch configurations for the turret motor.
+     * Limits are based on Turret.TURRET_MAX_ANGLE_DEGREES constant.
      * @return the software limit switch configurations for the turret motor
      */
     private SoftwareLimitSwitchConfigs getTurretSoftwareLimitConfigs() {
         SoftwareLimitSwitchConfigs configs = new SoftwareLimitSwitchConfigs();
 
+        // Convert max angle degrees to mechanism rotations
+        // SensorToMechanismRatio is set so 1 mechanism rotation = 180 degrees
+        // Therefore: mechanismRotations = degrees / 180
+        double limitRotations = Turret.TURRET_MAX_ANGLE_DEGREES / 180.0;
+
         configs.ForwardSoftLimitEnable = true;
-        configs.ForwardSoftLimitThreshold = 1; // 1 rotation of the motor past the zero point
+        configs.ForwardSoftLimitThreshold = limitRotations;
 
         configs.ReverseSoftLimitEnable = true;
-        configs.ReverseSoftLimitThreshold = -1; // 1 rotation of the motor in the opposite direction past the zero point
+        configs.ReverseSoftLimitThreshold = -limitRotations;
 
         return configs;
     }
@@ -359,8 +409,8 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     /**
-     * Gets the angle of the turret in robot space wrapped from [-180, 180)
-     * @return the angle of the turret in robot space, wrapped
+     * Gets the angle of the turret in turret space wrapped to the turret range.
+     * @return the angle of the turret in turret space, wrapped to [-TURRET_MAX_ANGLE_DEGREES, +TURRET_MAX_ANGLE_DEGREES)
      */
     private double getTurretAngle() {
         double continuousRevs = getTurretPositionRevs();
@@ -368,21 +418,22 @@ public class TurretIOTalonFX implements TurretIO {
         
         double turretAngleWithOffset = turretAngleDegrees - Turret.TURRET_CENTER_OFFSET_DEG;
 
-        // apply offset and wrap to [-180, 180)
-        return wrap180(turretAngleWithOffset);
+        // apply offset and wrap to turret range
+        return wrap(turretAngleWithOffset, -Turret.TURRET_MAX_ANGLE_DEGREES, Turret.TURRET_MAX_ANGLE_DEGREES);
     }
 
     /**
-     * Gets the angle of the turret in robot space, without wrapping, so it can be used for continuous calculations.
-     * @return the angle of the turret in robot space, without wrapping
+     * Gets the angle of the turret in robot space.
+     * @return the angle of the turret in robot space, wrapped to turret range
      */
     public double getTurretAngleRobotRelative() {
-        return wrap180(getTurretAngle() - Turret.TURRET_ROBOT_OFFSET_DEG);
+        return wrap(getTurretAngle() - Turret.TURRET_ROBOT_OFFSET_DEG, 
+            -Turret.TURRET_MAX_ANGLE_DEGREES, Turret.TURRET_MAX_ANGLE_DEGREES);
     }
 
     /**
-     * Gets the angle of the turret in field space, wrapped from [-180, 180)
-     * @return the angle of the turret in field space, wrapped
+     * Gets the angle of the turret in field space.
+     * @return the angle of the turret in field space, wrapped to [-180, 180) for field coordinates
      */
     private double getTurretAngleFieldRelative() {
         double robotRelativeAngle = getTurretAngleRobotRelative();
@@ -390,6 +441,7 @@ public class TurretIOTalonFX implements TurretIO {
 
         double fieldCentricContinuous = robotRelativeAngle + currentRobotHeading;
 
+        // Field-relative angles should still wrap at 180 since field is 360 degrees
         return wrap180(fieldCentricContinuous);
     }
 
@@ -412,9 +464,79 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     /**
-     * Wraps the input angle to be within the range [-180, 180).
+     * Wraps the input angle to be within the turret's configured range 
+     * [-TURRET_MAX_ANGLE_DEGREES, +TURRET_MAX_ANGLE_DEGREES).
+     * Includes hysteresis to prevent oscillation at the wrap boundaries.
      * @param input the angle to wrap
-     * @return the wrapped angle within the range [-180, 180)
+     * @param currentTurretAngle the current actual turret angle (for hysteresis)
+     * @return the wrapped angle within the turret range
+     */
+    private double wrapToTurretRange(double input, double currentTurretAngle) {
+        double maxAngle = Turret.TURRET_MAX_ANGLE_DEGREES;
+        
+        // First, normalize input to [-180, +180) to get canonical direction
+        double normalizedInput = wrap(input, -180, 180);
+        
+        // Calculate both possible target angles (could go positive or negative way)
+        double positiveOption = normalizedInput;
+        double negativeOption = normalizedInput;
+        
+        // Adjust to get the two possible representations within turret range
+        if (normalizedInput < 0) {
+            positiveOption = normalizedInput + 360; // e.g., -170 -> +190
+        } else {
+            negativeOption = normalizedInput - 360; // e.g., +170 -> -190
+        }
+        
+        // Check which options are within the turret's physical limits
+        boolean positiveValid = positiveOption >= -maxAngle && positiveOption <= maxAngle;
+        boolean negativeValid = negativeOption >= -maxAngle && negativeOption <= maxAngle;
+        
+        double wrapped;
+        
+        if (positiveValid && negativeValid) {
+            // Both options are valid - choose based on current position and hysteresis
+            double distToPositive = Math.abs(currentTurretAngle - positiveOption);
+            double distToNegative = Math.abs(currentTurretAngle - negativeOption);
+            
+            // Use hysteresis: prefer staying on current side unless the other side is 
+            // significantly closer (by more than hysteresis margin)
+            if (currentTurretAngle >= 0) {
+                // Currently on positive side - prefer positive unless negative is much closer
+                if (distToNegative + WRAP_HYSTERESIS_DEGREES < distToPositive) {
+                    wrapped = negativeOption;
+                } else {
+                    wrapped = positiveOption;
+                }
+            } else {
+                // Currently on negative side - prefer negative unless positive is much closer
+                if (distToPositive + WRAP_HYSTERESIS_DEGREES < distToNegative) {
+                    wrapped = positiveOption;
+                } else {
+                    wrapped = negativeOption;
+                }
+            }
+        } else if (positiveValid) {
+            wrapped = positiveOption;
+        } else if (negativeValid) {
+            wrapped = negativeOption;
+        } else {
+            // Neither option is in range - clamp to nearest limit
+            // This shouldn't happen with a ±200° range, but handle it safely
+            wrapped = Math.max(-maxAngle, Math.min(maxAngle, normalizedInput));
+        }
+        
+        Logger.recordOutput("Turret/CurrentAngle", currentTurretAngle);
+        Logger.recordOutput("Turret/WrappedAngle", wrapped);
+        
+        return wrapped;
+    }
+    
+    /**
+     * Simple wrap to [-180, 180) without hysteresis.
+     * Used for display/logging purposes only.
+     * @param input the angle to wrap
+     * @return the wrapped angle within [-180, 180)
      */
     private double wrap180(double input) {
         return wrap(input, -180.0, 180.0);

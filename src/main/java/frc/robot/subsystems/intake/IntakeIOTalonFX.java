@@ -14,6 +14,7 @@ import edu.wpi.first.units.measure.Current;
 
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 import frc.robot.subsystems.intake.Intake.IntakeState;
 
 public class IntakeIOTalonFX implements IntakeIO, IORefresher {
@@ -119,6 +120,9 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         intakeConfig.Slot0.kD = 0.0;
 
         intakeConfig.Slot0.kV = 0.15;
+
+        // Apply current limits
+        intakeConfig.CurrentLimits = MotorCurrentLimits.INTAKE.toCurrentLimitsConfigs();
 
         return intakeConfig;
     }

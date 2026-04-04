@@ -7,6 +7,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 
 public class FindexerIOTalonFX implements FindexerIO {
     private final TalonFX motor;
@@ -26,6 +27,7 @@ public class FindexerIOTalonFX implements FindexerIO {
         config.kV = 0.1;
 
         this.motor.getConfigurator().apply(config);
+        this.motor.getConfigurator().apply(MotorCurrentLimits.FINDEXER.toCurrentLimitsConfigs());
 
         this.motor.optimizeBusUtilization();
     }

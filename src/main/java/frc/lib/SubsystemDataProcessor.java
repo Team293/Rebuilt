@@ -1,6 +1,7 @@
 package frc.lib;
 
 import java.util.List;
+import java.util.concurrent.locks.LockSupport;
 
 public class SubsystemDataProcessor implements Runnable {
     public interface DataReaderAndLogger {
@@ -11,7 +12,8 @@ public class SubsystemDataProcessor implements Runnable {
         void refreshData();
     }
 
-    public static final int LOOP_TIME = 20;
+    public static final int LOOP_TIME_MS = 20;
+    private static final long LOOP_TIME_NS = LOOP_TIME_MS * 1_000_000L;
 
     public static void createAndStartSubsystemDataProcessor(
             DataReaderAndLogger dataReaderAndLogger, IODataRefresher IODataRefresher) {
@@ -45,22 +47,32 @@ public class SubsystemDataProcessor implements Runnable {
 
     @Override
     public void run() {
+        // Calculate absolute deadline for next iteration
+        long nextDeadlineNs = System.nanoTime() + LOOP_TIME_NS;
+        
         while (!Thread.currentThread().isInterrupted()) {
-            long startNs = System.nanoTime();
             for (IODataRefresher IODataRefresher : IODataRefreshers) {
                 IODataRefresher.refreshData();
             }
 
             dataReaderAndLogger.readAndLogDataFromIO();
 
-            long elapsedMs = (System.nanoTime() - startNs) / 1_000_000L;
-            long sleepMs = LOOP_TIME - elapsedMs;
-            if (sleepMs > 0) {
-                try {
-                    Thread.sleep(sleepMs);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt(); // restore interrupt flag so the loop exits cleanly
-                }
+            // Use absolute time-based parking for precise timing
+            // LockSupport.parkNanos uses absolute deadline avoiding drift accumulation
+            long sleepNs = nextDeadlineNs - System.nanoTime();
+            if (sleepNs > 0) {
+                LockSupport.parkNanos(sleepNs);
+            }
+            
+            // Calculate next deadline based on previous deadline (not current time)
+            // This prevents drift accumulation over time
+            nextDeadlineNs += LOOP_TIME_NS;
+            
+            // If we've fallen behind by more than one full period, reset the deadline
+            // to prevent trying to "catch up" by running many iterations rapidly
+            long currentNs = System.nanoTime();
+            if (nextDeadlineNs < currentNs - LOOP_TIME_NS) {
+                nextDeadlineNs = currentNs + LOOP_TIME_NS;
             }
         }
     }

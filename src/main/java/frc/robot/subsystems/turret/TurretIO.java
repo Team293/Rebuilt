@@ -45,4 +45,12 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
      * @param deltaDegrees the amount of degrees to change the turret trim by, in degrees. Positive values will adjust the turret angle clockwise, and negative values will adjust the turret angle counterclockwise.
      */
     void changeTurretTrim(double deltaDegrees);
+
+    /**
+     * Set the angular velocity feedforward for the turret to compensate for robot rotation during moving shots.
+     * @param feedforwardDegPerSec feedforward angular velocity in degrees per second
+     */
+    default void setTurretFeedforward(double feedforwardDegPerSec) {
+        // Default implementation does nothing - override in TurretIOTalonFX
+    }
 }

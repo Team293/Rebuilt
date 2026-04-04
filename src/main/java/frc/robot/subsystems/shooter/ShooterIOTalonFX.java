@@ -19,6 +19,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 
 public class ShooterIOTalonFX implements ShooterIO {
     private static final double HOOD_ZERO_CURRENT = 1.75; // amps at which we consider the hood to have hit a limit
@@ -100,6 +101,7 @@ public class ShooterIOTalonFX implements ShooterIO {
         flywheelSlot0.kV = 0.0; // not used for torque control
 
         this.flywheelMotor.getConfigurator().apply(flywheelSlot0);
+        this.flywheelMotor.getConfigurator().apply(MotorCurrentLimits.FLYWHEEL.toCurrentLimitsConfigs());
 
         this.motorVelocity = flywheelMotor.getVelocity();
         this.hoodAngle = hoodEncoder.getAbsolutePosition();

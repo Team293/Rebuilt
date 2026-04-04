@@ -3,8 +3,6 @@ package frc.robot.subsystems.shooter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
@@ -91,13 +89,14 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     }
 
     /**
-     * Returns the distance from the center of the turret to the target in meters
-     * @return
+     * Returns the effective distance to target, accounting for moving shot compensation.
+     * Uses Targeting.getEffectiveDistance() which compensates for robot velocity when shooting while moving.
+     * @return effective distance in meters
      */
     public double getDistanceToTarget() {
-        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
-        return toGoal.getNorm() + io.distanceTrimMeters; // add distance trim to adjust the distance based on operator controller input
+        double effectiveDistance = Targeting.getEffectiveDistance();
+        Logger.recordOutput("Targeting/DistanceToTarget", effectiveDistance);
+        return effectiveDistance + io.distanceTrimMeters; // add distance trim to adjust the distance based on operator controller input
     }
 
     /**

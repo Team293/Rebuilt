@@ -44,8 +44,9 @@ import org.littletonrobotics.junction.Logger;
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
     // default standard deviations
-    // x, y, heading; trust x and y translation and reject yaw
-    public static final Vector<N3> kDefaultVisionStdDevs = VecBuilder.fill(0.3, 0.3, 1.0);
+    // x, y, heading; trust x, y translation and allow vision heading to contribute
+    // 0.3m for position, 0.1 rad (~5.7 deg) for heading allows useful heading correction from multi-tag poses
+    public static final Vector<N3> kDefaultVisionStdDevs = VecBuilder.fill(0.3, 0.3, 0.1);
 
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private double m_lastSimTime;

@@ -60,7 +60,7 @@ public class CameraManager {
                 "left",
                  new Transform3d(
                     Inches.of(-2.5),
-                    Inches.of(-13.75),
+                    Inches.of(13.75),  // positive Y = left side of robot (was incorrectly -13.75)
                     Inches.of(8.5625),
                  new Rotation3d(
                     Degrees.of(0),

@@ -18,11 +18,20 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.Turret;
 
 public class Targeting extends SubsystemBase {
-    private static final double NOMINAL_SHOT_TIME_S = 0.3; // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
-    private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
+    // ==================== CONFIGURATION ====================
+    
+    /** Minimum robot speed (m/s) to enable moving shot compensation.
+     *  Below this threshold, we use static aiming. */
+    private static final double MIN_SPEED_FOR_MOVING_SHOT = 0.1;
+    
+    /** Whether to use physics-based moving shot compensation */
+    private static boolean usePhysicsBasedMovingShot = true;
+    
+    // ==================== STATE ====================
+    
+    private static MovingShot.MovingShotResult lastMovingShotResult = null;
 
     private static Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-    private final CommandSwerveDrivetrain drive;
 
     private static final double FIELD_WIDTH = 8.07; // meters
     private static final double FIELD_LENGTH = 16.54; // meters
@@ -41,66 +50,120 @@ public class Targeting extends SubsystemBase {
     private boolean overrideRedAlliance = false;
     private boolean overrideBlueAlliance = false;
     
-    public Targeting(CommandSwerveDrivetrain drive) {
-        this.drive = drive;
+    public Targeting() {
         Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
 
         SmartDashboard.putBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         SmartDashboard.putBoolean("OverrideRedAlliance", overrideRedAlliance);
+        SmartDashboard.putBoolean("UsePhysicsMovingShot", usePhysicsBasedMovingShot);
     }
 
+    /**
+     * Calculate the vector from the turret pivot to the target, with optional
+     * moving shot compensation using physics-based prediction.
+     * 
+     * @return Translation2d vector from turret to target (or compensated aim point)
+     */
     public static Translation2d differenceBetweenRobotAndTarget() {
-        // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
-        // get pose of robo
         Pose2d robotPose = RobotContainer.getDrive().getPose();
-        Translation2d robotPos = robotPose.getTranslation();
-
-        Translation2d goalPose = targetPos;
-
-        Translation2d turretPivotNow = Turret.TURRET_OFFSET_FROM_CENTER
+        
+        // Calculate turret pivot position
+        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
                 .rotateBy(robotPose.getRotation())
                 .plus(robotPose.getTranslation());
 
-        double staticDistance = goalPose.getDistance(turretPivotNow);
-        double tof = ShotData.distanceToTOFConstant.get(staticDistance);
-        // translate robot-center pose to the turret pivot location on the field
-
+        // Get robot velocity in field-relative coordinates
         ChassisSpeeds robotRelSpeeds = RobotContainer.getDrive().getState().Speeds;
-
-        ChassisSpeeds speeds =
-            ChassisSpeeds.fromRobotRelativeSpeeds(
+        ChassisSpeeds fieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
                 robotRelSpeeds.vxMetersPerSecond,
                 robotRelSpeeds.vyMetersPerSecond,
                 robotRelSpeeds.omegaRadiansPerSecond,
                 robotPose.getRotation()
-            );
-
-        double vx = speeds.vxMetersPerSecond;
-        double vy = speeds.vyMetersPerSecond;
-
-        Translation2d predictedRobotPos = robotPos.plus(
-            new Translation2d(vx * tof, vy * tof)
         );
 
-        Rotation2d predictedHeading =
-            robotPose.getRotation().plus(
-                Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * tof)
-            );
-
-        Translation2d predictedTurretPivot = Turret.TURRET_OFFSET_FROM_CENTER
-            .rotateBy(predictedHeading)
-            .plus(predictedRobotPos);
-
-        Translation2d toGoalComp = goalPose.minus(predictedTurretPivot);
+        double robotSpeed = Math.hypot(fieldRelSpeeds.vxMetersPerSecond, fieldRelSpeeds.vyMetersPerSecond);
         
-        Logger.recordOutput("Targeting/StaticDistance", staticDistance);
-        Logger.recordOutput("Targeting/PredictedRobotPos", new Pose2d(predictedRobotPos, predictedHeading));
-        Logger.recordOutput("Targeting/PredictedTurretPivot", new Pose2d(predictedTurretPivot, predictedHeading));
-        Logger.recordOutput("Targeting/ToGoalCompensation", toGoalComp);
-        Logger.recordOutput("Targeting/TimeOfFlight", tof);
-
-        return toGoalComp;
+        // Check if we should use moving shot compensation
+        usePhysicsBasedMovingShot = SmartDashboard.getBoolean("UsePhysicsMovingShot", true);
+        
+        if (usePhysicsBasedMovingShot && robotSpeed > MIN_SPEED_FOR_MOVING_SHOT) {
+            // Use physics-based moving shot calculation
+            lastMovingShotResult = MovingShot.calculate(
+                    robotPose,
+                    Turret.TURRET_OFFSET_FROM_CENTER,
+                    fieldRelSpeeds,
+                    targetPos
+            );
+            
+            // Convert the aim angle back to a vector for compatibility with existing code
+            double aimAngleRad = Math.toRadians(lastMovingShotResult.turretAngleDeg());
+            double effectiveDistance = lastMovingShotResult.effectiveDistanceM();
+            
+            // Create a vector that points in the aim direction with the effective distance
+            Translation2d compensatedVector = new Translation2d(
+                    effectiveDistance * Math.cos(aimAngleRad),
+                    effectiveDistance * Math.sin(aimAngleRad)
+            );
+            
+            Logger.recordOutput("Targeting/UsingMovingShot", true);
+            Logger.recordOutput("Targeting/EffectiveDistance", effectiveDistance);
+            Logger.recordOutput("Targeting/TimeOfFlight", lastMovingShotResult.timeOfFlightS());
+            Logger.recordOutput("Targeting/LeadAngleDeg", lastMovingShotResult.leadAngleDeg());
+            
+            return compensatedVector;
+        } else {
+            // Static aiming - just point at the target
+            Translation2d toGoal = targetPos.minus(turretPivot);
+            
+            Logger.recordOutput("Targeting/UsingMovingShot", false);
+            Logger.recordOutput("Targeting/StaticDistance", toGoal.getNorm());
+            
+            lastMovingShotResult = null;
+            return toGoal;
+        }
+    }
+    
+    /**
+     * Get the effective distance to target, accounting for moving shot compensation.
+     * This should be used for RPM and hood angle lookups.
+     * 
+     * @return Effective distance in meters
+     */
+    public static double getEffectiveDistance() {
+        if (lastMovingShotResult != null && lastMovingShotResult.isValidShot()) {
+            return lastMovingShotResult.effectiveDistanceM();
+        }
+        
+        // Fall back to static distance
+        Pose2d robotPose = RobotContainer.getDrive().getPose();
+        Translation2d turretPivot = Turret.TURRET_OFFSET_FROM_CENTER
+                .rotateBy(robotPose.getRotation())
+                .plus(robotPose.getTranslation());
+        return targetPos.minus(turretPivot).getNorm();
+    }
+    
+    /**
+     * Get the turret feedforward for angular velocity compensation.
+     * Apply this to the turret to compensate for robot rotation during moving shots.
+     * 
+     * @return Turret feedforward in degrees per second
+     */
+    public static double getTurretFeedforward() {
+        if (lastMovingShotResult != null && lastMovingShotResult.isValidShot()) {
+            return lastMovingShotResult.turretAngularVelocityFFDegPerS();
+        }
+        return 0.0;
+    }
+    
+    /**
+     * Check if the current shot is valid (achievable with physics).
+     */
+    public static boolean isValidShot() {
+        if (lastMovingShotResult != null) {
+            return lastMovingShotResult.isValidShot();
+        }
+        return true; // Static shots are always "valid"
     }
 
     /**
@@ -136,15 +199,6 @@ public class Targeting extends SubsystemBase {
 
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
-
-        // if (!DriverStation.getAlliance().isPresent() && isRedAlliance) {
-        //     if (isRedAlliance) {
-        //         targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        //     } else {
-        //         targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
-        //     }
-        //     return;
-        // }
 
         if (overrideRedAlliance) {
             targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
@@ -197,12 +251,11 @@ public class Targeting extends SubsystemBase {
             targetPos = new Translation2d(0 + shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         }
     }
-    
+
     /**
-     * Returns the current shot data
-     * @return ShotCompensation.AdjustedShot shot data to use
+     * Returns the last moving shot result for advanced users
      */
-    public static ShotCompensation.AdjustedShot getShotData() {
-        return shotData;
+    public static MovingShot.MovingShotResult getMovingShotResult() {
+        return lastMovingShotResult;
     }
 }
