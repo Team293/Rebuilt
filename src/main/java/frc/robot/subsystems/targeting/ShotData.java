@@ -11,7 +11,7 @@ public class ShotData {
         distanceToRPM.put(1.0, 1800.0);
         distanceToHoodAngle.put(1.0, 15.0);
         distanceToTOFConstant.put(1.0, 0.8);
-        distanceToTOFConstant.put(4.0, 0.9  );
+        distanceToTOFConstant.put(4.0, 0.85  );
 
         distanceToRPM.put(2.0, 2050.0);
         distanceToHoodAngle.put(2.0, 23.0);

@@ -153,7 +153,7 @@ public class RobotContainer {
                         .withTargetDirection(Rotation2d.fromDegrees(90));
                 }
 
-                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.5 : 1.0;
 
                 return driveCmd
                     .withVelocityX(vx)
@@ -168,8 +168,8 @@ public class RobotContainer {
                 drive.applyRequest(() -> idle).ignoringDisable(true));
 
         driverController.leftTrigger().whileTrue(drive.applyRequest(() -> brake));
-        driverController.rightTrigger().whileTrue(drive.applyRequest(() -> point
-                .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
+        // driverController.rightTrigger().whileTrue(drive.applyRequest(() -> point
+        //         .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -206,11 +206,11 @@ public class RobotContainer {
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
         operatorController.rightTrigger()
-                .onTrue(shooter.runOnce(() -> shooter.setDriverRequestingShooting(true)))
-                .onFalse(shooter.runOnce(() -> shooter.setDriverRequestingShooting(false)));
+                .onTrue(shooter.runOnce(() -> shooter.setDriverSpinUpFlywheel(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setDriverSpinUpFlywheel(false)));
         operatorController.leftTrigger()
-                .onTrue(shooter.runOnce(() -> shooter.setRequestingWithForce(true)))
-                .onFalse(shooter.runOnce(() -> shooter.setRequestingWithForce(false)));
+                .onTrue(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(false)));
 
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
@@ -223,6 +223,9 @@ public class RobotContainer {
         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(1)));
         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-1)));
+
+        driverController.rightTrigger().onTrue(shooter.runOnce(() -> shooter.setOverrideStopShooting(true)));
+        driverController.rightTrigger().onFalse(shooter.runOnce(() -> shooter.setOverrideStopShooting(false)));
     }
 
     public Command getAutonomousCommand() {

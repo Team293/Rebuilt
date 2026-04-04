@@ -16,8 +16,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private boolean readFromData = true;
 
     private ShooterIO shooterIO;
-    private boolean driverRequestingShooting = false; // Whether the driver is currently requesting to shoot
-    private boolean requestingWithForce = false; // Whether the driver is requesting to shoot with force, which bypasses the normal checks for whether the shooter is ready and just runs the flywheel and hood at the target values
+    private boolean spinUpFlywheel = false; 
+    private boolean actuateHoodAndLaunch = false; 
+    private boolean overrideStopShooting = false; // driver override to stop shooting and bring hood to  zero regardless of operator input
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
@@ -55,16 +56,16 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         if (io.isZeroing) {
             shooterIO.runZeroingHood();
         } else {
-            if (driverRequestingShooting) {
-                shooterIO.setHoodAngle(hoodAngle);
+            if (overrideStopShooting || !actuateHoodAndLaunch) {
+                shooterIO.setHoodAngle(0);
             } else {
-                shooterIO.setHoodAngle(15); // set hood to default position when not shooting
+                shooterIO.setHoodAngle(hoodAngle);
             }
         }
 
         // put to recovery mode if the driver is requesting to shoot
         // more direct control rather than smooth trajectory generation
-        if (driverRequestingShooting) {
+        if (spinUpFlywheel) {
             shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
         } else {
             shooterIO.setFlywheelVelocity(0);
@@ -103,12 +104,12 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      * Sets whether the driver is currently requesting to shoot. This can be used to determine if the shooter should be active or not.
       * @param isRequesting true if the driver is requesting to shoot, false otherwise
      */
-    public void setDriverRequestingShooting(boolean isRequesting) {
-        this.driverRequestingShooting = isRequesting;
+    public void setDriverSpinUpFlywheel(boolean isRequesting) {
+        this.spinUpFlywheel = isRequesting;
     }
 
-    public void setRequestingWithForce(boolean isRequestingWithForce) {
-        this.requestingWithForce = isRequestingWithForce;
+    public void setActuateHoodAndLaunch(boolean isRequesting) {
+        this.actuateHoodAndLaunch = isRequesting;
     }
 
     public void zeroHood() {
@@ -119,12 +120,12 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      * Returns whether the driver is currently requesting to shoot.
      * @return true if the driver is requesting to shoot, false otherwise
      */
-    public boolean isShootingRequested() {
-        return this.driverRequestingShooting;
+    public boolean isSpinUpFlywheel() {
+        return this.spinUpFlywheel;
     }
 
-    public boolean isRequestingWithForce() {
-        return this.requestingWithForce;
+    public boolean isActuatingHoodAndLaunching() {
+        return this.actuateHoodAndLaunch;
     }
 
      /**
@@ -134,5 +135,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public void changeDistanceTrim(double deltaDistance) {
         shooterIO.changeDistanceTrim(deltaDistance);
+    }
+
+    public void setOverrideStopShooting(boolean overrideStopShooting) {
+        this.overrideStopShooting = overrideStopShooting;
     }
 }

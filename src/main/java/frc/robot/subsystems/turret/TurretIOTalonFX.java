@@ -43,6 +43,8 @@ public class TurretIOTalonFX implements TurretIO {
     private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
     private double lastPinionRevs = 0.0; // last calculated position of the pinion encoder in revolutions
 
+    private double lastTurretAngleDegrees = 0.0; // last calculated angle of the turret in degrees, used for calculating angular velocity
+
     // VALUES
     private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
     private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
@@ -171,6 +173,26 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
         inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
         inputs.turretTrimDegrees = turretTrimDegrees;
+        inputs.turretAngularVelocityDegreesPerSecond = getAngularVelocityDegreesPerSecond();
+    }
+
+    private double getAngularVelocityDegreesPerSecond() {
+        double currentAngleDegrees = getTurretAngleRobotRelative();
+        double deltaDegrees = currentAngleDegrees - lastTurretAngleDegrees;
+
+        // if the change in angle is greater than 180 degrees, we have wrapped around the encoder, so we need to adjust the delta accordingly
+        if (deltaDegrees > 180.0) {
+            deltaDegrees -= 360.0;
+        } else if (deltaDegrees < -180.0) {
+            deltaDegrees += 360.0;
+        }
+
+        lastTurretAngleDegrees = currentAngleDegrees;
+
+        // calculate angular velocity in degrees per second
+        double angularVelocityDegreesPerSecond = deltaDegrees / 0.02; // assuming this method is called every 20 ms
+
+        return angularVelocityDegreesPerSecond;
     }
 
     // CONFIGURATIONS

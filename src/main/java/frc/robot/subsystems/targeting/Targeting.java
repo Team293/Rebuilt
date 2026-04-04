@@ -27,7 +27,7 @@ public class Targeting extends SubsystemBase {
     private static final double FIELD_WIDTH = 8.07; // meters
     private static final double FIELD_LENGTH = 16.54; // meters
 
-    private static final double shuttlingXOffset = 1.5;
+    private static final double shuttlingXOffset = 2.0;
     private static final double shuttlingYOffset = 1.5;
 
     private boolean overrideRedAlliance = false;
