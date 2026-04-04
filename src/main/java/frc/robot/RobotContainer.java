@@ -82,15 +82,16 @@ public class RobotContainer {
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
 
-        autoChooser = drive.getAutoChooser();
-        SmartDashboard.putData("Auto Path", autoChooser);
-
+        
         NamedCommands.registerCommand("enableIntake", new SetIntakeState(intake, true));
         NamedCommands.registerCommand("disableIntake", new SetIntakeState(intake, false));
         NamedCommands.registerCommand("startFlywheel", new SetFlywheelState(shooter, true));
         NamedCommands.registerCommand("stopFlywheel", new SetFlywheelState(shooter, false));
         NamedCommands.registerCommand("requestShooting10S", new RequestShootingForSeconds(shooter, true, 10.0));
         NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
+
+        autoChooser = drive.getAutoChooser();
+        SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
         configureLEDPresets();

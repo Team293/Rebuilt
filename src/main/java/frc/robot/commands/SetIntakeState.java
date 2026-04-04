@@ -10,14 +10,19 @@ public class SetIntakeState extends Command {
     public SetIntakeState(Intake intake, boolean enabled) {
         this.intake = intake;
         this.enabled = enabled;
+        if (this.enabled) {
+            this.intake.enable();
+        } else {
+            this.intake.disable();
+        }
     }
 
     @Override
     public void initialize() {
         if (this.enabled) {
-            this.intake.disable();
-        } else {
             this.intake.enable();
+        } else {
+            this.intake.disable();
         }
     }
 

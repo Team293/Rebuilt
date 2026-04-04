@@ -15,14 +15,19 @@ public class RequestShootingForSeconds extends Command {
         this.shooter = shooter;
         this.enabled = enabled;
         this.shootingTime = shootingTime;
+        this.shootingTimer.restart();
     }
 
 
     @Override
     public void initialize() {
         this.shooter.setActuateHoodAndLaunch(enabled);
-
         this.shootingTimer.restart();
+    }
+
+    @Override
+    public void execute() {
+        this.shooter.setActuateHoodAndLaunch(enabled);
     }
 
     @Override
