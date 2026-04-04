@@ -48,15 +48,13 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
                 avgDist = totalDist / pose.targetsUsed.size();
             }
 
-            if (!usePose) {
-                continue;
+            if (usePose) {               
+                drive.addVisionMeasurement(
+                        pose.estimatedPose.toPose2d(),
+                        pose.timestampSeconds,
+                        CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30))
+                );
             }
-
-            drive.addVisionMeasurement(
-                    pose.estimatedPose.toPose2d(),
-                    pose.timestampSeconds,
-                    CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30))
-            );
         }
     }
 
