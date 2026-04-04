@@ -78,6 +78,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     }
 
     public void toggleAimingOverride() {
+        RobotContainer.getLEDController().switchPreset("fixed");
         this.overrideAutomaticAiming = !this.overrideAutomaticAiming;
     }
 
