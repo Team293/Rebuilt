@@ -26,6 +26,7 @@ import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.targeting.Targeting;
+import frc.robot.subsystems.targeting.Targeting.Target;
 import frc.robot.subsystems.trigger.Trigger;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
@@ -198,9 +199,9 @@ public class RobotContainer {
     }
 
     private void setupTargetingBindings() {
-        operatorController.y().onTrue(targeting.runOnce(targeting::setTargetingHub));
-        operatorController.x().onTrue(targeting.runOnce(targeting::setTargetingShuttleLeft));
-        operatorController.b().onTrue(targeting.runOnce(targeting::setTargetingShuttleRight));
+        operatorController.y().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.HUB)));
+        operatorController.x().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.SHUTTLE_LEFT)));
+        operatorController.b().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.SHUTTLE_RIGHT)));
     }
 
     private void setupShooterBindings() {

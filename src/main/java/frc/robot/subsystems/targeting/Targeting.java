@@ -30,12 +30,19 @@ public class Targeting extends SubsystemBase {
     private static final double shuttlingXOffset = 2.0;
     private static final double shuttlingYOffset = 1.5;
 
+    public static enum Target {
+        HUB,
+        SHUTTLE_RIGHT,
+        SHUTTLE_LEFT
+    }
+
+    private Target currentTarget = Target.HUB;
+
     private boolean overrideRedAlliance = false;
     private boolean overrideBlueAlliance = false;
     
     public Targeting(CommandSwerveDrivetrain drive) {
         this.drive = drive;
-        setTargetingHub();
         Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
 
@@ -101,15 +108,26 @@ public class Targeting extends SubsystemBase {
      */
     @Override
     public void periodic() {
-        if (DriverStation.isAutonomous()) {
-            setTargetingHub();
+        if (currentTarget == Target.HUB) {
+            setPoseTargetingHub();
+        } else if (currentTarget == Target.SHUTTLE_RIGHT) {
+            setPoseTargetingShuttleRight();
+        } else if (currentTarget == Target.SHUTTLE_LEFT) {
+            setPoseTargetingShuttleLeft();
         }
+    }
+
+    /**
+     * Set the target of the targeting subsystem. This will change the target position
+     */
+    public void setTarget(Target target) {
+        currentTarget = target;
     }
 
     /**
      * Set the target location to center of the hub 
      */
-    public void setTargetingHub() {
+    private void setPoseTargetingHub() {
         Elastic.sendNotification(
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
         );
@@ -152,7 +170,7 @@ public class Targeting extends SubsystemBase {
     /**
      * Set the target location to 0, 0
      */
-    public void setTargetingShuttleRight() {
+    private void setPoseTargetingShuttleRight() {
         Elastic.sendNotification(
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
@@ -166,7 +184,7 @@ public class Targeting extends SubsystemBase {
         }
     }
 
-    public void setTargetingShuttleLeft() {
+    private void setPoseTargetingShuttleLeft() {
         Elastic.sendNotification(
                 new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
         );
