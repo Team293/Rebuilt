@@ -54,7 +54,7 @@ public class TurretIOTalonFX implements TurretIO {
     private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
-    private double turretTrimDegrees = -4.0;
+    private double turretTrimDegrees = 0.0;
 
     public TurretIOTalonFX(CommandSwerveDrivetrain drive) {
         // SUBSYSTEMS
@@ -104,7 +104,7 @@ public class TurretIOTalonFX implements TurretIO {
 
         // absolute robot-relative target, in motor rotations
         double targetRobotRelativeDeg = fieldRelativeAngleDegrees - currentRobotHeading;
-        this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg + turretTrimDegrees);
+        this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg);
 
         setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
     }
