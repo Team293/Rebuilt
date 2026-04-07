@@ -8,15 +8,15 @@ import org.littletonrobotics.junction.Logger;
 
 /**
  * Physics-based shoot-on-the-move compensation system.
- * 
+ * <br><br>
  * This class calculates the required turret angle and shot parameters to hit a target
  * while the robot is moving, using projectile motion physics rather than simple
  * linear prediction.
- * 
- * Key concepts:
- * - The ball inherits the robot's velocity when shot
- * - The ball follows a parabolic arc due to gravity
- * - We need to "lead" the target to account for robot motion during flight
+ * <br><br>
+ * Key concepts:<br>
+ * - The ball inherits the robot's velocity when shot<br>
+ * - The ball follows a parabolic arc due to gravity<br>
+ * - We need to "lead" the target to account for robot motion during flight<br>
  * - Turret feedforward compensates for robot rotation during aiming
  */
 public class MovingShot {
@@ -33,7 +33,7 @@ public class MovingShot {
     private static final double TARGET_HEIGHT_METERS = 2.64; // 2026 game target height - adjust as needed
     
     /** Flywheel radius in meters - used to convert RPM to ball exit velocity */
-    private static final double FLYWHEEL_RADIUS_METERS = 0.051; // 2 inch radius = 0.051m
+    private static final double FLYWHEEL_RADIUS_METERS = 0.127; // 2 inch radius = 0.051m
     
     /** Efficiency factor for flywheel to ball velocity transfer (typically 0.7-0.9) */
     private static final double FLYWHEEL_EFFICIENCY = 0.85;
@@ -109,7 +109,7 @@ public class MovingShot {
         if (timeOfFlight <= 0 || Double.isNaN(timeOfFlight)) {
             timeOfFlight = staticDistance / (ballExitVelocity * Math.cos(Math.toRadians(hoodAngleDeg)));
             if (timeOfFlight <= 0 || Double.isNaN(timeOfFlight)) {
-                timeOfFlight = 0.5; // Last resort fallback
+                timeOfFlight = 0.8; // Last resort fallback
             }
         }
         
@@ -127,12 +127,6 @@ public class MovingShot {
         Translation2d aimPoint = targetPosition;
         
         for (int i = 0; i < MAX_ITERATIONS; i++) {
-            // Predict where the turret pivot will be at shot time
-            // (Ball is released from current position, but inherits robot velocity)
-            Translation2d predictedTurretPivot = turretPivot.plus(
-                    new Translation2d(vx * refinedTOF, vy * refinedTOF)
-            );
-            
             // The ball inherits robot velocity, so relative to a ground-fixed frame,
             // the target appears to move opposite to robot velocity
             // But the ball also moves with robot velocity, so these cancel for the
@@ -236,11 +230,11 @@ public class MovingShot {
     
     /**
      * Calculate time of flight using projectile motion physics.
-     * 
+     * <br>
      * Uses the equations:
      * - x(t) = v0 * cos(theta) * t
      * - y(t) = h0 + v0 * sin(theta) * t - 0.5 * g * t^2
-     * 
+     * <br>
      * @param horizontalDistance Distance to target in meters
      * @param exitVelocity Ball exit velocity in m/s
      * @param launchAngleRad Launch angle in radians (from horizontal)
@@ -263,7 +257,6 @@ public class MovingShot {
         
         // Verify the ball reaches the target height at this time
         // y(t) = h0 + vy*t - 0.5*g*t^2
-        double heightDifference = TARGET_HEIGHT_METERS - SHOOTER_HEIGHT_METERS;
         double actualHeight = vy * t - 0.5 * GRAVITY * t * t;
         
         // If we're not reaching target height, this isn't a valid trajectory
@@ -278,7 +271,7 @@ public class MovingShot {
     
     /**
      * Calculate the apparent angular rate of the target due to robot translation.
-     * 
+     * <br>
      * When the robot moves tangentially to the target, the target appears to
      * move angularly even though it's stationary.
      * 

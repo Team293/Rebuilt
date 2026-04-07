@@ -14,7 +14,6 @@ import frc.lib.Elastic.Notification;
 import frc.lib.Elastic.NotificationLevel;
 import frc.lib.FieldConstants;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.Turret;
 
 public class Targeting extends SubsystemBase {
