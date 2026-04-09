@@ -11,7 +11,7 @@ import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
-    private static final double SHOOTER_READY_THRESHOLD_RPS = 2.0; // RPS threshold to consider the shooter ready
+    private static final double SHOOTER_READY_THRESHOLD_RPS = 3.0; // RPS threshold to consider the shooter ready
 
     private boolean readFromData = true;
 
@@ -66,6 +66,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         // put to recovery mode if the driver is requesting to shoot
         // more direct control rather than smooth trajectory generation
         if (spinUpFlywheel) {
+            // check if RPM change is greater than 50 to prevent minor fluctuations from causing the shooter to go into recovery mode
             shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
         } else {
             shooterIO.setFlywheelVelocity(0);
@@ -87,7 +88,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     @AutoLogOutput(key="Shooter/IsAtTargetRPS")
     public boolean isAtTargetRPS() {
-        return Math.abs((super.io.flywheelVelocityRPS - 0.5) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
+        return Math.abs((super.io.flywheelVelocityRPS - 1) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
     }
 
     /**
@@ -136,6 +137,19 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     public void changeDistanceTrim(double deltaDistance) {
         shooterIO.changeDistanceTrim(deltaDistance);
     }
+
+    public void setDistanceTrim(double deltaDistance) {
+        shooterIO.setDistanceTrim(deltaDistance);
+    }
+
+    public double getDistanceTrim() {
+        return shooterIO.getDistanceTrim();
+    }
+
+     /**
+     * Sets the override to stop shooting and bring hood to zero regardless of operator input. This is used for a driver override to prevent shooting and reset the hood position.
+     * @param overrideStopShooting true to override and stop shooting, false to allow shooting based on operator input
+     */
 
     public void setOverrideStopShooting(boolean overrideStopShooting) {
         this.overrideStopShooting = overrideStopShooting;

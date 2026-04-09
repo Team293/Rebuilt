@@ -32,16 +32,16 @@
     },
     {
       "anchor": {
-        "x": 7.326208609271523,
-        "y": 5.1893294701986745
+        "x": 7.289908940397352,
+        "y": 5.414387417218543
       },
       "prevControl": {
-        "x": 8.146581125827815,
-        "y": 5.218369205298013
+        "x": 8.110281456953643,
+        "y": 5.443427152317882
       },
       "nextControl": {
-        "x": 6.88343972815728,
-        "y": 5.173656235468966
+        "x": 6.847140059283109,
+        "y": 5.398714182488835
       },
       "isLocked": false,
       "linkedName": null
@@ -135,17 +135,6 @@
               }
             }
           ]
-        }
-      }
-    },
-    {
-      "name": "requestShooting10S",
-      "waypointRelativePos": 3.9747858255451685,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "requestShooting10S"
         }
       }
     }

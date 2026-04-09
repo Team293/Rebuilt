@@ -192,8 +192,6 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
 
-        driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
-
         // operatorController.y().onTrue(vision.runOnce(() -> {
         // var estimatedPose = vision.getEstimatedPositionFromCameras();
         // if (estimatedPose != null) {
@@ -236,8 +234,8 @@ public class RobotContainer {
         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(1)));
         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-1)));
 
-        driverController.rightTrigger().onTrue(shooter.runOnce(() -> shooter.setOverrideStopShooting(true)));
-        driverController.rightTrigger().onFalse(shooter.runOnce(() -> shooter.setOverrideStopShooting(false)));
+        driverController.leftTrigger().onTrue(shooter.runOnce(() -> shooter.setOverrideStopShooting(true)));
+        driverController.leftTrigger().onFalse(shooter.runOnce(() -> shooter.setOverrideStopShooting(false)));
     }
 
     public Command getAutonomousCommand() {

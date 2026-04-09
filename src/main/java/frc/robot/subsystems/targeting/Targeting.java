@@ -2,6 +2,8 @@ package frc.robot.subsystems.targeting;
 
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -29,6 +31,12 @@ public class Targeting extends SubsystemBase {
 
     private static final double shuttlingXOffset = 2.0;
     private static final double shuttlingYOffset = 1.5;
+
+    private static final MedianFilter distMedian = new MedianFilter(5);
+    private static final LinearFilter distIIR = LinearFilter.singlePoleIIR(0.06, 0.02);
+
+    private static final LinearFilter toGoalXFilter = LinearFilter.singlePoleIIR(0.04, 0.02);
+    private static final LinearFilter toGoalYFilter = LinearFilter.singlePoleIIR(0.04, 0.02);
 
     public static enum Target {
         HUB,
@@ -62,8 +70,9 @@ public class Targeting extends SubsystemBase {
                 .rotateBy(robotPose.getRotation())
                 .plus(robotPose.getTranslation());
 
-        double staticDistance = goalPose.getDistance(turretPivotNow);
+        double staticDistance = distIIR.calculate(distMedian.calculate(goalPose.getDistance(turretPivotNow)));
         double tof = ShotData.distanceToTOFConstant.get(staticDistance);
+        Logger.recordOutput("Targeting/TOF", tof);
         // translate robot-center pose to the turret pivot location on the field
 
         ChassisSpeeds robotRelSpeeds = RobotContainer.getDrive().getState().Speeds;
@@ -100,7 +109,10 @@ public class Targeting extends SubsystemBase {
         Logger.recordOutput("Targeting/ToGoalCompensation", toGoalComp);
         Logger.recordOutput("Targeting/TimeOfFlight", tof);
 
-        return toGoalComp;
+        return new Translation2d(
+            toGoalXFilter.calculate(toGoalComp.getX()),
+            toGoalYFilter.calculate(toGoalComp.getY())
+        );
     }
 
     /**

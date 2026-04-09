@@ -1,5 +1,6 @@
 package frc.robot.subsystems.findexer;
 
+import edu.wpi.first.wpilibj.Timer;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.trigger.Trigger;
 
@@ -24,7 +25,11 @@ public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
     public void onPeriodic() {
         // run the findexer if the indexer needs feeding (doesn't have a ball), otherwise stop it
         if (trigger.needsFeeding()) {
-            findexerIO.setSpeed(FEEDING_RPS);
+            if (this.trigger.getReverseTrigger()) {
+                findexerIO.setSpeed(-FEEDING_RPS);
+            } else {
+                findexerIO.setSpeed(FEEDING_RPS);
+            }
         } else {
             findexerIO.setSpeed(0.0);
         }

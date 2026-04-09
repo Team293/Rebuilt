@@ -23,11 +23,14 @@ public class RequestShootingForSeconds extends Command {
     public void initialize() {
         this.shooter.setActuateHoodAndLaunch(enabled);
         this.shootingTimer.restart();
+        System.out.println("RequestShootingForSeconds initialized with enabled = " + enabled + " and shootingTime = " + shootingTime);
     }
 
     @Override
     public void execute() {
         this.shooter.setActuateHoodAndLaunch(enabled);
+        this.shooter.setDriverSpinUpFlywheel(true);
+        System.out.println("RequestShootingForSeconds executing with enabled = " + enabled);
     }
 
     @Override
@@ -39,5 +42,6 @@ public class RequestShootingForSeconds extends Command {
     public void end(boolean interrupted) {
         this.shooter.setActuateHoodAndLaunch(false);
         this.shooter.setDriverSpinUpFlywheel(false);
+        this.shooter.setDistanceTrim(0);
     }
 }

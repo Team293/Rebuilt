@@ -9,7 +9,12 @@ public class ShotData {
     
     static {
         distanceToTOFConstant.put(1.0, 0.8);
-        distanceToTOFConstant.put(4.0, 0.85  );
+        distanceToTOFConstant.put(3.0, 1.2);
+        distanceToTOFConstant.put(4.0, 1.4);
+        distanceToTOFConstant.put(5.0, 1.6);
+        distanceToTOFConstant.put(6.0, 1.9);
+        
+        distanceToTOFConstant.put(10.0, 4.0);
 
         distanceToRPM.put(2.0, 2000.0);
         distanceToHoodAngle.put(2.0, 25.0);

@@ -22,4 +22,6 @@ public interface ShooterIO extends BaseIO<ShooterIO.ShooterIOInputs>, IORefreshe
     void runZeroingHood();
     void zeroHood();
     void changeDistanceTrim(double deltaDistance);
+    void setDistanceTrim(double deltaDistance);
+    double getDistanceTrim();
 }

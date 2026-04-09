@@ -139,6 +139,16 @@ public class ShooterIOTalonFX implements ShooterIO {
         this.distanceTrim += deltaDistance;
     }
 
+    @Override
+    public void setDistanceTrim(double deltaDistance) {
+        this.distanceTrim = deltaDistance;
+    }
+
+    @Override
+    public double getDistanceTrim() {
+        return this.distanceTrim;
+    }
+
     /**
      * Periodically refreshes encoder signals.
      * Called automatically by the subsystem data refresher.

@@ -7,6 +7,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -53,7 +55,7 @@ public class TurretIOTalonFX implements TurretIO {
     private double targetTurretDegreesTurretRelative = 0;
 
     // COMMANDS
-    private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
+    private final PositionTorqueCurrentFOC mmRequest = new PositionTorqueCurrentFOC(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
     private double turretTrimDegrees = 0.0;
@@ -116,10 +118,10 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
-        this.targetTurretDegreesTurretRelative = angleDegrees;
-
         angleDegrees += turretTrimDegrees;
         angleDegrees = wrap180(angleDegrees);
+
+        this.targetTurretDegreesTurretRelative = angleDegrees;
         double targetMotorRotations = angleDegrees / 180.0;
         this.targetTurretAngleMotorRevs = targetMotorRotations;
         
@@ -204,12 +206,13 @@ public class TurretIOTalonFX implements TurretIO {
     private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 50;
-        configs.kI = 0.0;
-        configs.kD = 1;
+        configs.kP = 200;
+        configs.kI = 180;
+        configs.kD = 15;
 
-        configs.kS = 0.4; //kS;
-        configs.kV = 0.4; //kV;
+        configs.kS = 10; //kS;
+        configs.kV = 0.8; //kV;
+        configs.kA = 20;
 
         MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
 

@@ -1,5 +1,6 @@
 package frc.robot.subsystems.trigger;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
@@ -54,6 +55,10 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
         this.reverseTrigger = reverse;
     }
 
+    public boolean getReverseTrigger() {
+        return this.reverseTrigger;
+    }
+
     /**
      * Determines if the shooter and turret are ready to receive a ball.
      * @return true if the shooter is at target RPS, the turret is at target angle, and the driver is requesting to shoot, false otherwise
@@ -62,6 +67,12 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
         if (shooter.isActuatingHoodAndLaunching()) {
             // check if turret is at target angle 
             boolean turretReady = turret.isAtTargetAngle();
+
+            
+            // if (DriverStation.isAutonomous() && turretReady) {
+            //     turretReady = shooter.isAtTargetRPS();
+            // }
+
             if (!turretReady) {
                 return false;
             }
