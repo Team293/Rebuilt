@@ -21,11 +21,15 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.lib.SpikeController;
 import frc.lib.led.LEDController;
 import frc.lib.led.LEDPreset;
+import frc.robot.commands.SetFlywheelState;
+import frc.robot.commands.SetIntakeState;
+import frc.robot.commands.RequestShootingForSeconds;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.targeting.Targeting;
+import frc.robot.subsystems.targeting.Targeting.Target;
 import frc.robot.subsystems.trigger.Trigger;
 import frc.robot.subsystems.turret.Turret;
 import frc.robot.subsystems.intake.Intake;
@@ -77,6 +81,14 @@ public class RobotContainer {
         this.targeting = new Targeting(drive);
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
+
+        
+        NamedCommands.registerCommand("enableIntake", new SetIntakeState(intake, true));
+        NamedCommands.registerCommand("disableIntake", new SetIntakeState(intake, false));
+        NamedCommands.registerCommand("startFlywheel", new SetFlywheelState(shooter, true));
+        NamedCommands.registerCommand("stopFlywheel", new SetFlywheelState(shooter, false));
+        NamedCommands.registerCommand("requestShooting10S", new RequestShootingForSeconds(shooter, true, 10.0));
+        NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
@@ -153,7 +165,7 @@ public class RobotContainer {
                         .withTargetDirection(Rotation2d.fromDegrees(90));
                 }
 
-                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+                double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.5 : 1.0;
 
                 return driveCmd
                     .withVelocityX(vx)
@@ -168,8 +180,8 @@ public class RobotContainer {
                 drive.applyRequest(() -> idle).ignoringDisable(true));
 
         driverController.leftTrigger().whileTrue(drive.applyRequest(() -> brake));
-        driverController.rightTrigger().whileTrue(drive.applyRequest(() -> point
-                .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
+        // driverController.rightTrigger().whileTrue(drive.applyRequest(() -> point
+        //         .withModuleDirection(new Rotation2d(-driverController.getLeftY(), -driverController.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -179,8 +191,6 @@ public class RobotContainer {
         driverController.start().and(driverController.x()).whileTrue(drive.sysIdQuasistatic(Direction.kReverse));
 
         // reset the field-centric heading on left bumper press
-
-        driverController.leftBumper().onTrue(drive.runOnce(() -> drive.seedFieldCentric()));
 
         // operatorController.y().onTrue(vision.runOnce(() -> {
         // var estimatedPose = vision.getEstimatedPositionFromCameras();
@@ -198,19 +208,19 @@ public class RobotContainer {
     }
 
     private void setupTargetingBindings() {
-        operatorController.y().onTrue(targeting.runOnce(targeting::setTargetingHub));
-        operatorController.x().onTrue(targeting.runOnce(targeting::setTargetingShuttleLeft));
-        operatorController.b().onTrue(targeting.runOnce(targeting::setTargetingShuttleRight));
+        operatorController.y().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.HUB)));
+        operatorController.x().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.SHUTTLE_LEFT)));
+        operatorController.b().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.SHUTTLE_RIGHT)));
     }
 
     private void setupShooterBindings() {
         // toggle shooter on right trigger hold
         operatorController.rightTrigger()
-                .onTrue(shooter.runOnce(() -> shooter.setDriverRequestingShooting(true)))
-                .onFalse(shooter.runOnce(() -> shooter.setDriverRequestingShooting(false)));
+                .onTrue(shooter.runOnce(() -> shooter.setDriverSpinUpFlywheel(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setDriverSpinUpFlywheel(false)));
         operatorController.leftTrigger()
-                .onTrue(shooter.runOnce(() -> shooter.setRequestingWithForce(true)))
-                .onFalse(shooter.runOnce(() -> shooter.setRequestingWithForce(false)));
+                .onTrue(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(true)))
+                .onFalse(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(false)));
 
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
@@ -223,6 +233,9 @@ public class RobotContainer {
         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(1)));
         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-1)));
+
+        driverController.leftTrigger().onTrue(shooter.runOnce(() -> shooter.setOverrideStopShooting(true)));
+        driverController.leftTrigger().onFalse(shooter.runOnce(() -> shooter.setOverrideStopShooting(false)));
     }
 
     public Command getAutonomousCommand() {

@@ -1,0 +1,26 @@
+package frc.robot.commands;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.shooter.Shooter;
+
+public class SetFlywheelState extends Command {
+    private Shooter shooter;
+    private boolean enabled;
+
+    public SetFlywheelState(Shooter shooter, boolean enabled) {
+        this.shooter = shooter;
+        this.enabled = enabled;
+    }
+
+    @Override
+    public void initialize() {
+        this.shooter.setDriverSpinUpFlywheel(enabled);
+        this.shooter.setDistanceTrim(0.6);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return true;
+    }
+}

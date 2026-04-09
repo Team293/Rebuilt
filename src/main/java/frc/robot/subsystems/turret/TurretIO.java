@@ -21,6 +21,7 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
         public double followerEncoderRotations = 0.0; // current rotations of the follower
         public double rawTurretMechanismRotations = 0.0; // raw rotations of the entire turret mechanism
         public double turretTrimDegrees = 0.0; // minor adjustment to the turret angle based on operator controller input, in degrees
+        public double turretAngularVelocityDegreesPerSecond = 0.0; // current angular velocity of the turret, in degrees per second
     }
 
     /**

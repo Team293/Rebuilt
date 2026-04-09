@@ -7,6 +7,8 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.*;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -43,6 +45,8 @@ public class TurretIOTalonFX implements TurretIO {
     private double lastPositionRevs = 0.0; // last calculated position of the turret in revolutions
     private double lastPinionRevs = 0.0; // last calculated position of the pinion encoder in revolutions
 
+    private double lastTurretAngleDegrees = 0.0; // last calculated angle of the turret in degrees, used for calculating angular velocity
+
     // VALUES
     private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
     private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
@@ -51,7 +55,7 @@ public class TurretIOTalonFX implements TurretIO {
     private double targetTurretDegreesTurretRelative = 0;
 
     // COMMANDS
-    private final MotionMagicVoltage mmRequest = new MotionMagicVoltage(0.0);
+    private final PositionTorqueCurrentFOC mmRequest = new PositionTorqueCurrentFOC(0.0);
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
     private double turretTrimDegrees = 0.0;
@@ -114,10 +118,10 @@ public class TurretIOTalonFX implements TurretIO {
     }
 
     private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
-        this.targetTurretDegreesTurretRelative = angleDegrees;
-
         angleDegrees += turretTrimDegrees;
         angleDegrees = wrap180(angleDegrees);
+
+        this.targetTurretDegreesTurretRelative = angleDegrees;
         double targetMotorRotations = angleDegrees / 180.0;
         this.targetTurretAngleMotorRevs = targetMotorRotations;
         
@@ -171,6 +175,26 @@ public class TurretIOTalonFX implements TurretIO {
         inputs.followerEncoderRotations = this.followerEncoderSignal.getValueAsDouble();
         inputs.rawTurretMechanismRotations = this.getTurretPositionRevs();
         inputs.turretTrimDegrees = turretTrimDegrees;
+        inputs.turretAngularVelocityDegreesPerSecond = getAngularVelocityDegreesPerSecond();
+    }
+
+    private double getAngularVelocityDegreesPerSecond() {
+        double currentAngleDegrees = getTurretAngleRobotRelative();
+        double deltaDegrees = currentAngleDegrees - lastTurretAngleDegrees;
+
+        // if the change in angle is greater than 180 degrees, we have wrapped around the encoder, so we need to adjust the delta accordingly
+        if (deltaDegrees > 180.0) {
+            deltaDegrees -= 360.0;
+        } else if (deltaDegrees < -180.0) {
+            deltaDegrees += 360.0;
+        }
+
+        lastTurretAngleDegrees = currentAngleDegrees;
+
+        // calculate angular velocity in degrees per second
+        double angularVelocityDegreesPerSecond = deltaDegrees / 0.02; // assuming this method is called every 20 ms
+
+        return angularVelocityDegreesPerSecond;
     }
 
     // CONFIGURATIONS
@@ -182,12 +206,13 @@ public class TurretIOTalonFX implements TurretIO {
     private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 50;
-        configs.kI = 0.0;
-        configs.kD = 1;
+        configs.kP = 200;
+        configs.kI = 180;
+        configs.kD = 15;
 
-        configs.kS = 0.4; //kS;
-        configs.kV = 0.4; //kV;
+        configs.kS = 10; //kS;
+        configs.kV = 0.8; //kV;
+        configs.kA = 20;
 
         MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
 
