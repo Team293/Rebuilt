@@ -3,8 +3,8 @@ package frc.lib;
 import edu.wpi.first.wpilibj.Timer;
 
 public class CountingDelay {
-    boolean lock;
-    double startTimeStamp;
+    private boolean lock;
+    private double startTimeStamp;
 
     public CountingDelay() {
         reset();

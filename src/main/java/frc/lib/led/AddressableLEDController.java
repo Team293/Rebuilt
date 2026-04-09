@@ -40,7 +40,7 @@ public class AddressableLEDController {
      * @param offset The offset to the start of the strip in LEDs.
      * @throws DuplicateLEDAssignmentException If the new strip overlaps with an existing strip.
      */
-    void addStrip(int length, int offset) throws DuplicateLEDAssignmentException {
+    public void addStrip(int length, int offset) throws DuplicateLEDAssignmentException {
         controller.addStrip(length, offset);
     }
 
