@@ -23,6 +23,7 @@ import frc.lib.led.LEDController;
 import frc.lib.led.LEDPreset;
 import frc.robot.commands.SetFlywheelState;
 import frc.robot.commands.SetIntakeState;
+import frc.robot.commands.DeployIntake;
 import frc.robot.commands.RequestShootingForSeconds;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
@@ -89,6 +90,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("stopFlywheel", new SetFlywheelState(shooter, false));
         NamedCommands.registerCommand("requestShooting10S", new RequestShootingForSeconds(shooter, true, 10.0));
         NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
+        NamedCommands.registerCommand("deployIntake", new DeployIntake(intake));
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);

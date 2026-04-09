@@ -35,45 +35,9 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     public void onPeriodic() {
         // Only act on the intake motor if the intake is running
         if (running) {
-            // switch (intakeIO.getIntakeState()) {
-            //     case DEPLOYING: // Intake is deploying
-            //         doDeployingState();
-            //         break;
-            //     case RETRACTING: // Intake is retracting
-            //         doRetractingState();
-            //         break;
-            //     case DEPLOYED: // Intake is fully deployed
-            //         doDeployedState();
-            //         break;
-            //     case RETRACTED: // Intake is fully retracted
-            //         doRetractedState();
-            //         break;
-            //     default:
-            //         // Error, unknown state!
-            //         // Turn off the deploy and intake motors!
-            //         intakeIO.setDeploySpeed(0.0);
-            //         intakeIO.setIntakeSpeed(0.0);
-            //         // Log unknown state
-            //         break;
-            // }
             doDeployedState();
         } else {
             doRetractedState();
-        }
-    }
-
-    // Run the DEPLOYING state periodic actions
-    private void doDeployingState() {
-        // Make sure the intake motor is OFF
-        intakeIO.setIntakeSpeed(0.0);
-        // Set intake speed to deploy
-        intakeIO.setDeploySpeed(DEPLOY_SPEED);
-        // Check to see if the intake has fully deployed
-        if (intakeIO.getDeployMotorCurrent() > DEPLOY_CURRENT_THRESHOLD) { // If the deploy motor current exceeds the
-                                                                           // threshold, we can assume it's fully
-                                                                           // deployed
-            intakeIO.setDeploySpeed(0.0); // Disable the deploy motor
-            intakeIO.setIntakeState(IntakeState.DEPLOYED); // Mark as deployed
         }
     }
 
@@ -98,29 +62,11 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         intakeIO.setIntakeSpeed(70);
     }
 
-    // Run the RETRACTING state periodic actions
-    private void doRetractingState() {
-        // Make sure the intake motor is OFF
-        intakeIO.setIntakeSpeed(0.0);
-        // Set the intake speed to retract
-        intakeIO.setDeploySpeed(RETRACT_SPEED);
-        // Check to see if the intake has fully retraced
-        if (intakeIO.getDeployMotorCurrent() > DEPLOY_CURRENT_THRESHOLD) { // If the deploy motor current exceeds the
-                                                                           // threshold, we can assume it's fully
-                                                                           // retracted
-            intakeIO.setDeploySpeed(0.0); // Disable the deploy motor
-            intakeIO.setIntakeState(IntakeState.RETRACTED); // Mark as retracted
-        }
-    }
-
     // Run the RETRACTED state periodic actions
     private void doRetractedState() {
         // Intake is fully deployed or retracted
         // Make sure intake motor is OFF
         intakeIO.setIntakeSpeed(0.0);
-
-        // Make sure deploy motor is OFF
-        intakeIO.setDeploySpeed(0.0);
     }
 
     // Enables the intake
@@ -142,7 +88,6 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
         // Turn off the intake motor
         intakeIO.setIntakeSpeed(0.0);
-        intakeIO.setDeploySpeed(0.0);
     }
 
     // Deploys the over the bumper intake
@@ -178,5 +123,9 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         // } else {
         //     deploy();
         // }
+    }
+
+    public void deployIntake() {
+        this.intakeIO.deployIntake();
     }
 }

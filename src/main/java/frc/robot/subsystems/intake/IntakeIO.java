@@ -18,8 +18,7 @@ public interface IntakeIO extends BaseIO<IntakeIO.IntakeIOInputs>, IORefresher {
   }
 
   void setIntakeSpeed(double speed);
-  void setDeploySpeed(double speed);
   IntakeState getIntakeState();
   void setIntakeState(IntakeState newState);
-  double getDeployMotorCurrent();
+  void deployIntake();
 }
