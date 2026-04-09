@@ -12,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -24,8 +25,11 @@ import frc.lib.led.LEDStrip;
 import frc.lib.led.PWMLEDController;
 import frc.lib.led.PWMLEDController.ModePreset;
 import frc.lib.led.presets.addressable.ChasePattern;
+import frc.lib.led.presets.addressable.FadePattern;
+import frc.lib.led.presets.addressable.MergeSortPattern;
 import frc.lib.led.presets.addressable.RainbowPattern;
 import frc.lib.led.presets.addressable.SolidColorPattern;
+import frc.lib.led.presets.addressable.WavePattern;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.findexer.Findexer;
@@ -70,8 +74,8 @@ public class RobotContainer {
     private final Targeting targeting;
     private final Findexer findexer;
 
-    private static final PWMLEDController.Mode LED_MODE = PWMLEDController.Mode.FIXED;
-    private static final int ADDRESSABLE_LED_LENGTH = 60;
+    private static final PWMLEDController.Mode LED_MODE = PWMLEDController.Mode.ADDRESSABLE;
+    private static final int ADDRESSABLE_LED_LENGTH = 160;
 
     private static PWMLEDController ledController;
 
@@ -110,7 +114,8 @@ public class RobotContainer {
         }
 
         // Configure physical strip layout once. Presets only mutate strip state.
-        ledController.addStrip(new LEDStrip(ADDRESSABLE_LED_LENGTH, 0));
+        ledController.addStrip(new LEDStrip(ADDRESSABLE_LED_LENGTH / 2, 0));
+        ledController.addStrip(new LEDStrip(ADDRESSABLE_LED_LENGTH / 2, ADDRESSABLE_LED_LENGTH / 2));
     }
 
     private ModePreset createHubPreset() {
@@ -119,10 +124,16 @@ public class RobotContainer {
             new LEDPreset("hub", -0.25),
             strips -> {
                 LEDStrip strip = getRequiredStrip(strips, 0, "hub");
-                strip.setPrimaryColor(new Color(100, 255, 255));
-                strip.setSecondaryColor(new Color(100, 255, 255));
+                strip.setPrimaryColor(Color.fromHex("00F5FF"));
+                strip.setSecondaryColor(Color.fromHex("FF007F"));
                 strip.setPattern(new RainbowPattern());
                 strip.setPatternDuration(2.5);
+
+                LEDStrip secondaryStrip = getRequiredStrip(strips, 1, "hub");
+                secondaryStrip.setPrimaryColor(Color.fromHex("00F5FF"));
+                secondaryStrip.setSecondaryColor(Color.fromHex("FF007F"));
+                secondaryStrip.setPattern(new RainbowPattern());
+                secondaryStrip.setPatternDuration(2.5);
             }
         );
     }
@@ -135,8 +146,14 @@ public class RobotContainer {
                 LEDStrip strip = getRequiredStrip(strips, 0, "shuttle");
                 strip.setPrimaryColor(new Color(35, 255, 255));
                 strip.setSecondaryColor(new Color(0, 0, 0));
-                strip.setPattern(new ChasePattern());
+                strip.setPattern(new MergeSortPattern());
                 strip.setPatternDuration(1.5);
+
+                LEDStrip secondaryStrip = getRequiredStrip(strips, 1, "shuttle");
+                secondaryStrip.setPrimaryColor(new Color(35, 255, 255));
+                secondaryStrip.setSecondaryColor(new Color(0, 0, 0));
+                secondaryStrip.setPattern(new MergeSortPattern());
+                secondaryStrip.setPatternDuration(1.5);
             }
         );
     }
@@ -149,8 +166,14 @@ public class RobotContainer {
                 LEDStrip strip = getRequiredStrip(strips, 0, "fixed");
                 strip.setPrimaryColor(new Color(0, 255, 255));
                 strip.setSecondaryColor(new Color(0, 0, 0));
-                strip.setPattern(new SolidColorPattern());
+                strip.setPattern(new ChasePattern());
                 strip.setPatternDuration(1.0);
+
+                LEDStrip secondaryStrip = getRequiredStrip(strips, 1, "fixed");
+                secondaryStrip.setPrimaryColor(new Color(0, 255, 255));
+                secondaryStrip.setSecondaryColor(new Color(0, 0, 0));
+                secondaryStrip.setPattern(new ChasePattern());
+                secondaryStrip.setPatternDuration(1.0);
             }
         );
     }
