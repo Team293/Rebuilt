@@ -11,7 +11,8 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
-
+import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
 import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 import frc.robot.subsystems.intake.Intake.IntakeState;
@@ -19,15 +20,13 @@ import frc.robot.subsystems.intake.Intake.IntakeState;
 public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     // TalonFX Motors
     private final TalonFX intakeMotor;
-    // private final TalonFX deployMotor;
+    private final Servo deployServo;
 
     private final VelocityVoltage velocityControl = new VelocityVoltage(0.0); 
 
     // Status Signals
     private final StatusSignal<AngularVelocity> intakeVelocity;
     private final StatusSignal<Current> intakeCurrent;
-    // private final StatusSignal<AngularVelocity> deployVelocity;
-    // private final StatusSignal<Current> deployCurrent;
 
     // Inputs for logging
     private IntakeIOInputs intakeIO;
@@ -35,20 +34,16 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     // IntakeIOTalonFX constructor
     public IntakeIOTalonFX() {
         intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID(), "Canivore_Drivetrain"); // Setup the intake motor with the CAN ID
-        // deployMotor = new TalonFX(CanID.INTAKE_DEPLOY_MOTOR.getID()); // Set up deploy motor with the CAN ID
+        deployServo = new Servo(CanID.INTAKE_DEPLOY_SERVO.getID());
 
         // Configure motors
-        // deployMotor.getConfigurator().apply(getDeployMotorConfig());
         intakeMotor.getConfigurator().apply(getIntakeMotorConfig());
 
         // Configure motor signals
         intakeVelocity = intakeMotor.getVelocity();
         intakeCurrent = intakeMotor.getStatorCurrent();
-        // deployVelocity = deployMotor.getVelocity();
-        // deployCurrent = deployMotor.getStatorCurrent();
 
         intakeMotor.optimizeBusUtilization();
-        // deployMotor.optimizeBusUtilization();
     }
 
     // Fetches data from the motors
@@ -61,8 +56,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     public void updateInputs(IntakeIOInputs inputs) {
         inputs.intakeVelocityRPS = intakeVelocity.getValueAsDouble();
         inputs.intakeCurrentAmps = intakeCurrent.getValueAsDouble();
-        // inputs.deployVelocityRPS = deployVelocity.getValueAsDouble();
-        // inputs.deployCurrentAmps = deployCurrent.getValueAsDouble();
         intakeIO = inputs;
     }
 
@@ -83,9 +76,8 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     // Set the speed of the deploy motor
     // double speed - Speed to set the motor to in Rotations Per Second
     @Override
-    public void setDeploySpeed(double speed) {
-        this.velocityControl.withVelocity(speed);
-        // deployMotor.setControl(this.velocityControl);
+    public void deployIntake() {
+        deployServo.setAngle(180.0);
     }
 
     // Return the state of the Intake
@@ -98,12 +90,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     @Override
     public void setIntakeState(IntakeState newState) {
         intakeIO.intakeState = newState;
-    }
-
-    // Return the current of the deploy motor in Amps
-    @Override
-    public double getDeployMotorCurrent() {
-        return intakeIO.deployCurrentAmps;
     }
 
     public static TalonFXConfiguration getIntakeMotorConfig() {
