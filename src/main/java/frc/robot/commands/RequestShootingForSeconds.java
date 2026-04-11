@@ -42,6 +42,5 @@ public class RequestShootingForSeconds extends Command {
     public void end(boolean interrupted) {
         this.shooter.setActuateHoodAndLaunch(false);
         this.shooter.setDriverSpinUpFlywheel(false);
-        this.shooter.setDistanceTrim(0);
     }
 }

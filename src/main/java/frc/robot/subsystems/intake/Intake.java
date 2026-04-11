@@ -1,5 +1,6 @@
 package frc.robot.subsystems.intake;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
@@ -125,7 +126,7 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         // }
     }
 
-    public void deployIntake() {
-        this.intakeIO.deployIntake();
+    public void setDeployServo(double position) {
+        this.intakeIO.setDeployServo(position);
     }
 }

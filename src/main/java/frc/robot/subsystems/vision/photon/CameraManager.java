@@ -39,21 +39,21 @@ public class CameraManager {
             )
         );
 
-        registerCamera(
-            new Camera(
-                "right",
-                new Transform3d(
-                    Inches.of(-1.5),
-                    Inches.of(-13.75),
-                    Inches.of(8.625),
-                    new Rotation3d(
-                        Degrees.of(0),
-                        Degrees.of(-65), // negative pitch = tilted upward
-                        Degrees.of(-90)
-                    )
-                )
-            )
-        );
+        // registerCamera(
+        //     new Camera(
+        //         "right",
+        //         new Transform3d(
+        //             Inches.of(-1.5),
+        //             Inches.of(-13.75),
+        //             Inches.of(8.625),
+        //             new Rotation3d(
+        //                 Degrees.of(0),
+        //                 Degrees.of(-65), // negative pitch = tilted upward
+        //                 Degrees.of(-90)
+        //             )
+        //         )
+        //     )
+        // );
 
         registerCamera(
             new Camera(
