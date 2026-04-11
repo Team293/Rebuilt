@@ -73,7 +73,7 @@ public class RobotContainer {
     private static LEDController ledController;
 
     public RobotContainer() {
-        ledController = new LEDController(0);
+        ledController = new LEDController(1);
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
@@ -89,8 +89,11 @@ public class RobotContainer {
         NamedCommands.registerCommand("startFlywheel", new SetFlywheelState(shooter, true));
         NamedCommands.registerCommand("stopFlywheel", new SetFlywheelState(shooter, false));
         NamedCommands.registerCommand("requestShooting10S", new RequestShootingForSeconds(shooter, true, 10.0));
+        NamedCommands.registerCommand("requestShooting15S", new RequestShootingForSeconds(shooter, true, 15.0));
+        NamedCommands.registerCommand("requestShooting20S", new RequestShootingForSeconds(shooter, true, 20.0));
         NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
         NamedCommands.registerCommand("deployIntake", new DeployIntake(intake));
+
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
@@ -136,7 +139,7 @@ public class RobotContainer {
         drive.setDefaultCommand(
             drive.applyRequest(() -> {
 
-                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.3 : 1.0;
+                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.2 : 1.0;
 
                 double vx = -driverController.getLeftY() * MaxSpeed * speedMultiplier;
                 double vy = -driverController.getLeftX() * MaxSpeed * speedMultiplier;
@@ -169,10 +172,12 @@ public class RobotContainer {
 
                 double angularMultiplier = driverController.rightBumper().getAsBoolean() ? 0.5 : 1.0;
 
+                double flipControls = driverController.leftStick().getAsBoolean() ? -1 : 1;   
+
                 return driveCmd
-                    .withVelocityX(vx)
-                    .withVelocityY(vy)
-                    .withRotationalRate(-driverController.getRightX() * MaxAngularRate * angularMultiplier);
+                    .withVelocityX(vx * flipControls)
+                    .withVelocityY(vy * flipControls)
+                    .withRotationalRate(-driverController.getRightX() * MaxAngularRate * angularMultiplier * flipControls);
             })
         );
         // Idle while the robot is disabled. This ensures the configured

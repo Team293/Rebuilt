@@ -73,13 +73,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         intakeMotor.setControl(this.velocityControl);
     }
 
-    // Set the speed of the deploy motor
-    // double speed - Speed to set the motor to in Rotations Per Second
-    @Override
-    public void deployIntake() {
-        deployServo.setAngle(180.0);
-    }
-
     // Return the state of the Intake
     @Override
     public IntakeState getIntakeState() {
@@ -121,5 +114,10 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         deployConfig.Slot0.kD = 0.0;
 
         return deployConfig;
+    }
+
+    @Override
+    public void setDeployServo(double position) {
+        deployServo.set(position);
     }
 }

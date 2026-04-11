@@ -16,7 +16,6 @@ public class SetFlywheelState extends Command {
     @Override
     public void initialize() {
         this.shooter.setDriverSpinUpFlywheel(enabled);
-        this.shooter.setDistanceTrim(0.6);
     }
 
     @Override

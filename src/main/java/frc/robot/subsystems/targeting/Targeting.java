@@ -11,9 +11,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.lib.Elastic;
-import frc.lib.Elastic.Notification;
-import frc.lib.Elastic.NotificationLevel;
 import frc.lib.FieldConstants;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
@@ -140,10 +137,6 @@ public class Targeting extends SubsystemBase {
      * Set the target location to center of the hub 
      */
     private void setPoseTargetingHub() {
-        Elastic.sendNotification(
-                new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SCORING mode")
-        );
-        Elastic.selectTab("Scoring Mode");
         RobotContainer.getLEDController().switchPreset("hub");
 
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
@@ -183,10 +176,6 @@ public class Targeting extends SubsystemBase {
      * Set the target location to 0, 0
      */
     private void setPoseTargetingShuttleRight() {
-        Elastic.sendNotification(
-                new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
-        );
-        Elastic.selectTab("Shuttling Mode");
         RobotContainer.getLEDController().switchPreset("shuttle");
 
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
@@ -197,10 +186,6 @@ public class Targeting extends SubsystemBase {
     }
 
     private void setPoseTargetingShuttleLeft() {
-        Elastic.sendNotification(
-                new Notification(NotificationLevel.INFO, "Switched Modes", "Switched modes to SHUTTLING mode")
-        );
-        Elastic.selectTab("Shuttling Mode");
         RobotContainer.getLEDController().switchPreset("shuttle");
 
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
