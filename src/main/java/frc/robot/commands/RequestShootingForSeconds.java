@@ -41,6 +41,8 @@ public class RequestShootingForSeconds extends Command {
     @Override
     public void end(boolean interrupted) {
         this.shooter.setActuateHoodAndLaunch(false);
-        this.shooter.setDriverSpinUpFlywheel(false);
+        if (interrupted) {
+            this.shooter.setDriverSpinUpFlywheel(false);
+        }
     }
 }

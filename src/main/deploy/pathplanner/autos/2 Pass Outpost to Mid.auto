@@ -1,0 +1,61 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "deployIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "enableIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "startFlywheel"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pass 1 - Outpost to Mid"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "requestShooting5S"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pass 2 - Outpost to Mid"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "requestShooting20S"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "stopFlywheel"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}

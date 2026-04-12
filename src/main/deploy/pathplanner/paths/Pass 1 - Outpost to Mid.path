@@ -3,12 +3,12 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 4.320596026490066,
+        "x": 3.9938990066225166,
         "y": 0.666390728476822
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.320596026490067,
+        "x": 4.9938990066225175,
         "y": 0.666390728476822
       },
       "isLocked": false,
@@ -32,44 +32,44 @@
     },
     {
       "anchor": {
-        "x": 7.391548013245033,
-        "y": 2.9823096026490052
+        "x": 7.093890728476822,
+        "y": 3.301746688741722
       },
       "prevControl": {
-        "x": 8.052817700960428,
-        "y": 2.9877298459909336
+        "x": 7.755160416192217,
+        "y": 3.3071669320836503
       },
       "nextControl": {
-        "x": 6.5058360927152314,
-        "y": 2.9750496688741723
+        "x": 6.208178807947021,
+        "y": 3.294486754966889
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 6.498576158940397,
-        "y": 1.3415645695364242
+        "x": 6.476796357615894,
+        "y": 1.101986754966888
       },
       "prevControl": {
-        "x": 6.9269122516556285,
-        "y": 2.2127566225165562
+        "x": 6.905132450331125,
+        "y": 1.9731788079470203
       },
       "nextControl": {
-        "x": 6.214810484806516,
-        "y": 0.7644140458742933
+        "x": 6.193030683482013,
+        "y": 0.5248362313047571
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 4.320596026490066,
+        "x": 3.7035016556291387,
         "y": 0.666390728476822
       },
       "prevControl": {
-        "x": 5.796368851244969,
-        "y": 0.8582092889088078
+        "x": 5.206307947019867,
+        "y": 0.7172102649006615
       },
       "nextControl": null,
       "isLocked": false,
@@ -78,21 +78,33 @@
   ],
   "rotationTargets": [
     {
+      "waypointRelativePos": 0.3099273607748189,
+      "rotationDegrees": 0.0
+    },
+    {
       "waypointRelativePos": 0.9539951573849952,
-      "rotationDegrees": 117.40360625563348
+      "rotationDegrees": 98.80231741603863
+    },
+    {
+      "waypointRelativePos": 1.8983050847457779,
+      "rotationDegrees": 106.53481995772754
     },
     {
       "waypointRelativePos": 2.6963635575589464,
-      "rotationDegrees": 89.95862437106403
+      "rotationDegrees": 87.79015138447025
+    },
+    {
+      "waypointRelativePos": 3.675544794188865,
+      "rotationDegrees": 2.2136983625309083
     }
   ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 1.2071651090342688,
-      "maxWaypointRelativePos": 1.8885319314641746,
+      "minWaypointRelativePos": 1.1646643109540615,
+      "maxWaypointRelativePos": 2.131448763250887,
       "constraints": {
-        "maxVelocity": 1.5,
+        "maxVelocity": 1.2,
         "maxAcceleration": 1.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -102,48 +114,7 @@
     }
   ],
   "pointTowardsZones": [],
-  "eventMarkers": [
-    {
-      "name": "startFlywheel",
-      "waypointRelativePos": 0.3279151943462853,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "startFlywheel"
-        }
-      }
-    },
-    {
-      "name": "enableIntake",
-      "waypointRelativePos": 0.38445229681977794,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "enableIntake"
-        }
-      }
-    },
-    {
-      "name": "disableIntake",
-      "waypointRelativePos": 2.137102473498207,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "sequential",
-        "data": {
-          "commands": [
-            {
-              "type": "named",
-              "data": {
-                "name": "disableIntake"
-              }
-            }
-          ]
-        }
-      }
-    }
-  ],
+  "eventMarkers": [],
   "globalConstraints": {
     "maxVelocity": 3.0,
     "maxAcceleration": 3.0,
