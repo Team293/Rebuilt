@@ -24,12 +24,15 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
+
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
+
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -105,6 +108,7 @@ public class Robot extends LoggedRobot {
 
     // Start AdvantageKit logger
     Logger.start();
+    SmartDashboard.putBoolean("Auto/PathFlipped", false);
 
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
@@ -184,6 +188,13 @@ public class Robot extends LoggedRobot {
   @Override
   public void autonomousInit() {
     autonomousCommand = robotContainer.getAutonomousCommand();
+    boolean flipped = SmartDashboard.getBoolean("Auto/PathFlipped", false);
+
+    if (flipped) {
+      PathPlannerAuto auto = new PathPlannerAuto(autonomousCommand);
+      PathPlannerAuto flippedAuto = new PathPlannerAuto(auto.getName(), true);
+      autonomousCommand = flippedAuto;
+    }
 
     // schedule the autonomous command (example)
     if (autonomousCommand != null) {
