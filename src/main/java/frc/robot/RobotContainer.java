@@ -88,7 +88,14 @@ public class RobotContainer {
         NamedCommands.registerCommand("disableIntake", new SetIntakeState(intake, false));
         NamedCommands.registerCommand("startFlywheel", new SetFlywheelState(shooter, true));
         NamedCommands.registerCommand("stopFlywheel", new SetFlywheelState(shooter, false));
+        NamedCommands.registerCommand("requestShooting5S", new RequestShootingForSeconds(shooter, true, 5.0));
+        NamedCommands.registerCommand("requestShooting6S", new RequestShootingForSeconds(shooter, true, 6.0));
+        NamedCommands.registerCommand("requestShooting7S", new RequestShootingForSeconds(shooter, true, 7.0));
+        NamedCommands.registerCommand("requestShooting8S", new RequestShootingForSeconds(shooter, true, 8.0));
+        NamedCommands.registerCommand("requestShooting9S", new RequestShootingForSeconds(shooter, true, 9.0));
         NamedCommands.registerCommand("requestShooting10S", new RequestShootingForSeconds(shooter, true, 10.0));
+        NamedCommands.registerCommand("requestShooting11S", new RequestShootingForSeconds(shooter, true, 11.0));
+        NamedCommands.registerCommand("requestShooting12S", new RequestShootingForSeconds(shooter, true, 12.0));
         NamedCommands.registerCommand("requestShooting15S", new RequestShootingForSeconds(shooter, true, 15.0));
         NamedCommands.registerCommand("requestShooting20S", new RequestShootingForSeconds(shooter, true, 20.0));
         NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
