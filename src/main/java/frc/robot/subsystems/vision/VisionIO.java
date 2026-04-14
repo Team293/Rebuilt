@@ -1,6 +1,5 @@
 package frc.robot.subsystems.vision;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import frc.lib.subsystem.BaseIO;
 import frc.lib.subsystem.BaseInputClass;

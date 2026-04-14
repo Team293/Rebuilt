@@ -1,6 +1,5 @@
 package frc.robot.subsystems.trigger;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.turret.Turret;
@@ -33,22 +32,10 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
             // run the indexer if the mechanisms are ready for balls
             // run it regardless of ball in indexer, so that it can feed a ball in if there is one queued up
             triggerIO.setSpeed(TRIGGER_SPEED);
-        // } else if (needsFeeding()) {
-        //     // bring the ball to the indexer and stop once we see a ball
-        //     triggerIO.setSpeed(TRIGGER_SPEED);
         } else {
             // stop the indexer if the mechanisms aren't ready and we have a ball queued
             triggerIO.setSpeed(0.0);
         }
-    }
-
-    /**
-     * Checks the proximity sensor to see if there is a ball currently queued up in the indexer.
-     * @return true if there is a ball in the indexer, false otherwise
-     */
-    private boolean hasBallQueued() {
-        // return super.io.proximitySensor;
-        return false;
     }
 
     public void setReverseTrigger(boolean reverse) {
@@ -67,11 +54,6 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
         if (shooter.isActuatingHoodAndLaunching()) {
             // check if turret is at target angle 
             boolean turretReady = turret.isAtTargetAngle();
-
-            
-            // if (DriverStation.isAutonomous() && turretReady) {
-            //     turretReady = shooter.isAtTargetRPS();
-            // }
 
             if (!turretReady) {
                 return false;

@@ -35,7 +35,6 @@ public class LEDStrip {
      * Sets the color of the strip.
      * @param color The color to set the strip to.
      */
-    @SuppressWarnings("unused")
     public void setPrimaryColor(Color color) {
         this.primaryColor = color;
     }
@@ -44,7 +43,6 @@ public class LEDStrip {
      * Sets the secondary of the strip.
      * @param color The color to set the strip to.
      */
-    @SuppressWarnings("unused")
     public void setSecondaryColor(Color color) {
         this.secondaryColor = color;
     }
@@ -54,7 +52,6 @@ public class LEDStrip {
      * Sets the pattern of the strip.
      * @param pattern The pattern to set the strip to.
      */
-    @SuppressWarnings("unused")
     public void setPattern(LEDPattern pattern) {
         this.pattern = pattern;
     }
@@ -63,7 +60,6 @@ public class LEDStrip {
      * Sets the time it takes for the pattern to loop.
      * @param patternDuration The pattern duration to set the strip to (in s).
      */
-    @SuppressWarnings("unused")
     public void setPatternDuration(double patternDuration) {
         this.patternDuration = patternDuration;
     }

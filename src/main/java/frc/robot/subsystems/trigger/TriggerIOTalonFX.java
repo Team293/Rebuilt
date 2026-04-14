@@ -3,10 +3,9 @@ package frc.robot.subsystems.trigger;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
-import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
 
-public class TriggerIOTalonFX implements IORefresher, TriggerIO {
+public class TriggerIOTalonFX implements TriggerIO {
     private final TalonFX motor;             // Motor object
     private final BaseStatusSignal motorRps; // Rotations per second
     private final DigitalInput proximitySensor;

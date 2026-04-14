@@ -1,14 +1,11 @@
 package frc.robot.subsystems.turret;
 
 import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.*;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -16,17 +13,11 @@ import com.ctre.phoenix6.signals.SensorDirectionValue;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.units.measure.Angle;
-import frc.lib.LowPassFilter;
 import frc.robot.CanID;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
-    // KS KV CONSTANTS
-    private static final double kS = 0.35; // volts needed to overcome static friction
-    private static final double kV = 0.20; // volts per (rotation per second) to maintain motion
-
     // SUBSYSTEMS
     private final CommandSwerveDrivetrain drive;
 
@@ -48,7 +39,6 @@ public class TurretIOTalonFX implements TurretIO {
     private double lastTurretAngleDegrees = 0.0; // last calculated angle of the turret in degrees, used for calculating angular velocity
 
     // VALUES
-    private double targetTurretDegreesFieldRelative; // target angle of the turret in degrees, relative to the field
     private double processedTargetTurretDegreesFieldRelative; // processed target angle of the turret in degrees, relative to the field
     private double targetTurretAngleMotorRevs; // target angle of the turret in motor rotations
     private double calculatedMotorOffsetRevs; // calculated offset in motor rotations based on the current position of the turret and the pinion encoder reading
@@ -56,7 +46,6 @@ public class TurretIOTalonFX implements TurretIO {
 
     // COMMANDS
     private final PositionTorqueCurrentFOC mmRequest = new PositionTorqueCurrentFOC(0.0);
-    private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(kS, kV); // ks, kv
 
     private double turretTrimDegrees = 0.0;
 
@@ -103,7 +92,6 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees) {
-        this.targetTurretDegreesFieldRelative = fieldRelativeAngleDegrees;
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
         // absolute robot-relative target, in motor rotations
@@ -128,7 +116,7 @@ public class TurretIOTalonFX implements TurretIO {
         
         mmRequest.Position = targetMotorRotations;
         this.turretMotor.setControl(
-            mmRequest
+            mmRequest // .withFeedForward(drive.getState().Speeds.omegaRadiansPerSecond)
         );
     }
 
@@ -142,19 +130,6 @@ public class TurretIOTalonFX implements TurretIO {
 
         turretMotor.setPosition(this.calculatedMotorOffsetRevs);
     }
-
-    /**
-     * Calculates the feedforward voltage to apply to the turret motor to counteract the rotation of the robot, based on the current angular velocity of the robot.
-     * @return the feedforward value to apply to the turret rotation
-     */
-    private double calculateFeedforward() {
-        // get the current angular velocity of the robot in radians per second
-        double gyroOmegaRadPerSecond = drive.getState().Speeds.omegaRadiansPerSecond;
-
-        double mechanismRotationsPerSecond = gyroOmegaRadPerSecond / Math.PI;
-        return feedforward.calculate(-mechanismRotationsPerSecond);
-    }
-
 
     @Override
     public void refreshData() {

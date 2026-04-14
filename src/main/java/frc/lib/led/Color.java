@@ -36,7 +36,6 @@ public class Color {
      * @param green The green value of the color [0-255].
      * @param blue The blue value of the color [0-255].
      */
-    @SuppressWarnings("unused")
     public static Color fromRGB(int red, int green, int blue) {
         HSV hsv = RGBtoHSV(red, green, blue);
         return new Color(hsv.hue(), hsv.saturation(), hsv.value());
@@ -46,7 +45,6 @@ public class Color {
      * Creates a new color from a hex string.
      * @param hex The hex string to convert (without #).
      */
-    @SuppressWarnings("unused")
     public static Color fromHex(String hex) throws InvalidColorException {
         if (hex.length() != 6) {
             throw new InvalidColorException("Hex string must be 6 characters long.");
@@ -63,7 +61,6 @@ public class Color {
      * Gets the RGB values of the color.
      * @return The RGB values of the color.
      */
-    @SuppressWarnings("unused")
     public RGB getRGB() {
         return rgb;
     }
@@ -72,7 +69,6 @@ public class Color {
      * Gets the HSV values of the color.
      * @return The HSV values of the color.
      */
-    @SuppressWarnings("unused")
     public HSV getHSV() {
         return hsv;
     }
@@ -187,7 +183,6 @@ public class Color {
          * Gets the red value of the color.
          * @return The red value of the color [0-255].
          */
-        @SuppressWarnings("unused")
         public int red() {
             return red;
         }
@@ -196,7 +191,6 @@ public class Color {
          * Gets the green value of the color.
          * @return The green value of the color [0-255].
          */
-        @SuppressWarnings("unused")
         public int green() {
             return green;
         }
@@ -205,7 +199,6 @@ public class Color {
          * Gets the blue value of the color.
          * @return The blue value of the color [0-255].
          */
-        @SuppressWarnings("unused")
         public int blue() {
             return blue;
         }

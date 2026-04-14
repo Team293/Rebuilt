@@ -4,14 +4,12 @@ package frc.robot.subsystems.turret;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.Targeting;
-import frc.robot.subsystems.targeting.ShotCompensation;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 5.0; // degrees within which we consider the turret to be aimed at the target (+-)
@@ -31,7 +29,6 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double ENCODER_COMBINED_PERIOD_TURRET_REV =
         ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
 
-
     public static final double TURRET_CENTER_OFFSET_DEG = -88.1; // subtracted from robot relative heading
     public static final double TURRET_ROBOT_OFFSET_DEG = 51.8; // subtracted from robot relative heading to get turret relative heading
 
@@ -48,13 +45,6 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     @Override
     public void onPeriodic() {
         Logger.recordOutput("Turret/TurretCenterOffset", new Pose2d(TURRET_OFFSET_FROM_CENTER, RobotContainer.getDrive().getRotation()));
-        // turretIO.setTurretAngleFieldRelativeDegrees(0);
-
-        // if (shotData != null) {
-        //     double newTargetAngleDeg = shotData.turretAngleDeg();
-
-        //     this.turretIO.setTurretAngleFieldRelativeDegrees(newTargetAngleDeg);
-        // }
 
         if (this.overrideAutomaticAiming) {
             this.turretIO.setTurretAngleRobotRelativeDegrees(0);
