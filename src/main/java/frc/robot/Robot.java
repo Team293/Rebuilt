@@ -190,13 +190,10 @@ public class Robot extends LoggedRobot {
     boolean flipped = SmartDashboard.getBoolean("Auto/PathFlipped", false);
 
     if (flipped) {
-      PathPlannerAuto auto = new PathPlannerAuto(autonomousCommand);
+      PathPlannerAuto auto = new PathPlannerAuto(autonomousCommand.getName());
       PathPlannerAuto flippedAuto = new PathPlannerAuto(auto.getName(), true);
-      autonomousCommand = flippedAuto;
-    }
-
-    // schedule the autonomous command (example)
-    if (autonomousCommand != null) {
+      CommandScheduler.getInstance().schedule(flippedAuto);
+    } else if (autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(autonomousCommand);
     }
   }

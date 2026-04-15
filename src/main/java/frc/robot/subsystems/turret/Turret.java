@@ -12,7 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 5.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 40.0; // degrees within which we consider the turret to be aimed at the target (+-)
 
     // HARDWARE CONSTANTS
     // gearing
@@ -49,17 +49,17 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         if (this.overrideAutomaticAiming) {
             this.turretIO.setTurretAngleRobotRelativeDegrees(0);
         } else {
-            this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
+            this.turretIO.setTurretAngleRobotRelativeDegrees(getTurretAngleDegreesRobotRelative());
         }
 
     }
 
-    public double getTurretAngleDegreesFieldRelative() {
-        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
+    public double getTurretAngleDegreesRobotRelative() {
+        Pose2d toGoal = Targeting.differenceBetweenRobotAndTarget();
 
-        double angleToTarget = toGoal.getAngle().getDegrees();
-        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
-        return angleToTarget;
+        double robotRelativeAngleToTarget = toGoal.getTranslation().getAngle().minus(toGoal.getRotation()).getDegrees();
+        Logger.recordOutput("Targeting/PredictedTargetAngleRobotRelative", robotRelativeAngleToTarget);
+        return robotRelativeAngleToTarget;
     }
 
 
@@ -81,8 +81,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     
     @AutoLogOutput(key="Turret/IsAtTargetAngle")
     public boolean isAtTargetAngle() {
-        return Math.abs(io.turretAngularVelocityDegreesPerSecond) < 200.0;
-        // return Math.abs(io.targetTurretDegrees - io.turretAngleDegreesTurretRelative) < TURRET_AIMING_TOLERANCE_DEGREES;
+        // return Math.abs(io.turretAngularVelocityDegreesPerSecond) < 200.0;
+        return Math.abs(io.targetTurretMotorRotations - io.turretMotorPositionRotations) < TURRET_AIMING_TOLERANCE_DEGREES / 180.0;
     }
 
     public void changeTrim(double deltaDegrees) {

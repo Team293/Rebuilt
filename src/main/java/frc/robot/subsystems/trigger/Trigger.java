@@ -53,12 +53,9 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
     private boolean mechanismReadyForBalls() {
         if (shooter.isActuatingHoodAndLaunching()) {
             // check if turret is at target angle 
-            boolean turretReady = turret.isAtTargetAngle();
+            boolean turretReady = turret.isAtTargetAngle() && shooter.isAtTargetRPS();
 
-            if (!turretReady) {
-                return false;
-            }
-            return true;
+            return turretReady;
         }
         return false;
     }

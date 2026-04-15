@@ -3,14 +3,14 @@ package frc.robot.subsystems.shooter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
-    private static final double SHOOTER_READY_THRESHOLD_RPS = 3.0; // RPS threshold to consider the shooter ready
+    private static final double SHOOTER_READY_THRESHOLD_RPS = 6.0; // RPS threshold to consider the shooter ready
 
     private boolean readFromData = true;
 
@@ -92,9 +92,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      * @return
      */
     public double getDistanceToTarget() {
-        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
-        return toGoal.getNorm() + io.distanceTrimMeters; // add distance trim to adjust the distance based on operator controller input
+        Pose2d toGoal = Targeting.differenceBetweenRobotAndTarget();
+        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getTranslation().getNorm());
+        return toGoal.getTranslation().getNorm() + io.distanceTrimMeters; // add distance trim to adjust the distance based on operator controller input
     }
 
     /**
