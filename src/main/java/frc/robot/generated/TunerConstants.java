@@ -26,18 +26,24 @@ public class TunerConstants {
         .withKP(100).withKI(0).withKD(0.5)
         .withKS(0.1).withKV(1.59).withKA(0)
         .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
+
     // When using closed-loop control, the drive motor uses the control
     // output type specified by SwerveModuleConstants.DriveMotorClosedLoopOutput
+    // TUNED FOR AMPS now that we are using TorqueCurrentFOC
     private static final Slot0Configs driveGains = new Slot0Configs()
-        .withKP(0.1).withKI(0).withKD(0)
-        .withKS(0).withKV(0.124);
+        .withKP(5.0) // A/rps
+        .withKI(0)
+        .withKD(0)
+        .withKS(0) // A to overcome static friction (tune on carpet) ~0.3-0.5
+        .withKV(0.0)
+        .withKA(0.0); // A/rps^2, closes velocity gap between commanded and actual when accelerating (should be small)
 
     // The closed-loop output type to use for the steer motors;
     // This affects the PID/FF gains for the steer motors
     private static final ClosedLoopOutputType kSteerClosedLoopOutput = ClosedLoopOutputType.Voltage;
     // The closed-loop output type to use for the drive motors;
     // This affects the PID/FF gains for the drive motors
-    private static final ClosedLoopOutputType kDriveClosedLoopOutput = ClosedLoopOutputType.Voltage;
+    private static final ClosedLoopOutputType kDriveClosedLoopOutput = ClosedLoopOutputType.TorqueCurrentFOC;
 
     // The type of motor used for the drive motor
     private static final DriveMotorArrangement kDriveMotorType = DriveMotorArrangement.TalonFX_Integrated;
@@ -58,7 +64,7 @@ public class TunerConstants {
     private static final TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
         .withCurrentLimits(
             new CurrentLimitsConfigs()
-                // Swerve azimuth does not require much torque output, so we can set a relatively low
+                // Swerve azimuth does not require much   output, so we can set a relatively low
                 // stator current limit to help avoid brownouts without impacting performance.
                 .withStatorCurrentLimit(Amps.of(60))
                 .withStatorCurrentLimitEnable(true)
