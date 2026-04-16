@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.SpikeController;
+import frc.lib.led.LEDController;
+import frc.lib.led.LEDPreset;
 import frc.robot.commands.SetFlywheelState;
 import frc.robot.commands.SetIntakeState;
 import frc.robot.commands.DeployIntake;
@@ -66,8 +68,11 @@ public class RobotContainer {
     private final Targeting targeting;
     private final Findexer findexer;
 
+    private static LEDController ledController;
+
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
+        ledController = new LEDController(1);
         this.turret = new Turret();
         this.vision = new Vision(drive);
         this.intake = new Intake();
@@ -98,6 +103,27 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
+        configureLEDPresets();
+
+        ledController.switchPreset("hub");
+    }
+
+    private void configureLEDPresets() {
+        ledController.registerPreset(
+            new LEDPreset("hub", -0.25)
+        );
+
+        ledController.registerPreset(
+            new LEDPreset("shuttle", -0.23)
+        );
+
+        ledController.registerPreset(
+            new LEDPreset("fixed", -0.21)
+        );
+    }
+
+    public static LEDController getLEDController() {
+        return ledController;
     }
 
     public static CommandSwerveDrivetrain getDrive() {

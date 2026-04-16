@@ -128,6 +128,12 @@ public class Targeting extends SubsystemBase {
      * Set the target of the targeting subsystem. This will change the target position
      */
     public void setTarget(Target target) {
+        if (target == Target.HUB) {
+            RobotContainer.getLEDController().switchPreset("hub");
+        } else if (target == Target.SHUTTLE_LEFT  || target == Target.SHUTTLE_RIGHT) {
+            RobotContainer.getLEDController().switchPreset("shuttle");
+        }
+
         currentTarget = target;
     }
 
