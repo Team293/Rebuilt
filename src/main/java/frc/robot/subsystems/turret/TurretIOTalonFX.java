@@ -181,7 +181,7 @@ public class TurretIOTalonFX implements TurretIO {
     private Pair<Slot0Configs, MotionMagicConfigs> getTurretMotionConfigs() {
         Slot0Configs configs = new Slot0Configs();
 
-        configs.kP = 150;
+        configs.kP = 300;
         configs.kI = 10;
         configs.kD = 25;
 
