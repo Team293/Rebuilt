@@ -19,6 +19,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private boolean spinUpFlywheel = false; 
     private boolean actuateHoodAndLaunch = false; 
     private boolean overrideStopShooting = false; // driver override to stop shooting and bring hood to  zero regardless of operator input
+    private boolean overrideShootingLimiter = false;
 
     public Shooter() {
         super("Shooter", new ShooterIOInputsAutoLogged());
@@ -108,6 +109,12 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public void setActuateHoodAndLaunch(boolean isRequesting) {
         this.actuateHoodAndLaunch = isRequesting;
+        this.overrideShootingLimiter = false;
+    }
+
+    public void setActuateHoodAndLaunch(boolean isRequesting, boolean override) {
+        this.actuateHoodAndLaunch = isRequesting;
+        this.overrideShootingLimiter = override;
     }
 
     public void zeroHood() {
@@ -124,6 +131,10 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public boolean isActuatingHoodAndLaunching() {
         return this.actuateHoodAndLaunch;
+    }
+
+    public boolean isOverridingShootingLimiter() {
+        return overrideShootingLimiter;
     }
 
      /**

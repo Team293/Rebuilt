@@ -5,22 +5,39 @@
     "data": {
       "commands": [
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "named",
-                "data": {
-                  "name": "startFlywheel"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Center Depot Path"
-                }
-              }
-            ]
+            "name": "deployIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "enableIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "startFlywheel"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Center Depot Path"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "startFlywheel"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "requestShooting20S"
           }
         }
       ]

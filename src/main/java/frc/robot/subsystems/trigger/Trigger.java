@@ -55,6 +55,10 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
             // check if turret is at target angle 
             boolean turretReady = turret.isAtTargetAngle() && shooter.isAtTargetRPS();
 
+            if (shooter.isOverridingShootingLimiter()) {
+                turretReady = true;
+            }
+
             return turretReady;
         }
         return false;

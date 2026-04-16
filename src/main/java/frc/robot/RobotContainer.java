@@ -213,10 +213,14 @@ public class RobotContainer {
         operatorController.leftTrigger()
                 .onTrue(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(true)))
                 .onFalse(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(false)));
+        
+        operatorController.leftBumper()
+                .onTrue(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(true, true)))
+                .onFalse(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(false, false)));
 
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
-        operatorController.leftBumper().onTrue(turret.runOnce(turret::toggleAimingOverride));
+        operatorController.rightBumper().onTrue(turret.runOnce(turret::toggleAimingOverride));
 
         operatorController.leftStick().onTrue(trigger.runOnce(() -> trigger.setReverseTrigger(true)));
         operatorController.leftStick().onFalse(trigger.runOnce(() -> trigger.setReverseTrigger(false)));

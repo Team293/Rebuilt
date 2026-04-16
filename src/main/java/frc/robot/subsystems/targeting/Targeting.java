@@ -25,7 +25,7 @@ public class Targeting extends SubsystemBase {
     private static final double FIELD_LENGTH = 16.54; // meters
 
     private static final double shuttlingXOffset = 2.0;
-    private static final double shuttlingYOffset = 1.5;
+    private static final double shuttlingYOffset = 2.5;
 
     private static final MedianFilter distMedian = new MedianFilter(5);
     private static final LinearFilter distIIR = LinearFilter.singlePoleIIR(0.06, 0.02);

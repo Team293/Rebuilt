@@ -12,7 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
-    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 40.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    public static final double TURRET_AIMING_TOLERANCE_DEGREES = 20.0; // degrees within which we consider the turret to be aimed at the target (+-)
 
     // HARDWARE CONSTANTS
     // gearing
