@@ -29,8 +29,8 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double ENCODER_COMBINED_PERIOD_TURRET_REV =
         ENCODER_COMBINED_PERIOD_REV * (PINION_ENCODER_TEETH / TURRET_GEAR_TEETH);
 
-    public static final double TURRET_CENTER_OFFSET_DEG = -88.1; // subtracted from robot relative heading
-    public static final double TURRET_ROBOT_OFFSET_DEG = 51.8; // subtracted from robot relative heading to get turret relative heading
+    public static final double TURRET_CENTER_OFFSET_DEG = -80; // -88.1; // subtracted from robot relative heading
+    public static final double TURRET_ROBOT_OFFSET_DEG = 43.3; // 51.8; // subtracted from robot relative heading to get turret relative heading
 
     public static final Translation2d TURRET_OFFSET_FROM_CENTER = new Translation2d(-0.3, -0.2); // distance from the center of the robot to the center of the turret, in meters 
 
