@@ -1,33 +1,17 @@
 package frc.robot.subsystems.intake;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import frc.lib.subsystem.SpikeSystem;
-import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
-    private static final double DEPLOY_SPEED = 1.0; // Speed in Rotations Per Second to deploy the intake
-    private static final double RETRACT_SPEED = -1.0; // Speed in Rotations Per Second to retract the intake
-    private static final double DEPLOY_CURRENT_THRESHOLD = 10.0; // Amp limit for the deploy motor. Watches
-                                                                 // for a resistance to the motor to see when it's
-                                                                 // deployed
-    private static final double BASE_SPEED_INTAKE = 1; // Rotation Per Second
-    private static final double SPEED_PER_MPS = 0.05; // Speed added to the base speed per m/s of drive velocity
-    private static final double MAX_SPEED = 5.0; // speed cap, max speed of the intake in RPS
-
-    public enum IntakeState {
-        DEPLOYED, RETRACTED, DEPLOYING, RETRACTING
-    }
 
     private IntakeIO intakeIO;
-    private final CommandSwerveDrivetrain drivetrain;
 
     private boolean running = false; // True if the intake is running, False otherwise
     private boolean forward = true;
 
     // Intake constructor
-    public Intake(CommandSwerveDrivetrain drivetrain) {
+    public Intake() {
         super("Intake", new IntakeIOInputsAutoLogged());
-        this.drivetrain = drivetrain;
     }
 
     // Intake periodic function
@@ -44,17 +28,6 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
 
     // Run the DEPLOYED state periodic actions
     private void doDeployedState() {
-        // // Get the absolute velocity of the entire robot
-        // double robotAbsoluteVelocity = Math.abs(drivetrain.getState().Speeds.vxMetersPerSecond);
-
-        // // Adjust the intake speed, increase the intake as the robot moves faster
-        // // Cap at MAX_SPEED
-        // double speed = Math.min(BASE_SPEED_INTAKE + robotAbsoluteVelocity * SPEED_PER_MPS, MAX_SPEED);
-
-        // if (forward == false) {
-        //     speed *= -1;
-        // }
-
         // Update the intakeIO on speed
         if (forward == false) {
             intakeIO.setIntakeSpeed(-70);
@@ -79,35 +52,12 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         forward = !forward;
     }
 
-    public void toggle() {
-        running = !running;
-    }
-
     // Disables the intake
     public void disable() {
         running = false;
 
         // Turn off the intake motor
         intakeIO.setIntakeSpeed(0.0);
-    }
-
-    // Deploys the over the bumper intake
-    public void deploy() {
-        if (intakeIO.getIntakeState() != IntakeState.DEPLOYED) { // Only try to deploy if we aren't already deployed
-            intakeIO.setIntakeState(IntakeState.DEPLOYING); // Mark as deploying
-        }
-    }
-
-    // Retracts the intake back to its stored position
-    public void retract() {
-        if (intakeIO.getIntakeState() != IntakeState.RETRACTED) { // Only try to retract if we aren't already retracted
-            intakeIO.setIntakeState(IntakeState.RETRACTING); // Mark as retracting
-        }
-    }
-
-    // Returns true if the intake is fully deployed, false otherwise
-    public boolean isDeployed() {
-        return intakeIO.getIntakeState() == IntakeState.DEPLOYED;
     }
 
     @Override
@@ -117,13 +67,8 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
     }
 
     // Toggles the intake between deployed and retracted states
-    public void toggleIntake() {
+    public void toggle() {
         this.running = !this.running;
-        // if (intakeIO.getIntakeState() == IntakeState.DEPLOYED || intakeIO.getIntakeState() == IntakeState.DEPLOYING) {
-        //     retract();
-        // } else {
-        //     deploy();
-        // }
     }
 
     public void setDeployServo(double position) {

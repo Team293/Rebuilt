@@ -2,18 +2,15 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import frc.lib.subsystem.IORefresher;
-import frc.robot.subsystems.vision.photon.Camera;
 import frc.robot.subsystems.vision.photon.CameraManager;
 import org.photonvision.EstimatedRobotPose;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class VisionIOPhotonCamera implements VisionIO, IORefresher {
+public class VisionIOPhotonCamera implements VisionIO {
 
     private final List<EstimatedRobotPose> estimatedRobotPoses;
     private final Supplier<Pose2d> odometryPoseSupplier;

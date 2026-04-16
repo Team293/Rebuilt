@@ -14,7 +14,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.Filesystem;
 import java.io.IOException;
 
 /**
@@ -305,6 +304,7 @@ public class FieldConstants {
                 new Translation2d(0, AprilTagLayoutType.OFFICIAL.getLayout().getTagPose(29).get().getY());
     }
 
+    @SuppressWarnings("unused")
     public enum FieldType {
         ANDYMARK("andymark"),
         WELDED("welded");
@@ -316,6 +316,7 @@ public class FieldConstants {
         }
     }
 
+    @SuppressWarnings("unused")
     public enum AprilTagLayoutType {
         OFFICIAL("2026-official"),
         NONE("2026-none");

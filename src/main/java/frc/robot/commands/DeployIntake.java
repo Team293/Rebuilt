@@ -20,14 +20,14 @@ public class DeployIntake extends Command {
 
     @Override
     public void execute() {
-        if (timer.hasElapsed(1.0)) {
+        if (timer.hasElapsed(0.75)) {
             intake.setDeployServo(0.0);
         }
     }
 
     @Override
     public boolean isFinished() {
-        if (timer.hasElapsed(2.0)) {
+        if (timer.hasElapsed(1.5)) {
             return true;
         }
         return false;

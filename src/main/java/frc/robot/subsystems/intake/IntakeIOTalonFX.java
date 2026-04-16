@@ -1,6 +1,7 @@
 package frc.robot.subsystems.intake;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -8,16 +9,12 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.units.measure.AngularAcceleration;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.Servo;
-import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
-import frc.lib.subsystem.IORefresher;
 import frc.robot.CanID;
-import frc.robot.subsystems.intake.Intake.IntakeState;
 
-public class IntakeIOTalonFX implements IntakeIO, IORefresher {
+public class IntakeIOTalonFX implements IntakeIO {
     // TalonFX Motors
     private final TalonFX intakeMotor;
     private final Servo deployServo;
@@ -28,12 +25,9 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     private final StatusSignal<AngularVelocity> intakeVelocity;
     private final StatusSignal<Current> intakeCurrent;
 
-    // Inputs for logging
-    private IntakeIOInputs intakeIO;
-
     // IntakeIOTalonFX constructor
     public IntakeIOTalonFX() {
-        intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID(), "Canivore_Drivetrain"); // Setup the intake motor with the CAN ID
+        intakeMotor = new TalonFX(CanID.INTAKE_MOTOR.getID(), new CANBus("Canivore_Drivetrain")); // Setup the intake motor with the CAN ID
         deployServo = new Servo(CanID.INTAKE_DEPLOY_SERVO.getID());
 
         // Configure motors
@@ -56,7 +50,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
     public void updateInputs(IntakeIOInputs inputs) {
         inputs.intakeVelocityRPS = intakeVelocity.getValueAsDouble();
         inputs.intakeCurrentAmps = intakeCurrent.getValueAsDouble();
-        intakeIO = inputs;
     }
 
     // Set the speed of the intake motor
@@ -71,18 +64,6 @@ public class IntakeIOTalonFX implements IntakeIO, IORefresher {
         // intakeMotor.set(speed);
         this.velocityControl.withVelocity(speed);
         intakeMotor.setControl(this.velocityControl);
-    }
-
-    // Return the state of the Intake
-    @Override
-    public IntakeState getIntakeState() {
-        return intakeIO.intakeState;
-    }
-
-    // Set the state of the Intake
-    @Override
-    public void setIntakeState(IntakeState newState) {
-        intakeIO.intakeState = newState;
     }
 
     public static TalonFXConfiguration getIntakeMotorConfig() {

@@ -37,6 +37,9 @@ public class ShotData {
         distanceToRPM.put(4.9, 2700.0);
         distanceToHoodAngle.put(4.9, 29.0);
 
+        distanceToRPM.put(5.88, 3000.0);
+        distanceToHoodAngle.put(5.88, 35.0);
+
         distanceToRPM.put(17.069, 5000.0);
         distanceToHoodAngle.put(17.069, 45.0);
     }

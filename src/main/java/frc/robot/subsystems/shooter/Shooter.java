@@ -3,15 +3,15 @@ package frc.robot.subsystems.shooter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
-    private static final double SHOOTER_READY_THRESHOLD_RPS = 3.0; // RPS threshold to consider the shooter ready
+    private static final double SHOOTER_READY_THRESHOLD_RPS = 6.0; // RPS threshold to consider the shooter ready
 
     private boolean readFromData = true;
 
@@ -32,11 +32,8 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */ 
     @Override
     public void onPeriodic() {
-
         double distToTarget = getDistanceToTarget(); // distance in meters
         readFromData = SmartDashboard.getBoolean("ReadFromData", true);
-        // double targetRPM = ShotData.distanceToRPM.get(distToTarget);
-        // double hoodAngle = ShotData.distanceToHoodAngle.get(distToTarget);
         
         double targetRPM = 0;
 

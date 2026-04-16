@@ -1,6 +1,5 @@
 package frc.robot.subsystems.findexer;
 
-import edu.wpi.first.wpilibj.Timer;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.trigger.Trigger;
 

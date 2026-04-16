@@ -22,7 +22,6 @@ import frc.robot.CanID;
 
 public class ShooterIOTalonFX implements ShooterIO {
     private static final double HOOD_ZERO_CURRENT = 1.75; // amps at which we consider the hood to have hit a limit
-    private static final double FLYWHEEL_SETPOINT_UPDATE_DEADBAND_RPS = 0.35; // ignore tiny target changes
 
     private final TalonFX flywheelMotor;
     private final TalonFXS hoodMotor;
@@ -41,7 +40,6 @@ public class ShooterIOTalonFX implements ShooterIO {
 
     private double hoodAngleSetPoint = 0.0;
     private double flywheelRPSSetPoint = 0.0;
-    private double lastAppliedFlywheelRPSSetPoint = Double.NaN;
 
     private double hoodTargetEncoder = 0.0;
     private boolean isZeroing = true;
@@ -190,9 +188,8 @@ public class ShooterIOTalonFX implements ShooterIO {
             this.flywheelControl.withVelocity(rps);
             flywheelMotor.setControl(this.flywheelControl);
         }
-
-        this.lastAppliedFlywheelRPSSetPoint = rps;
     }
+    
     /**
      * Set the target hood angle.
      * @param angle target angle

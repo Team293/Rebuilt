@@ -13,16 +13,14 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.FieldConstants;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.turret.Turret;
 
 public class Targeting extends SubsystemBase {
-    private static final double NOMINAL_SHOT_TIME_S = 0.3; // see github issue #23 (https://github.com/Team293/Rebuilt/issues/23)
     private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
 
     private static Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-    private final CommandSwerveDrivetrain drive;
 
+    private static final double ROTATION_TOF_MULTIPLIER = 0.5;
     private static final double FIELD_WIDTH = 8.07; // meters
     private static final double FIELD_LENGTH = 16.54; // meters
 
@@ -46,8 +44,7 @@ public class Targeting extends SubsystemBase {
     private boolean overrideRedAlliance = false;
     private boolean overrideBlueAlliance = false;
     
-    public Targeting(CommandSwerveDrivetrain drive) {
-        this.drive = drive;
+    public Targeting() {
         Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
 
@@ -99,7 +96,7 @@ public class Targeting extends SubsystemBase {
             .plus(predictedRobotPos);
 
         Translation2d toGoalComp = goalPose.minus(predictedTurretPivot);
-        
+
         Logger.recordOutput("Targeting/StaticDistance", staticDistance);
         Logger.recordOutput("Targeting/PredictedRobotPos", new Pose2d(predictedRobotPos, predictedHeading));
         Logger.recordOutput("Targeting/PredictedTurretPivot", new Pose2d(predictedTurretPivot, predictedHeading));
@@ -130,6 +127,12 @@ public class Targeting extends SubsystemBase {
      * Set the target of the targeting subsystem. This will change the target position
      */
     public void setTarget(Target target) {
+        if (target == Target.HUB) {
+            RobotContainer.getLEDController().switchPreset("hub");
+        } else if (target == Target.SHUTTLE_LEFT  || target == Target.SHUTTLE_RIGHT) {
+            RobotContainer.getLEDController().switchPreset("shuttle");
+        }
+
         currentTarget = target;
     }
 
@@ -137,19 +140,9 @@ public class Targeting extends SubsystemBase {
      * Set the target location to center of the hub 
      */
     private void setPoseTargetingHub() {
-        RobotContainer.getLEDController().switchPreset("hub");
 
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
-
-        // if (!DriverStation.getAlliance().isPresent() && isRedAlliance) {
-        //     if (isRedAlliance) {
-        //         targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-        //     } else {
-        //         targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
-        //     }
-        //     return;
-        // }
 
         if (overrideRedAlliance) {
             targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
@@ -176,8 +169,6 @@ public class Targeting extends SubsystemBase {
      * Set the target location to 0, 0
      */
     private void setPoseTargetingShuttleRight() {
-        RobotContainer.getLEDController().switchPreset("shuttle");
-
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         } else {
@@ -186,8 +177,6 @@ public class Targeting extends SubsystemBase {
     }
 
     private void setPoseTargetingShuttleLeft() {
-        RobotContainer.getLEDController().switchPreset("shuttle");
-
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, 0 + shuttlingYOffset);
         } else {
