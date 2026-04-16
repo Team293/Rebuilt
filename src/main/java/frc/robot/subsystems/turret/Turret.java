@@ -49,17 +49,17 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         if (this.overrideAutomaticAiming) {
             this.turretIO.setTurretAngleRobotRelativeDegrees(0);
         } else {
-            this.turretIO.setTurretAngleRobotRelativeDegrees(getTurretAngleDegreesRobotRelative());
+            this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
         }
 
     }
 
-    public double getTurretAngleDegreesRobotRelative() {
-        Pose2d toGoal = Targeting.differenceBetweenRobotAndTarget();
+    public double getTurretAngleDegreesFieldRelative() {
+        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
 
-        double robotRelativeAngleToTarget = toGoal.getTranslation().getAngle().minus(toGoal.getRotation()).getDegrees();
-        Logger.recordOutput("Targeting/PredictedTargetAngleRobotRelative", robotRelativeAngleToTarget);
-        return robotRelativeAngleToTarget;
+        double angleToTarget = toGoal.getAngle().getDegrees();
+        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
+        return angleToTarget;
     }
 
 

@@ -52,7 +52,7 @@ public class Targeting extends SubsystemBase {
         SmartDashboard.putBoolean("OverrideRedAlliance", overrideRedAlliance);
     }
 
-    public static Pose2d differenceBetweenRobotAndTarget() {
+    public static Translation2d differenceBetweenRobotAndTarget() {
         // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
         // get pose of robo
         Pose2d robotPose = RobotContainer.getDrive().getPose();
@@ -88,7 +88,7 @@ public class Targeting extends SubsystemBase {
 
         Rotation2d predictedHeading =
             robotPose.getRotation().plus(
-                Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * tof * ROTATION_TOF_MULTIPLIER)
+                Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * tof)
             );
 
         Translation2d predictedTurretPivot = Turret.TURRET_OFFSET_FROM_CENTER
@@ -96,17 +96,16 @@ public class Targeting extends SubsystemBase {
             .plus(predictedRobotPos);
 
         Translation2d toGoalComp = goalPose.minus(predictedTurretPivot);
-        
+
         Logger.recordOutput("Targeting/StaticDistance", staticDistance);
         Logger.recordOutput("Targeting/PredictedRobotPos", new Pose2d(predictedRobotPos, predictedHeading));
         Logger.recordOutput("Targeting/PredictedTurretPivot", new Pose2d(predictedTurretPivot, predictedHeading));
         Logger.recordOutput("Targeting/ToGoalCompensation", toGoalComp);
         Logger.recordOutput("Targeting/TimeOfFlight", tof);
 
-        return new Pose2d(
+        return new Translation2d(
             toGoalXFilter.calculate(toGoalComp.getX()),
-            toGoalYFilter.calculate(toGoalComp.getY()),
-            predictedHeading
+            toGoalYFilter.calculate(toGoalComp.getY())
         );
     }
 
