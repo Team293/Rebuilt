@@ -44,7 +44,7 @@ public class ShooterIOTalonFX implements ShooterIO {
     private double hoodTargetEncoder = 0.0;
     private boolean isZeroing = true;
 
-    private double distanceTrim = 0.6; // minor adjustment to the returned distance based on operator controller input, in degrees
+    private double distanceTrim = 0.3; // minor adjustment to the returned distance based on operator controller input, in degrees
 
     public ShooterIOTalonFX() {
         this.hoodMotor = new TalonFXS(CanID.HOOD_MOTOR.getID());
