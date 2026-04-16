@@ -19,14 +19,6 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.SpikeController;
-import frc.lib.led.Color;
-import frc.lib.led.LEDPreset;
-import frc.lib.led.LEDStrip;
-import frc.lib.led.PWMLEDController;
-import frc.lib.led.PWMLEDController.ModePreset;
-import frc.lib.led.presets.addressable.ChasePattern;
-import frc.lib.led.presets.addressable.MergeSortPattern;
-import frc.lib.led.presets.addressable.RainbowPattern;
 import frc.robot.commands.SetFlywheelState;
 import frc.robot.commands.SetIntakeState;
 import frc.robot.commands.DeployIntake;
@@ -74,17 +66,7 @@ public class RobotContainer {
     private final Targeting targeting;
     private final Findexer findexer;
 
-    private static final PWMLEDController.Mode LED_MODE = PWMLEDController.Mode.ADDRESSABLE;
-    private static final int ADDRESSABLE_LED_LENGTH = 160;
-
-    private static PWMLEDController ledController;
-
     public RobotContainer() {
-        ledController = new PWMLEDController(1, LED_MODE);
-        configureAddressableStrips();
-        configureLEDPresets();
-        ledController.start();
-
         drive = TunerConstants.createDrivetrain();
         this.turret = new Turret();
         this.vision = new Vision(drive);
@@ -116,102 +98,6 @@ public class RobotContainer {
         SmartDashboard.putData("Auto Path", autoChooser);
 
         configureBindings();
-
-        ledController.switchPreset("hub");
-    }
-
-    private void configureLEDPresets() {
-        ledController.registerPreset(createHubPreset());
-        ledController.registerPreset(createShuttlePreset());
-        ledController.registerPreset(createFixedPreset());
-    }
-
-    private void configureAddressableStrips() {
-        if (!ledController.isAddressable()) {
-            return;
-        }
-
-        // Configure physical strip layout once. Presets only mutate strip state.
-        ledController.addStrip(new LEDStrip(ADDRESSABLE_LED_LENGTH / 2, 0));
-        ledController.addStrip(new LEDStrip(ADDRESSABLE_LED_LENGTH / 2, ADDRESSABLE_LED_LENGTH / 2));
-    }
-
-    private ModePreset createHubPreset() {
-        return new ModePreset(
-            "hub",
-            new LEDPreset("hub", -0.25),
-            strips -> {
-                LEDStrip strip = getRequiredStrip(strips, 0, "hub");
-                strip.setPrimaryColor(Color.fromHex("00F5FF"));
-                strip.setSecondaryColor(Color.fromHex("FF007F"));
-                strip.setPattern(new RainbowPattern());
-                strip.setPatternDuration(2.5);
-
-                LEDStrip secondaryStrip = getRequiredStrip(strips, 1, "hub");
-                secondaryStrip.setPrimaryColor(Color.fromHex("00F5FF"));
-                secondaryStrip.setSecondaryColor(Color.fromHex("FF007F"));
-                secondaryStrip.setPattern(new RainbowPattern());
-                secondaryStrip.setPatternDuration(2.5);
-            }
-        );
-    }
-
-    private ModePreset createShuttlePreset() {
-        return new ModePreset(
-            "shuttle",
-            new LEDPreset("shuttle", -0.23),
-            strips -> {
-                LEDStrip strip = getRequiredStrip(strips, 0, "shuttle");
-                strip.setPrimaryColor(new Color(35, 255, 255));
-                strip.setSecondaryColor(new Color(0, 0, 0));
-                strip.setPattern(new MergeSortPattern());
-                strip.setPatternDuration(1.5);
-
-                LEDStrip secondaryStrip = getRequiredStrip(strips, 1, "shuttle");
-                secondaryStrip.setPrimaryColor(new Color(35, 255, 255));
-                secondaryStrip.setSecondaryColor(new Color(0, 0, 0));
-                secondaryStrip.setPattern(new MergeSortPattern());
-                secondaryStrip.setPatternDuration(1.5);
-            }
-        );
-    }
-
-    private ModePreset createFixedPreset() {
-        return new ModePreset(
-            "fixed",
-            new LEDPreset("fixed", -0.21),
-            strips -> {
-                LEDStrip strip = getRequiredStrip(strips, 0, "fixed");
-                strip.setPrimaryColor(new Color(0, 255, 255));
-                strip.setSecondaryColor(new Color(0, 0, 0));
-                strip.setPattern(new ChasePattern());
-                strip.setPatternDuration(1.0);
-
-                LEDStrip secondaryStrip = getRequiredStrip(strips, 1, "fixed");
-                secondaryStrip.setPrimaryColor(new Color(0, 255, 255));
-                secondaryStrip.setSecondaryColor(new Color(0, 0, 0));
-                secondaryStrip.setPattern(new ChasePattern());
-                secondaryStrip.setPatternDuration(1.0);
-            }
-        );
-    }
-
-    private LEDStrip getRequiredStrip(java.util.List<LEDStrip> strips, int index, String presetName) {
-        if (index < 0 || index >= strips.size()) {
-            throw new IllegalStateException(
-                "Addressable preset '" + presetName + "' requires strip index " + index
-            );
-        }
-
-        return strips.get(index);
-    }
-
-    public static PWMLEDController getLEDController() {
-        return ledController;
-    }
-
-    public void updateLEDs() {
-        ledController.update();
     }
 
     public static CommandSwerveDrivetrain getDrive() {

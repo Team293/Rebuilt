@@ -135,7 +135,6 @@ public class Targeting extends SubsystemBase {
      * Set the target location to center of the hub 
      */
     private void setPoseTargetingHub() {
-        RobotContainer.getLEDController().switchPreset("hub");
 
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
@@ -165,8 +164,6 @@ public class Targeting extends SubsystemBase {
      * Set the target location to 0, 0
      */
     private void setPoseTargetingShuttleRight() {
-        RobotContainer.getLEDController().switchPreset("shuttle");
-
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         } else {
@@ -175,8 +172,6 @@ public class Targeting extends SubsystemBase {
     }
 
     private void setPoseTargetingShuttleLeft() {
-        RobotContainer.getLEDController().switchPreset("shuttle");
-
         if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, 0 + shuttlingYOffset);
         } else {
