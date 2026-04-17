@@ -20,7 +20,6 @@ public class Targeting extends SubsystemBase {
 
     private static Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
 
-    private static final double ROTATION_TOF_MULTIPLIER = 0.5;
     private static final double FIELD_WIDTH = 8.07; // meters
     private static final double FIELD_LENGTH = 16.54; // meters
 

@@ -3,9 +3,10 @@ package frc.robot.subsystems.shooter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
@@ -20,9 +21,13 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private boolean actuateHoodAndLaunch = false; 
     private boolean overrideStopShooting = false; // driver override to stop shooting and bring hood to  zero regardless of operator input
     private boolean overrideShootingLimiter = false;
+    private double tempTrim = 0.0;
 
-    public Shooter() {
+    private CommandXboxController controller;
+
+    public Shooter(CommandXboxController controller) {
         super("Shooter", new ShooterIOInputsAutoLogged());
+        this.controller = controller;
         SmartDashboard.putNumber("TargetRPM", 0);
         SmartDashboard.putNumber("TargetHoodAngle", 0);
         SmartDashboard.putBoolean("ReadFromData", true);
@@ -33,7 +38,23 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */ 
     @Override
     public void onPeriodic() {
+        if (DriverStation.isTeleop()) {
+            double y = -controller.getRightY();
+            if (Math.abs(y) < 0.08) {
+                y = 0.0;
+            }
+
+            tempTrim = y * 0.3;
+
+            shooterIO.setDistanceTrim(tempTrim + 0.1);
+        } else {
+            shooterIO.setDistanceTrim(0.3);
+        }
+
         double distToTarget = getDistanceToTarget(); // distance in meters
+        
+        // get the temporary trim applied by the operator controller 
+
         readFromData = SmartDashboard.getBoolean("ReadFromData", true);
         
         double targetRPM = 0;
@@ -143,6 +164,9 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
 
     public void changeDistanceTrim(double deltaDistance) {
+        if (shooterIO.getDistanceTrim() + deltaDistance > 0.3) {
+            return;
+        }
         shooterIO.changeDistanceTrim(deltaDistance);
     }
 

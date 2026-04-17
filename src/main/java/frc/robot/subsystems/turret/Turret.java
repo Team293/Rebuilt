@@ -10,6 +10,8 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 20.0; // degrees within which we consider the turret to be aimed at the target (+-)
@@ -37,19 +39,28 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     private boolean overrideAutomaticAiming = false;
 
     private TurretIO turretIO;
+    private CommandXboxController controller;
 
-    public Turret() {
+    public Turret(CommandXboxController controller) {
         super("Turret", new TurretIOInputsAutoLogged());
+        this.controller = controller;
     }
 
     @Override
     public void onPeriodic() {
         Logger.recordOutput("Turret/TurretCenterOffset", new Pose2d(TURRET_OFFSET_FROM_CENTER, RobotContainer.getDrive().getRotation()));
 
+        double y = -controller.getLeftX();
+        if (Math.abs(y) < 0.08) {
+            y = 0.0;
+        }
+
+        double tempTrim = y * 5;
+
         if (this.overrideAutomaticAiming) {
             this.turretIO.setTurretAngleRobotRelativeDegrees(0);
         } else {
-            this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative());
+            this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative() + tempTrim);
         }
 
     }

@@ -25,36 +25,52 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
     public void onPeriodic() {
         // update drive with vision measurements
         for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
-            if (pose == null) {
-                continue;
-            }
-            double avgDist = 0;
+            if (pose == null) continue;
+
+            double avgDist = 0.0;
             boolean usePose = true;
+            int numTags = pose.targetsUsed.size();
 
-            // calculate the average distance to the targets
-            // used to calculate the standard deviations of the vision measurement
-            if (!pose.targetsUsed.isEmpty()) {
-                double totalDist = 0;
-                for (var target : pose.targetsUsed) {
-                    if (target.poseAmbiguity > AMBIGUITY_THRESHOLD) {
-                        usePose = false;
-                        break;
-                    }
+            if (numTags == 0) continue;
 
-                    totalDist += target.getBestCameraToTarget().getTranslation().getNorm();
+            double totalDist = 0.0;
+
+            for (var target : pose.targetsUsed) {
+                // Reject high ambiguity targets
+                if (target.poseAmbiguity > AMBIGUITY_THRESHOLD) {
+                    usePose = false;
+                    break;
                 }
 
-                avgDist = totalDist / pose.targetsUsed.size();
+                totalDist += target.getBestCameraToTarget()
+                                .getTranslation()
+                                .getNorm();
             }
 
-            if (usePose) {               
-                drive.addVisionMeasurement(
-                        pose.estimatedPose.toPose2d(),
-                        pose.timestampSeconds,
-                        CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(1 + ((avgDist * avgDist) / 30))
-                );
+            if (!usePose) continue;
+
+            avgDist = totalDist / numTags;
+
+            // Optional hard rejection (VERY useful in matches)
+            if (avgDist > 5.0) continue;
+
+            double scale = 1 + (avgDist * avgDist / 50.0);
+
+            // Trust multi-tag solutions more
+            if (numTags >= 2) {
+                scale *= 0.7;
+            } else {
+                scale *= 1.3;
             }
-        }
+
+            var stdDevs = CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(scale);
+
+            drive.addVisionMeasurement(
+                pose.estimatedPose.toPose2d(),
+                pose.timestampSeconds,
+                stdDevs
+            );
+        }    
     }
 
     @Override

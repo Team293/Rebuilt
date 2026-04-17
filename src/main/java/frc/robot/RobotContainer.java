@@ -73,10 +73,10 @@ public class RobotContainer {
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         ledController = new LEDController(1);
-        this.turret = new Turret();
+        this.turret = new Turret(operatorController);
         this.vision = new Vision(drive);
         this.intake = new Intake();
-        this.shooter = new Shooter();
+        this.shooter = new Shooter(operatorController);
         this.targeting = new Targeting();
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
@@ -227,6 +227,8 @@ public class RobotContainer {
 
         operatorController.povUp().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(0.1)));
         operatorController.povDown().onTrue(shooter.runOnce(() -> shooter.changeDistanceTrim(-0.1)));
+
+        operatorController.a().onTrue(shooter.runOnce(() -> shooter.setDistanceTrim(0)));
         operatorController.povLeft().onTrue(turret.runOnce(() -> turret.changeTrim(1)));
         operatorController.povRight().onTrue(turret.runOnce(() -> turret.changeTrim(-1)));
 
