@@ -132,6 +132,20 @@ public class FieldConstants {
                 AprilTagLayoutType.OFFICIAL.getLayout().getTagPose(21).get().toPose2d();
     }
 
+    public static class Outreach {
+        public static final double width = Units.inchesToMeters(47.0);
+        public static final double height =
+                Units.inchesToMeters(117.0); // includes the catcher at the top
+        public static final double translationFromTagToHoop = Units.feetToMeters(6);
+
+        public static final Translation3d basketballHoop = 
+                new Translation3d(
+                        AprilTagLayoutType.OFFICIAL.getLayout().getTagPose(10).get().getX() + translationFromTagToHoop,
+                        fieldWidth / 2.0,
+                        height
+                );
+    }
+
     /** Left Bump related constants */
     public static class LeftBump {
 

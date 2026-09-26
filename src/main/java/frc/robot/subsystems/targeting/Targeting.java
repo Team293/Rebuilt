@@ -5,7 +5,9 @@ import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -46,6 +48,7 @@ public class Targeting extends SubsystemBase {
     public Targeting() {
         Logger.recordOutput("HubTarget", FieldConstants.Hub.oppTopCenterPoint);
         Logger.recordOutput("ShuttleTarget", new Pose2d(0, 0, new Rotation2d()));
+        Logger.recordOutput("Outreach/BasetballHoop", new Pose3d(FieldConstants.Outreach.basketballHoop, new Rotation3d()));
 
         SmartDashboard.putBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         SmartDashboard.putBoolean("OverrideRedAlliance", overrideRedAlliance);

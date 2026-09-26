@@ -16,6 +16,11 @@ public class ShotData {
         
         distanceToTOFConstant.put(10.0, 4.0);
 
+        // distanceToRPM.put(4.0, 3000.0);
+        // distanceToHoodAngle.put(4.0, 23.0);
+
+        // distanceToRPM.put(1.95, 2600.0);
+        // distanceToHoodAngle.put(1.95, 20.0);
         distanceToRPM.put(2.0, 2000.0);
         distanceToHoodAngle.put(2.0, 25.0);
 
