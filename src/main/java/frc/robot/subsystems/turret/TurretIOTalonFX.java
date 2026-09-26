@@ -247,7 +247,7 @@ public class TurretIOTalonFX implements TurretIO {
     public CANcoderConfiguration getPinionEncoderConfigs() {
         CANcoderConfiguration configs = getEncoderConfigs();
         // configs.MagnetSensor.MagnetOffset = Turret.PINION_ENCODER_OFFSET;
-        configs.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+        configs.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
 
         return configs;
     }

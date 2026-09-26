@@ -22,8 +22,8 @@ public class Targeting extends SubsystemBase {
 
     private static Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
 
-    private static final double FIELD_WIDTH = 8.07; // meters
-    private static final double FIELD_LENGTH = 16.54; // meters
+    private static final double FIELD_WIDTH = FieldConstants.APRIL_TAG_LAYOUT.getFieldWidth(); // meters
+    private static final double FIELD_LENGTH = FieldConstants.APRIL_TAG_LAYOUT.getFieldLength(); // meters
 
     private static final double shuttlingXOffset = 2.0;
     private static final double shuttlingYOffset = 2.5;

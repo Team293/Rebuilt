@@ -24,6 +24,7 @@ import java.io.IOException;
  */
 public class FieldConstants {
     public static final FieldType fieldType = FieldType.WELDED;
+    public static final AprilTagFieldLayout APRIL_TAG_LAYOUT = AprilTagLayoutType.OFFICIAL.getLayout();
 
     // AprilTag related constants
     public static final int aprilTagCount = AprilTagLayoutType.OFFICIAL.getLayout().getTags().size();
@@ -332,7 +333,7 @@ public class FieldConstants {
 
     @SuppressWarnings("unused")
     public enum AprilTagLayoutType {
-        OFFICIAL("2026-official"),
+        OFFICIAL("2026-robocon-welded-photonvision-wpilib"),
         NONE("2026-none");
 
         private final String name;

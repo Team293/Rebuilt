@@ -5,6 +5,7 @@ import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.subsystem.SpikeSystem;
@@ -15,6 +16,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 6.0; // RPS threshold to consider the shooter ready
 
     private boolean readFromData = true;
+    private boolean useAllianceSpecificTrims = true;
 
     private ShooterIO shooterIO;
     private boolean spinUpFlywheel = false; 
@@ -31,6 +33,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         SmartDashboard.putNumber("TargetRPM", 0);
         SmartDashboard.putNumber("TargetHoodAngle", 0);
         SmartDashboard.putBoolean("ReadFromData", true);
+        SmartDashboard.putBoolean("UseAllianceSpecificTrim", useAllianceSpecificTrims);
     }
 
     /**
@@ -43,12 +46,37 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
             if (Math.abs(y) < 0.08) {
                 y = 0.0;
             }
+            double allianceTrim = 0;
 
-            tempTrim = y * 0.3;
+            if (SmartDashboard.getBoolean("UseAllianceSpecificTrim", useAllianceSpecificTrims)) {
+                if (DriverStation.getAlliance().isPresent()) {
+                    if (DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                        allianceTrim += 0.3;
+                    } else if (DriverStation.getAlliance().get().equals(Alliance.Blue)) {
+                        allianceTrim -= 0.3;
+                    }
+                    SmartDashboard.putNumber("AllianceSpecificTrims", allianceTrim);
+                }
+            }
+
+            tempTrim = (y * 0.3) + allianceTrim;
 
             shooterIO.setDistanceTrim(tempTrim + 0.1);
         } else {
-            shooterIO.setDistanceTrim(0.3);
+            double allianceTrim = 0;
+
+             if (SmartDashboard.getBoolean("UseAllianceSpecificTrim", useAllianceSpecificTrims)) {
+                if (DriverStation.getAlliance().isPresent()) {
+                    if (DriverStation.getAlliance().get().equals(Alliance.Red)) {
+                        allianceTrim += 0.3;
+                    } else if (DriverStation.getAlliance().get().equals(Alliance.Blue)) {
+                        allianceTrim -= 0.3;
+                    }
+                    SmartDashboard.putNumber("AllianceSpecificTrims", allianceTrim);
+                }
+            }
+
+            shooterIO.setDistanceTrim(allianceTrim + 0.1);
         }
 
         double distToTarget = getDistanceToTarget(); // distance in meters

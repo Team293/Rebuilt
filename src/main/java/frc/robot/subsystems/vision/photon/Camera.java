@@ -1,14 +1,16 @@
 package frc.robot.subsystems.vision.photon;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.wpilibj.Filesystem;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.targeting.PhotonPipelineResult;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,11 +24,18 @@ public class Camera {
     private final Transform3d robotToCamera;
 
     public Camera(String id, Transform3d robotToCamera) {
+        AprilTagFieldLayout fieldLayout;
+        try {
+            Path layoutPath = Filesystem.getDeployDirectory().toPath().resolve("2026-robocon-welded-photonvision-wpilib.json");
+            fieldLayout = new AprilTagFieldLayout(layoutPath);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load AprilTag field layout", e);
+        }
         this.robotToCamera = robotToCamera;
         this.id = id;
         this.photonCamera = new PhotonCamera(id);
         this.poseEstimator = new PhotonPoseEstimator(
-                AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField),
+                fieldLayout,
                 PhotonPoseEstimator.PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
                 robotToCamera
         );

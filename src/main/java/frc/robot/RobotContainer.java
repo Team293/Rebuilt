@@ -98,7 +98,6 @@ public class RobotContainer {
         NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
         NamedCommands.registerCommand("deployIntake", new DeployIntake(intake));
 
-
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
 
