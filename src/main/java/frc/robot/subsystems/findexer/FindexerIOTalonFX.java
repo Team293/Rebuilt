@@ -3,6 +3,7 @@ package frc.robot.subsystems.findexer;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -18,13 +19,24 @@ public class FindexerIOTalonFX implements FindexerIO {
     public FindexerIOTalonFX() {
         this.motor = new TalonFX(CanID.FINDEXER_MOTOR.getID());
         this.motorRps = motor.getVelocity();
-        Slot0Configs config = new Slot0Configs();
-        config.kP = 10;
-        config.kI = 0.0;
-        config.kD = 0.0;
+        TalonFXConfiguration config = new TalonFXConfiguration();
         
-        config.kS = 2;
-        config.kV = 0.1;
+        config.CurrentLimits.StatorCurrentLimit = 40;
+        config.CurrentLimits.StatorCurrentLimitEnable = true;
+        config.CurrentLimits.SupplyCurrentLimit = 50;
+        config.CurrentLimits.SupplyCurrentLowerLimit = 30.0;
+        config.CurrentLimits.SupplyCurrentLowerTime = 0.5;
+        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+
+        Slot0Configs slot0 = config.Slot0;
+
+        slot0.kP = 10;
+        slot0.kI = 0.0;
+        slot0.kD = 0.0;
+        slot0.kS = 2;
+        slot0.kV = 0.1;
+
+        config.Slot0 = slot0;
 
         this.motor.getConfigurator().apply(config);
 
