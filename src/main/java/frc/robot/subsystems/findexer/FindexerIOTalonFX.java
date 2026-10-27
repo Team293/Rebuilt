@@ -3,6 +3,7 @@ package frc.robot.subsystems.findexer;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -11,18 +12,18 @@ import frc.robot.CanID;
 public class FindexerIOTalonFX implements FindexerIO {
     private final TalonFX motor;
 
-    private final VelocityVoltage velocityControl = new VelocityVoltage(0.0);
+    private final VelocityTorqueCurrentFOC velocityControl = new VelocityTorqueCurrentFOC(0.0);
     private final StatusSignal<AngularVelocity> motorRps; // Rotations per second
 
     public FindexerIOTalonFX() {
         this.motor = new TalonFX(CanID.FINDEXER_MOTOR.getID());
         this.motorRps = motor.getVelocity();
         Slot0Configs config = new Slot0Configs();
-        config.kP = 0.1;
+        config.kP = 10;
         config.kI = 0.0;
         config.kD = 0.0;
         
-        config.kS = 0.0;
+        config.kS = 2;
         config.kV = 0.1;
 
         this.motor.getConfigurator().apply(config);

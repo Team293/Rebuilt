@@ -47,7 +47,7 @@ import org.littletonrobotics.junction.Logger;
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
     // default standard deviations
     // x, y, heading; trust x and y translation and reject yaw
-    public static final Vector<N3> kDefaultVisionStdDevs = VecBuilder.fill(0.7, 0.7, 1.0);
+    public static final Vector<N3> kDefaultVisionStdDevs = VecBuilder.fill(0.7, 0.7, 10000000.0);
 
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private double m_lastSimTime;
@@ -339,5 +339,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     public double getRobotOmegaDegPerSec() {
         return robotOmegaDegPerSec;
+    }
+
+    public void resetAllianceHeadingToAllianceForward() {
+        Rotation2d correctHeading = DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red
+                ? kRedAlliancePerspectiveRotation
+                : kBlueAlliancePerspectiveRotation;
+
+        resetRotation(correctHeading);
     }
 }

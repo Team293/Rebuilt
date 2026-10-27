@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
+import frc.lib.FieldConstants;
 import frc.lib.SpikeController;
 import frc.lib.led.LEDController;
 import frc.lib.led.LEDPreset;
@@ -100,6 +100,8 @@ public class RobotContainer {
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
+        SmartDashboard.putNumber("Field Length", FieldConstants.APRIL_TAG_LAYOUT.getFieldLength());
+        SmartDashboard.putNumber("Field Width", FieldConstants.APRIL_TAG_LAYOUT.getFieldWidth());
 
         configureBindings();
         configureLEDPresets();
@@ -183,7 +185,11 @@ public class RobotContainer {
                     .withVelocityY(vy * flipControls)
                     .withRotationalRate(-driverController.getRightX() * MaxAngularRate * angularMultiplier * flipControls);
             })
+
+
         );
+        driverController.povLeft().onTrue(drive.runOnce(drive::resetAllianceHeadingToAllianceForward));
+
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();

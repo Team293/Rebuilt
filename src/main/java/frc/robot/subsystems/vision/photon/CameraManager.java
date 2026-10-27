@@ -28,7 +28,7 @@ public class CameraManager {
                 "back",
                  new Transform3d(
                     Inches.of(-13.6), // checked
-                    Inches.of(-2.5), //checked
+                    Inches.of(2), // updated 9/26
                     Inches.of(8.875), //checked
                     new Rotation3d(
                         Degrees.of(0),
@@ -39,28 +39,28 @@ public class CameraManager {
             )
         );
 
-        registerCamera(
-            new Camera(
-                "right",
-                new Transform3d(
-                    Inches.of(-1.5), //checked
-                    Inches.of(-13.55), //checked
-                    Inches.of(8.9), //checked
-                    new Rotation3d(
-                        Degrees.of(0),
-                        Degrees.of(-65), // negative pitch = tilted upward
-                        Degrees.of(-90)
-                    )
-                )
-            )
-        );
+        // registerCamera(
+        //     new Camera(
+        //         "right",
+        //         new Transform3d(
+        //             Inches.of(-1.5), //checked
+        //             Inches.of(-13.55), //checked
+        //             Inches.of(8.9), //checked
+        //             new Rotation3d(
+        //                 Degrees.of(0),
+        //                 Degrees.of(-65), // negative pitch = tilted upward
+        //                 Degrees.of(-90)
+        //             )
+        //         )
+        //     )
+        // );
 
         registerCamera(
             new Camera(
                 "left",
                  new Transform3d(
-                    Inches.of(-2.875), // checked
-                    Inches.of(-13.5), // checked 
+                    Inches.of(-2.5), // updated 9/26
+                    Inches.of(13.5), // checked 
                     Inches.of(8.8), // checked
                  new Rotation3d(
                     Degrees.of(0),

@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.lib.FieldConstants;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
 import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.util.FlippingUtil;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -185,6 +187,10 @@ public class Robot extends LoggedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
+    FlippingUtil.fieldSizeX = FieldConstants.APRIL_TAG_LAYOUT.getFieldLength();
+    FlippingUtil.fieldSizeY = FieldConstants.APRIL_TAG_LAYOUT.getFieldWidth();
+    FlippingUtil.symmetryType = FlippingUtil.FieldSymmetry.kRotational;
+    
     autonomousCommand = robotContainer.getAutonomousCommand();
     boolean flipped = SmartDashboard.getBoolean("Auto/PathFlipped", false);
 

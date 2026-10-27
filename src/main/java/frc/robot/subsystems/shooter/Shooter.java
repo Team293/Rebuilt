@@ -16,7 +16,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 6.0; // RPS threshold to consider the shooter ready
 
     private boolean readFromData = true;
-    private boolean useAllianceSpecificTrims = true;
+    private boolean useAllianceSpecificTrims = false;
 
     private ShooterIO shooterIO;
     private boolean spinUpFlywheel = false; 
@@ -76,7 +76,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
                 }
             }
 
-            shooterIO.setDistanceTrim(allianceTrim + 0.1);
+            shooterIO.setDistanceTrim(allianceTrim + 0.3);
         }
 
         double distToTarget = getDistanceToTarget(); // distance in meters

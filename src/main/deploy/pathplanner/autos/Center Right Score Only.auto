@@ -13,14 +13,20 @@
                 "data": {
                   "pathName": "Center Right Start"
                 }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "emptyHopper"
-                }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "deployIntake"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "requestShooting20S"
           }
         }
       ]
