@@ -11,6 +11,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.NamedCommands;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -73,11 +75,13 @@ public class RobotContainer {
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         ledController = new LEDController(1);
-        this.turret = new Turret(operatorController);
         this.vision = new Vision(drive);
+        // Subsystem periodic methods run in registration order: apply vision first,
+        // then publish one targeting solution before either aiming subsystem reads it.
+        this.targeting = new Targeting();
+        this.turret = new Turret(operatorController);
         this.intake = new Intake();
         this.shooter = new Shooter(operatorController);
-        this.targeting = new Targeting();
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
         
@@ -144,8 +148,7 @@ public class RobotContainer {
         drive.setDefaultCommand(
             drive.applyRequest(() -> {
 
-                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.2 : 1.0;
-                // double speedMultiplier = tr0.2ue;
+                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.30 : 1.0;
 
                 double vx = -driverController.getLeftY() * MaxSpeed * speedMultiplier;
                 double vy = -driverController.getLeftX() * MaxSpeed * speedMultiplier;
@@ -189,6 +192,8 @@ public class RobotContainer {
 
         );
         driverController.povLeft().onTrue(drive.runOnce(drive::resetAllianceHeadingToAllianceForward));
+        driverController.povDown().onTrue(drive.runOnce(() ->
+            drive.resetRotation(vision.getAprilTagHeading().orElseGet(drive::getRotation))));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
@@ -244,5 +249,11 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return autoChooser.getSelected();
+    }
+
+    public void updateDriverFeedback() {
+        double rumble = DriverStation.isTeleopEnabled() ? turret.getDirectionalWraparoundRumble() : 0.0;
+        driverController.getHID().setRumble(RumbleType.kLeftRumble, Math.max(0.0, rumble));
+        driverController.getHID().setRumble(RumbleType.kRightRumble, Math.max(0.0, -rumble));
     }
 }

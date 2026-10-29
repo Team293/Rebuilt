@@ -8,12 +8,14 @@ import frc.robot.subsystems.targeting.Targeting;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     public static final double TURRET_AIMING_TOLERANCE_DEGREES = 20.0; // degrees within which we consider the turret to be aimed at the target (+-)
+    public static final double WRAP_WARNING_RANGE_DEGREES = 45.0;
     // HARDWARE CONSTANTS
     // gearing
     public static final double TURRET_GEAR_TEETH = 84.0; // number of teeth on fixed turret gear
@@ -58,7 +60,9 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         if (this.overrideAutomaticAiming) {
             this.turretIO.setTurretAngleRobotRelativeDegrees(0);
         } else {
-            this.turretIO.setTurretAngleFieldRelativeDegrees(getTurretAngleDegreesFieldRelative() + tempTrim);
+            var shot = Targeting.getShotData();
+            this.turretIO.setTurretAngleFieldRelativeDegrees(
+                    shot.turretAngleDeg() + tempTrim, shot.turretFF_deg_s());
         }
     }
 
@@ -66,7 +70,6 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
         Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
 
         double angleToTarget = toGoal.getAngle().getDegrees();
-        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
         return angleToTarget;
     }
 
@@ -94,5 +97,25 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     public void changeTrim(double deltaDegrees) {
         turretIO.changeTurretTrim(deltaDegrees);
+    }
+
+    /** Commanded wrap warning: positive for the left (CCW) limit, negative for right (CW). */
+    @AutoLogOutput(key = "Turret/DirectionalWraparoundRumble")
+    public double getDirectionalWraparoundRumble() {
+        synchronized (io) {
+            // The IO target already includes the robot heading, mounting offset, and both trims.
+            return calculateDirectionalWraparoundRumble(io.targetTurretDegrees);
+        }
+    }
+
+    static double calculateDirectionalWraparoundRumble(double turretRelativeTargetDegrees) {
+        if (!Double.isFinite(turretRelativeTargetDegrees)) {
+            return 0.0;
+        }
+        double wrappedDegrees = MathUtil.inputModulus(turretRelativeTargetDegrees, -180.0, 180.0);
+        double distanceToWrapDegrees = 180.0 - Math.abs(wrappedDegrees);
+        double strength = MathUtil.clamp(
+                1.0 - distanceToWrapDegrees / WRAP_WARNING_RANGE_DEGREES, 0.0, 1.0);
+        return Math.copySign(strength, wrappedDegrees);
     }
 }

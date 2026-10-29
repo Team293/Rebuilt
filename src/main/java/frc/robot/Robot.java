@@ -31,6 +31,7 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.util.FlippingUtil;
 
@@ -59,6 +60,9 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void robotInit() {
+    // Use AdvantageKit logging; prevent Phoenix from repeatedly trying to start hoot logs.
+    SignalLogger.enableAutoLogging(false);
+
     // Setup log directory and free up space if needed
     SetupLog();
     //Pathfinding.setPathfinder(new LocalADStarAK());
@@ -166,6 +170,7 @@ public class Robot extends LoggedRobot {
     // This must be called from the robot's periodic block in order for anything in
     // the Command-based framework to work.
     CommandScheduler.getInstance().run();
+    robotContainer.updateDriverFeedback();
     double endTime = Timer.getFPGATimestamp();
 
     double execMs = (endTime - startTime) * 1000.0;

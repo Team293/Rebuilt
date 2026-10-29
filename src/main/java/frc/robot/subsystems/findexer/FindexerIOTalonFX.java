@@ -9,6 +9,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 
 public class FindexerIOTalonFX implements FindexerIO {
     private final TalonFX motor;
@@ -21,12 +22,7 @@ public class FindexerIOTalonFX implements FindexerIO {
         this.motorRps = motor.getVelocity();
         TalonFXConfiguration config = new TalonFXConfiguration();
         
-        config.CurrentLimits.StatorCurrentLimit = 40;
-        config.CurrentLimits.StatorCurrentLimitEnable = true;
-        config.CurrentLimits.SupplyCurrentLimit = 50;
-        config.CurrentLimits.SupplyCurrentLowerLimit = 30.0;
-        config.CurrentLimits.SupplyCurrentLowerTime = 0.5;
-        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+        config.CurrentLimits = MotorCurrentLimits.findexer();
 
         Slot0Configs slot0 = config.Slot0;
 

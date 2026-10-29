@@ -7,21 +7,14 @@
 
 package frc.lib;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import java.io.IOException;
-import java.nio.file.Path;
 
 /**
  * Contains information for location of field element and other useful reference points.
@@ -32,20 +25,8 @@ import java.nio.file.Path;
 public class FieldConstants {
     public static final FieldType fieldType = FieldType.WELDED;
 
-public static final AprilTagFieldLayout APRIL_TAG_LAYOUT = loadAprilTagLayout();
-
-    private static AprilTagFieldLayout loadAprilTagLayout() {
-        try {
-            Path path =
-                    Filesystem.getDeployDirectory()
-                            .toPath()
-                            .resolve("2026-robocon-welded-photonvision-wpilib.json");
-
-            return new AprilTagFieldLayout(path);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load AprilTag field layout", e);
-        }
-    }
+    public static final AprilTagFieldLayout APRIL_TAG_LAYOUT =
+            AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
     // AprilTag related constants
     public static final int aprilTagCount = APRIL_TAG_LAYOUT.getTags().size();

@@ -4,6 +4,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 
 public class TriggerIOTalonFX implements TriggerIO {
     private final TalonFX motor;             // Motor object
@@ -12,6 +13,7 @@ public class TriggerIOTalonFX implements TriggerIO {
 
     public TriggerIOTalonFX(int proxChannel) {
         this.motor = new TalonFX(CanID.TRIGGER_MOTOR.getID());
+        this.motor.getConfigurator().apply(MotorCurrentLimits.trigger());
         this.motorRps = motor.getRotorVelocity();
         this.proximitySensor = new DigitalInput(proxChannel);
 
