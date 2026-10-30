@@ -4,12 +4,12 @@
     {
       "anchor": {
         "x": 3.6091113999999997,
-        "y": 7.429682
+        "y": 7.429682000000001
       },
       "prevControl": null,
       "nextControl": {
         "x": 4.4091114,
-        "y": 7.429682
+        "y": 7.429682000000001
       },
       "isLocked": false,
       "linkedName": null
@@ -17,15 +17,15 @@
     {
       "anchor": {
         "x": 5.95,
-        "y": 7.429682
+        "y": 7.429682000000001
       },
       "prevControl": {
         "x": 5.15,
-        "y": 7.429682
+        "y": 7.429682000000001
       },
       "nextControl": {
         "x": 6.65,
-        "y": 7.429682
+        "y": 7.429682000000001
       },
       "isLocked": false,
       "linkedName": null
@@ -33,15 +33,15 @@
     {
       "anchor": {
         "x": 8.15,
-        "y": 7.169
+        "y": 7.1690000000000005
       },
       "prevControl": {
         "x": 8.15,
-        "y": 7.369
+        "y": 7.369000000000001
       },
       "nextControl": {
         "x": 8.15,
-        "y": 6.919
+        "y": 6.9190000000000005
       },
       "isLocked": false,
       "linkedName": null
@@ -49,11 +49,43 @@
     {
       "anchor": {
         "x": 8.15,
-        "y": 4.949
+        "y": 4.949000000000001
       },
       "prevControl": {
         "x": 8.15,
-        "y": 5.199
+        "y": 5.199000000000001
+      },
+      "nextControl": {
+        "x": 8.15,
+        "y": 4.649000000000001
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 5.95,
+        "y": 5.5585
+      },
+      "prevControl": {
+        "x": 6.95,
+        "y": 5.5585
+      },
+      "nextControl": {
+        "x": 5.15,
+        "y": 5.5585
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 3.4125,
+        "y": 5.5585
+      },
+      "prevControl": {
+        "x": 4.2125,
+        "y": 5.5585
       },
       "nextControl": null,
       "isLocked": false,
@@ -68,16 +100,37 @@
     {
       "waypointRelativePos": 2.0,
       "rotationDegrees": -90.0
+    },
+    {
+      "waypointRelativePos": 3.0,
+      "rotationDegrees": -90.0
+    },
+    {
+      "waypointRelativePos": 4.0,
+      "rotationDegrees": -0.0
     }
   ],
   "constraintZones": [
     {
       "name": "40% pickup speed",
       "minWaypointRelativePos": 1.7,
-      "maxWaypointRelativePos": 3.0,
+      "maxWaypointRelativePos": 3.05,
       "constraints": {
         "maxVelocity": 1.4800000000000002,
         "maxAcceleration": 1.0,
+        "maxAngularVelocity": 180.0,
+        "maxAngularAcceleration": 360.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    },
+    {
+      "name": "Bump crossing",
+      "minWaypointRelativePos": 4.05,
+      "maxWaypointRelativePos": 5.0,
+      "constraints": {
+        "maxVelocity": 1.5,
+        "maxAcceleration": 1.5,
         "maxAngularVelocity": 180.0,
         "maxAngularAcceleration": 360.0,
         "nominalVoltage": 12.0,
@@ -97,6 +150,17 @@
           "name": "enableIntake"
         }
       }
+    },
+    {
+      "name": "Batch collected",
+      "waypointRelativePos": 3.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "disableIntake"
+        }
+      }
     }
   ],
   "globalConstraints": {
@@ -109,7 +173,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -90
+    "rotation": 0
   },
   "reversed": false,
   "folder": null,

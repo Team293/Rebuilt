@@ -33,9 +33,9 @@ class OutpostPreloadAutoTest {
     private static SimState state;
 
     private static class SimState {
-        boolean flywheel, intake, shooting, driving, held, braked;
-        int shots, legs, shotsCompleted;
-        double startedAt, firstShotAt, shotStartedAt;
+        boolean flywheel, intake, shooting, driving, held, braked, deployed, collected;
+        int shots, legs, shotsCompleted, pickedLeg;
+        double startedAt, firstShotAt, shotStartedAt, firstDriveAt, returnAt, secondShotSeconds;
         Pose2d pose = Pose2d.kZero;
     }
 
@@ -50,6 +50,7 @@ class OutpostPreloadAutoTest {
         // Path event wrappers retain these commands; each test supplies its own state.
         NamedCommands.registerCommand("enableIntake", Commands.runOnce(() -> state.intake = true));
         NamedCommands.registerCommand("disableIntake", Commands.runOnce(() -> state.intake = false));
+        PathPlannerPath.clearCache();
         paths = PathPlannerAuto.getPathGroupFromAutoFile("Outpost Preload Collect Return");
         FlippingUtil.fieldSizeX = FieldConstants.fieldLength;
         FlippingUtil.fieldSizeY = FieldConstants.fieldWidth;
@@ -61,7 +62,7 @@ class OutpostPreloadAutoTest {
     }
 
     @Test
-    void editorCompatibleAutoConnectsStoppedPathsAndEndsInMidfield() throws Exception {
+    void editorCompatibleAutoConnectsStoppedPathsAndReturnsAfterSecondPickup() throws Exception {
         var auto = json("src/main/deploy/pathplanner/autos/Outpost Preload Collect Return.auto");
         assertEquals("sequential", ((JSONObject) auto.get("command")).get("type"));
         assertEquals(2, paths.size());
@@ -78,9 +79,10 @@ class OutpostPreloadAutoTest {
         assertEquals(0, loop.getGoalEndState().rotation().getDegrees(), 1e-6);
         var finalPath = paths.get(1);
         var end = finalPath.getPoint(finalPath.numPoints() - 1).position;
-        assertTrue(end.getX() > FieldConstants.LinesVertical.neutralZoneNear);
-        assertTrue(end.getY() > 2);
-        assertEquals(90, finalPath.getGoalEndState().rotation().getDegrees(), 1e-6);
+        assertTrue(end.getX() + halfLength < FieldConstants.LinesVertical.starting);
+        assertEquals((FieldConstants.LinesHorizontal.rightBumpEnd + FieldConstants.Hub.nearRightCorner.getY()) / 2,
+                end.getY(), 1e-6);
+        assertEquals(0, finalPath.getGoalEndState().rotation().getDegrees(), 1e-6);
     }
 
     @Test
@@ -124,13 +126,13 @@ class OutpostPreloadAutoTest {
                 checkClearance(FlippingUtil.flipFieldPose(sample.pose), true);
             }
         }
-        double total = 2.5 + 2.5 + drive + 5;
-        double pickupBegins = 2.5 + 2.5 + paths.get(0).getIdealTrajectory(config).orElseThrow().getTotalTimeSeconds()
+        double total = drive + 5;
+        double pickupBegins = paths.get(0).getIdealTrajectory(config).orElseThrow().getTotalTimeSeconds()
                 + 5 + paths.get(1).getIdealTrajectory(config).orElseThrow().getEvents()
                         .stream().mapToDouble(e -> e.getTimestampSeconds()).min().orElseThrow();
-        System.out.printf("Final pickup starts %.3f s; uncut path ends %.3f s (deadline 20 s)%n", pickupBegins, total);
-        assertTrue(2.5 + 2.5 + paths.get(0).getIdealTrajectory(config).orElseThrow()
-                .getTotalTimeSeconds() + 5 < 20, "Complete both shooting windows before the deadline");
+        System.out.printf("Second pickup starts %.3f s; final shot starts %.3f s, available %.3f s (deadline 20 s)%n",
+                pickupBegins, total, 20-total);
+        assertTrue(total < 19, "Return from both pickups with time for a second shooting attempt");
     }
 
     @Test
@@ -151,17 +153,18 @@ class OutpostPreloadAutoTest {
             }
             events.end();
             assertTrue(pickedUp, "Each pickup path must enable the intake");
-            if (leg == 0) assertFalse(state.intake, "Stop intake before return travel");
+            assertFalse(state.intake, "Stop intake before each return trip");
         }
     }
 
     @Test
-    void commandTreeShootsPreloadsForTwoPointFiveSecondsAndReturnForFiveSeconds() {
-        verifyCommandTree("Outpost Preload Collect Return", false);
+    void collectBeforeFirstShotOnBothTrenchReturnSides() {
+        verifyCommandTree("Outpost Preload Collect Return", true);
+        verifyCommandTree("Depot Preload Collect Return", true);
     }
 
     @Test
-    void optimizedBumpVariantsCompleteBothFullSweepsAndShotsBeforeDeadline() {
+    void optimizedBumpVariantsCollectBeforeShootingAndCompleteBothSweeps() {
         verifyCommandTree("Outpost Double Pass Bump Return", true);
         verifyCommandTree("Depot Double Pass Bump Return", true);
     }
@@ -169,7 +172,8 @@ class OutpostPreloadAutoTest {
     private void verifyCommandTree(String name, boolean requireCompleteSweep) {
         SimHooks.pauseTiming();
         try {
-            for (boolean cancelAtPickup : new boolean[] {false, true}) {
+            for (String cancelAt : new String[] {"none", "firstPickup", "secondPickup", "secondReturn", "secondShot"}) {
+                boolean cancel = !cancelAt.equals("none");
                 state = new SimState();
                 state.startedAt = Timer.getFPGATimestamp();
                 var shooter = new SubsystemBase() {};
@@ -185,6 +189,12 @@ class OutpostPreloadAutoTest {
                         assertFalse(state.intake);
                         state.driving = true;
                         state.legs++;
+                        if (state.legs == 1) {
+                            state.firstDriveAt = Timer.getFPGATimestamp();
+                            assertEquals(0, state.shots);
+                        } else {
+                            assertEquals(1, state.shotsCompleted);
+                        }
                         events.initialize(trajectory);
                         timer.restart();
                     }, () -> {
@@ -198,10 +208,12 @@ class OutpostPreloadAutoTest {
                         events.end();
                         timer.stop();
                         state.driving = false;
+                        if (!interrupted) state.returnAt = Timer.getFPGATimestamp();
                     }, () -> timer.hasElapsed(trajectory.getTotalTimeSeconds()), drive);
                 }, () -> state.pose, pose -> state.pose = pose, true);
                 NamedCommands.registerCommand("targetHub", Commands.none());
-                NamedCommands.registerCommand("deployIntake", Commands.waitSeconds(1.5));
+                NamedCommands.registerCommand("deployIntake", Commands.waitSeconds(1.5)
+                        .andThen(Commands.runOnce(() -> state.deployed = true)));
                 NamedCommands.registerCommand("autoFlywheel", Commands.startEnd(
                         () -> state.flywheel = true, () -> state.flywheel = false, shooter));
                 NamedCommands.registerCommand("autoIntakeCleanup", Commands.startEnd(
@@ -212,26 +224,36 @@ class OutpostPreloadAutoTest {
                 NamedCommands.registerCommand("holdAutoPosition", Commands.run(() -> {
                     state.held = true;
                     assertFalse(state.flywheel);
-                    assertTrue(state.intake);
+                    assertFalse(state.intake);
                 }, drive));
-                for (double shotSeconds : new double[] {2.5, 5.0}) {
-                    String commandName = shotSeconds == 2.5 ? "requestShooting2_5S" : "requestShooting5S";
-                    NamedCommands.registerCommand(commandName,
+                NamedCommands.registerCommand("requestShooting2_5S",
+                        Commands.runOnce(() -> fail("Collect-and-return autos must not shoot at the start")));
+                double shotSeconds = 5.0;
+                NamedCommands.registerCommand("requestShooting5S",
                             Commands.sequence(Commands.runOnce(() -> {
                                 assertTrue(state.flywheel);
                                 assertFalse(state.driving);
                                 assertFalse(state.intake);
-                                assertEquals(state.shots == 0 ? 2.5 : 5.0, shotSeconds);
+                                assertTrue(state.deployed && state.collected);
+                                assertEquals(state.shots + 1, state.legs, "Each shot follows its collection return");
+                                assertEquals(state.legs, state.pickedLeg, "Collect on each pass before shooting");
+                                assertTrue(state.returnAt >= state.firstDriveAt);
                                 state.shotStartedAt = Timer.getFPGATimestamp();
                                 if (state.shots == 0) state.firstShotAt = state.shotStartedAt;
                                 state.shooting = true;
+                                state.collected = false;
                                 state.shots++;
                             }), Commands.waitSeconds(shotSeconds)).finallyDo(() -> {
                                 if (Timer.getFPGATimestamp() - state.shotStartedAt >= shotSeconds) state.shotsCompleted++;
+                                if (state.shots == 2) state.secondShotSeconds = Timer.getFPGATimestamp() - state.shotStartedAt;
                                 state.shooting = false;
                             }));
-                }
-                NamedCommands.registerCommand("enableIntake", Commands.runOnce(() -> state.intake = true));
+                NamedCommands.registerCommand("enableIntake", Commands.runOnce(() -> {
+                    assertTrue(state.deployed, "Deployment must finish before pickup starts");
+                    state.intake = true;
+                    state.collected = true;
+                    state.pickedLeg = state.legs;
+                }));
                 NamedCommands.registerCommand("disableIntake", Commands.runOnce(() -> state.intake = false));
                 PathPlannerPath.clearCache();
                 var auto = new PathPlannerAuto(name);
@@ -241,23 +263,29 @@ class OutpostPreloadAutoTest {
                     SimHooks.stepTiming(.02);
                     auto.execute();
                     ticks++;
-                    if (cancelAtPickup && state.intake && state.driving) break;
+                    if (cancelAt.equals("firstPickup") && state.intake && state.driving) break;
+                    if (cancelAt.equals("secondPickup") && state.legs == 2 && state.intake && state.driving) break;
+                    if (cancelAt.equals("secondReturn") && state.driving && state.pickedLeg == 2 && !state.intake) break;
+                    if (cancelAt.equals("secondShot") && state.shots == 2 && state.shooting
+                            && Timer.getFPGATimestamp() - state.shotStartedAt > .2) break;
                 }
-                assertTrue(state.firstShotAt - state.startedAt >= 2.5);
-                if (cancelAtPickup) {
-                    assertTrue(state.intake && state.driving);
+                assertTrue(state.firstDriveAt - state.startedAt < .1, "Leave immediately while deploying");
+                if (cancel) {
                     assertFalse(auto.isFinished());
+                    assertEquals(cancelAt.equals("firstPickup") ? 0 : cancelAt.equals("secondShot") ? 2 : 1,
+                            state.shots, "Shooting must follow the completed return trips");
                 } else {
                     assertTrue(auto.isFinished());
                     assertEquals(20, ticks * .02, .08);
-                    assertEquals(2, state.shots);
+                    assertEquals(2, state.shots, "Attempt shooting after both collection passes");
                     assertEquals(2, state.legs);
-                    assertEquals(2, state.shotsCompleted, "Both shooting windows must finish");
+                    assertEquals(1, state.shotsCompleted, "The five-second return shot must finish");
+                    assertTrue(state.secondShotSeconds > 1, "Final shot must get meaningful time before cutoff");
                     if (requireCompleteSweep) {
-                        assertTrue(state.held, name + " must complete the full second path before the deadline");
+                        assertTrue(state.returnAt > state.firstShotAt, name + " must return after its second sweep");
                     }
                 }
-                auto.end(cancelAtPickup);
+                auto.end(cancel);
                 assertFalse(state.flywheel);
                 assertFalse(state.intake);
                 assertFalse(state.shooting);
@@ -284,7 +312,9 @@ class OutpostPreloadAutoTest {
         }
         if (pose.getX() + extentX >= near && pose.getX() - extentX <= far) {
             double localY = red ? FieldConstants.fieldWidth - pose.getY() : pose.getY();
-            assertTrue(localY + extentY < FieldConstants.RightTrench.openingWidth, pose.toString());
+            assertTrue(localY + extentY < FieldConstants.RightTrench.openingWidth
+                    || (localY - extentY > FieldConstants.LinesHorizontal.rightBumpEnd
+                            && localY + extentY < FieldConstants.Hub.nearRightCorner.getY()), pose.toString());
             assertEquals(red ? 180 : 0, Math.abs(pose.getRotation().getDegrees()), 1e-6);
         }
     }

@@ -35,9 +35,9 @@
                             }
                           },
                           {
-                            "type": "wait",
+                            "type": "path",
                             "data": {
-                              "waitTime": 2.5
+                              "pathName": "Depot Double Pass - Bump Return"
                             }
                           }
                         ]
@@ -46,13 +46,13 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "requestShooting2_5S"
+                        "name": "requestShooting5S"
                       }
                     },
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "Depot Double Pass - Bump Return"
+                        "pathName": "Depot Double Pass - Trench Harvest"
                       }
                     },
                     {
@@ -65,12 +65,6 @@
                       "type": "named",
                       "data": {
                         "name": "stopFlywheel"
-                      }
-                    },
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Depot Double Pass - Trench Harvest"
                       }
                     },
                     {

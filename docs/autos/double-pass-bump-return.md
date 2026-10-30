@@ -6,20 +6,23 @@ Depot mirrors Outpost across the field width; red uses the existing alliance fli
 
 ![Route overview](double-pass-bump-return.svg)
 
-Both variants retain the original command sequence: deploy and spin up for
-2.5 seconds, shoot preloads for 2.5 seconds, collect, stop for a 5-second shot,
-then collect again until the 20-second deadline. The first pass leaves through
+Both variants leave immediately while deploying the intake and spinning up.
+They keep the preloaded balls during the first collection, return and stop for
+a 5-second shot of preloads plus collected balls, then collect again, return over
+the bump again, and request another 5-second shot. The second shot is interrupted
+by the 20-second deadline if time runs out. There is no initial preload shot or startup wait.
+The first pass leaves through
 the trench and returns over the adjacent bump. The second departure moves back
-to the trench lane before crossing into neutral territory.
+to the trench lane before crossing into neutral territory. Both paths return
+over the bump to the same stopped shooting pose; neither stops in midfield.
 
 | Blue starting center, heading 0° | Outpost | Depot |
 | --- | --- | --- |
-| Initial preload pose (m) | (3.6091, 0.6393) | (3.6091, 7.4297) |
-| Return shooting pose (m) | (3.4125, 2.5105) | (3.4125, 5.5585) |
+| Starting pose (m) | (3.6091, 0.6393) | (3.6091, 7.4297) |
+| Both return shooting poses (m) | (3.4428, 2.5105) | (3.4428, 5.5585) |
 
 Place the initial front bumper **on the starting line**. The hood-clearance
-logic uses the actual oriented bumper footprint while stationary, so touching
-the line does not block the preload shot. Movement or rotation enables the
+logic uses the actual oriented bumper footprint while stationary. Movement or rotation enables the
 conservative approach buffer and retraction lookahead again.
 
 Bump crossing is limited to 1.5 m/s with 1.5 m/s² acceleration, and pickup keeps
@@ -33,21 +36,26 @@ limits determine the achievable acceleration and braking. There is no extra
 The second departure now curves smoothly into the trench lane rather than
 making a sharp corner. Bezier handles, transit anchors, the return shooting X,
 and the bump-zone boundaries were searched against the configured dynamics.
-Both pickup sweeps retain their original anchors and coverage.
+Both pickup sweeps retain their original anchors and coverage. The second
+pickup transitions directly into its return curve without stopping at the end
+of the sweep. The intake stops before each return, and the flywheel stays spun
+up through both trips.
 
-| Modeled timing | Previous variant | Optimized variant |
-| --- | --- | --- |
-| First path | 6.66 s | 5.16 s |
-| Both shots complete / second departure | 16.66 s | 15.16 s |
-| Second intake begins | 18.87 s | 17.48 s |
-| Full routine including setup and shots | 22.88 s | 19.84 s |
+| Modeled timing | Collect first |
+| --- | --- |
+| First collection and return / first shot begins | 5.18 s |
+| Five-second return shot complete / second departure | 10.18 s |
+| Second intake begins | 12.53 s |
+| Second bump return complete / final shot begins | 16.77 s |
+| Time available for final shot before cutoff | 3.23 s |
+| Full routine if the final shot were allowed all 5 seconds | 21.77 s |
 
-The optimized paths cover about 19.36 m. Command-sequence tests at 20 ms confirm
-both full paths and both shooting windows complete before the 20-second cutoff,
-then hold position. The deadline still stops the drive, intake, and flywheel.
-The modeled margin is small; real bump traversal and tracking can consume it.
+The optimized paths cover about 24.37 m. Command-sequence tests at 20 ms confirm
+both full paths and the first five-second return shot complete before the cutoff,
+then the second shot runs until the deadline stops the drive, intake, and flywheel.
+These timings exclude command transition overhead and must be validated on the robot.
 
-The search evaluated 1,463 candidates across six deterministic starting seeds.
+The search evaluated 1,379 candidates across six deterministic starting seeds.
 This is the best result found within the searched route family, not a proof of
 a global optimum. The [optimization report](double-pass-optimization.json)
 records the model limits, winning parameters, distance, and timings.
@@ -62,4 +70,6 @@ Trajectory tests check both sides, stopped path connections, bumper clearance,
 trench outbound and bump inbound crossings, pickup and bump speed limits,
 shooting-pose hood clearance, preserved shooting commands, and the deadline budget.
 They also check continuous tangents at interior waypoints, use of the available
-transit speed, and completion of both sweeps in the actual command sequence.
+transit speed, completion of both sweeps and returns in the actual command
+sequence, and cleanup when interrupted during either pickup, the second return,
+or the final shot.

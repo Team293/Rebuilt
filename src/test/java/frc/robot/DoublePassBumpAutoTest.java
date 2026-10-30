@@ -78,7 +78,10 @@ class DoublePassBumpAutoTest {
                 assertEquals(0, path.getIdealStartingState().velocityMPS());
                 assertEquals(0, path.getGoalEndState().velocityMPS());
             }
-            for (var shootingPose : new Pose2d[] {first.getStartingHolonomicPose().orElseThrow(), nextStart}) {
+            var second = paths.get(1);
+            var last = second.getWaypoints().get(second.getWaypoints().size() - 1).anchor();
+            for (var shootingPose : new Pose2d[] {first.getStartingHolonomicPose().orElseThrow(), nextStart,
+                    new Pose2d(last, second.getGoalEndState().rotation())}) {
                 assertFalse(FieldTargeting.requiresHoodRetraction(shootingPose, new ChassisSpeeds()),
                         "Stationary shooting pose must permit the hood to extend");
                 assertTrue(shootingPose.getX() + HALF_BUMPER <= FieldConstants.LinesVertical.starting + 1e-6);
@@ -90,7 +93,7 @@ class DoublePassBumpAutoTest {
     void crossesTrenchOutboundAndBumpInboundWithClearBumpers() throws Exception {
         for (String side : new String[] {"Outpost", "Depot"}) {
             var paths = PathPlannerAuto.getPathGroupFromAutoFile(side + " Double Pass Bump Return");
-            boolean trench = false, bump = false, secondTrench = false;
+            boolean trench = false, bump = false, secondTrench = false, secondBump = false;
             for (int leg = 0; leg < 2; leg++) {
                 var trajectory = paths.get(leg).getIdealTrajectory(config).orElseThrow();
                 double previousX = trajectory.getInitialState().pose.getX();
@@ -110,18 +113,48 @@ class DoublePassBumpAutoTest {
                             if (leg == 0) trench = true;
                             else secondTrench = true;
                         } else {
-                            assertEquals(0, leg, "Only the first collection returns home");
                             assertTrue(y - extent > FieldConstants.LinesHorizontal.rightBumpEnd
                                     && y + extent < FieldConstants.Hub.nearRightCorner.getY(),
                                     "Return bump clearance: " + pose);
                             assertTrue(sample.linearVelocity <= 1.52, "Slow down before the bump");
-                            bump = true;
+                            if (leg == 0) bump = true;
+                            else secondBump = true;
                         }
                     }
                     previousX = pose.getX();
                 }
             }
-            assertTrue(trench && bump && secondTrench, "Both passes and the bump return must cross the barrier");
+            assertTrue(trench && bump && secondTrench && secondBump,
+                    "Both passes must go out through the trench and return over the bump");
+        }
+    }
+
+    @Test
+    void everyCollectReturnAutoReturnsOverBumpAfterSecondPickup() throws Exception {
+        for (String name : new String[] {"Outpost Preload Collect Return", "Depot Preload Collect Return",
+                "Outpost Double Pass Bump Return", "Depot Double Pass Bump Return"}) {
+            var paths = PathPlannerAuto.getPathGroupFromAutoFile(name);
+            var second = paths.get(1);
+            var trajectory = second.getIdealTrajectory(config).orElseThrow();
+            boolean crossed = false;
+            double previousX = trajectory.getInitialState().pose.getX();
+            for (var sample : trajectory.getStates()) {
+                var pose = sample.pose;
+                double extent = HALF_BUMPER * (Math.abs(pose.getRotation().getCos())
+                        + Math.abs(pose.getRotation().getSin()));
+                if (pose.getX() < previousX && pose.getX() + extent >= FieldConstants.LinesVertical.starting
+                        && pose.getX() - extent <= FieldConstants.Hub.farRightCorner.getX()) {
+                    double y = name.startsWith("Depot") ? FieldConstants.fieldWidth - pose.getY() : pose.getY();
+                    assertTrue(y - extent > FieldConstants.LinesHorizontal.rightBumpEnd);
+                    assertTrue(y + extent < FieldConstants.Hub.nearRightCorner.getY());
+                    assertEquals(0, pose.getRotation().getRadians(), 1e-6);
+                    assertTrue(sample.linearVelocity <= 1.52);
+                    crossed = true;
+                }
+                previousX = pose.getX();
+            }
+            assertTrue(crossed, name + " needs a second bump return");
+            assertTrue(trajectory.getEndState().pose.getX() + HALF_BUMPER < FieldConstants.LinesVertical.starting);
         }
     }
 
@@ -148,11 +181,11 @@ class DoublePassBumpAutoTest {
     }
 
     @Test
-    void completesBothShootingWindowsAndBeginsSecondPickupBeforeDeadline() throws Exception {
+    void completesReturnShootingAndBothPickupsBeforeDeadline() throws Exception {
         for (String side : new String[] {"Outpost", "Depot"}) {
             var paths = PathPlannerAuto.getPathGroupFromAutoFile(side + " Double Pass Bump Return");
-            double secondDeparture = 10 + paths.get(0).getIdealTrajectory(config).orElseThrow().getTotalTimeSeconds();
-            assertTrue(secondDeparture < 20, "Both shots must complete before auto ends");
+            double secondDeparture = 5 + paths.get(0).getIdealTrajectory(config).orElseThrow().getTotalTimeSeconds();
+            assertTrue(secondDeparture < 20, "The return shot must complete before auto ends");
             for (int leg = 0; leg < 2; leg++) {
                 intake = false;
                 boolean collected = false;
@@ -175,14 +208,15 @@ class DoublePassBumpAutoTest {
                     events.end();
                 }
                 assertTrue(collected);
-                if (leg == 0) assertFalse(intake, "Intake must stop before bump return and shooting");
-                else {
+                assertFalse(intake, "Intake must stop before each bump return and shot");
+                if (leg == 1) {
                     double pickupStarts = secondDeparture + pickupTime;
-                    System.out.printf("%s: second departure %.3f s, second pickup %.3f s, full route %.3f s%n",
-                            side, secondDeparture, pickupStarts, secondDeparture + trajectory.getTotalTimeSeconds());
+                    double finalShotBegins = secondDeparture + trajectory.getTotalTimeSeconds();
+                    System.out.printf("%s: second departure %.3f s, second pickup %.3f s, final shot %.3f s, available %.3f s%n",
+                            side, secondDeparture, pickupStarts, finalShotBegins, 20-finalShotBegins);
                     assertTrue(pickupStarts < 20, "Second collection must start before the 20-second deadline");
-                    assertTrue(secondDeparture + trajectory.getTotalTimeSeconds() < 19.9,
-                            "Full pickup sweep must fit with room for command transitions");
+                    assertTrue(finalShotBegins < 17.5,
+                            "Return from the full second sweep with at least 2.5 s for a shooting attempt");
                 }
             }
         }

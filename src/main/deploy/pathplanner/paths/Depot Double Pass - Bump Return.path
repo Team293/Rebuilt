@@ -76,15 +76,15 @@
     },
     {
       "nextControl": {
-        "x": 6.45625,
+        "x": 6.582178620358834,
         "y": 7.429682000000001
       },
       "anchor": {
-        "x": 6.0,
+        "x": 5.8875,
         "y": 7.429682000000001
       },
       "prevControl": {
-        "x": 5.2,
+        "x": 5.0875,
         "y": 7.429682000000001
       },
       "isLocked": false,
@@ -101,7 +101,7 @@
       },
       "prevControl": {
         "x": 7.85,
-        "y": 7.609000000000001
+        "y": 7.593501147406465
       },
       "isLocked": false,
       "linkedName": null
@@ -109,7 +109,7 @@
     {
       "nextControl": {
         "x": 7.85,
-        "y": 5.379000000000001
+        "y": 5.304725242806148
       },
       "anchor": {
         "x": 7.85,
@@ -124,15 +124,15 @@
     },
     {
       "nextControl": {
-        "x": 5.1625000000000005,
+        "x": 5.156498883892842,
         "y": 5.5585
       },
       "anchor": {
-        "x": 5.9625,
+        "x": 5.956498883892841,
         "y": 5.5585
       },
       "prevControl": {
-        "x": 6.9625,
+        "x": 7.216867368968895,
         "y": 5.5585
       },
       "isLocked": false,
@@ -141,11 +141,11 @@
     {
       "nextControl": null,
       "anchor": {
-        "x": 3.4125,
+        "x": 3.4428350867467725,
         "y": 5.5585
       },
       "prevControl": {
-        "x": 4.2125,
+        "x": 4.242835086746773,
         "y": 5.5585
       },
       "isLocked": false,
@@ -169,9 +169,9 @@
       }
     },
     {
-      "minWaypointRelativePos": 4.107368228666473,
+      "minWaypointRelativePos": 4.105406872151889,
       "name": "Bump crossing",
-      "maxWaypointRelativePos": 4.955567538945161,
+      "maxWaypointRelativePos": 4.967990423001993,
       "constraints": {
         "nominalVoltage": 12.0,
         "maxAngularVelocity": 180.0,

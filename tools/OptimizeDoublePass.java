@@ -22,9 +22,9 @@ public class OptimizeDoublePass {
     static RobotConfig config;
     static JSONObject firstTemplate, secondTemplate;
     static int evaluations;
-    static final double[] LOW = {2.8, 5.70, .25, .08, .08, 5.70, .20, 0, .30, .25, .20, .20, .08};
-    static final double[] HIGH = {START, 6.4, 1.8, .70, .65, 6.4, 1.5, 1.3, 2.0, 1.3, 1.3, 1.8, .70};
-    static final double[] STEP = {.15, .15, .25, .12, .10, .15, .20, .20, .25, .20, .20, .25, .12};
+    static final double[] LOW = {2.8, 5.70, .25, .08, .08, 5.70, .20, 0, .30, .25, .20, .20, .08, .08};
+    static final double[] HIGH = {START, 6.4, 1.8, .70, .65, 6.4, 1.5, 1.3, 2.0, 1.3, 1.3, 1.8, .70, .8};
+    static final double[] STEP = {.15, .15, .25, .12, .10, .15, .20, .20, .25, .20, .20, .25, .12, .1};
     record Result(JSONObject first, JSONObject second, double seconds, double firstSeconds, double distance) {}
 
     @SuppressWarnings("unchecked")
@@ -123,10 +123,15 @@ public class OptimizeDoublePass {
                 wp(3.55,LANE,point(3.55-p[9],LANE),point(3.55+p[10],LANE)),
                 wp(p[1],LANE,point(p[1]-.8,LANE),point(p[1]+p[11],LANE)),
                 wp(8.15,.9,point(8.15,.9-p[12]),point(8.15,1.15)),
-                wp(8.15,3.12,point(8.15,2.87),null)));
-        second.put("rotationTargets",array(rot(1,0),rot(2,0),rot(3,90)));
-        second.put("constraintZones",array(zone("40% pickup speed",2.75,4.0,constraints(1.48,1,180,360))));
-        second.put("eventMarkers",array(event("Begin second pickup",2.8,"enableIntake")));
+                wp(8.15,3.12,point(8.15,2.87),point(8.15,3.12+p[13])),
+                wp(p[5],BUMP_Y,point(p[5]+p[6],BUMP_Y),point(p[5]-.8,BUMP_Y)),
+                wp(p[0],BUMP_Y,point(p[0]+.8,BUMP_Y),null)));
+        second.put("rotationTargets",array(rot(1,0),rot(2,0),rot(3,90),rot(4,90),rot(5,0)));
+        second.put("constraintZones",array(zone("40% pickup speed",2.75,4.05,constraints(1.48,1,180,360)),
+                zone("Bump crossing",1+positionAtX(p[5],p[0],5.70),1+positionAtX(p[5],p[0],3.52),constraints(1.5,1.5,180,360))));
+        second.put("eventMarkers",array(event("Begin second pickup",2.8,"enableIntake"),
+                event("Second batch collected",4.0,"disableIntake")));
+        second.put("goalEndState",obj("velocity",0,"rotation",0));
         second.put("globalConstraints",fullConstraints());
         PathPlannerPath a = path(first), b = path(second);
         PathPlannerTrajectory ta = a.getIdealTrajectory(config).orElseThrow(), tb = b.getIdealTrajectory(config).orElseThrow();
@@ -180,10 +185,10 @@ public class OptimizeDoublePass {
         config = RobotConfig.fromGUISettings();
         firstTemplate = (JSONObject)new JSONParser().parse(Files.readString(PP.resolve("paths/Outpost Double Pass - Bump Return.path")));
         secondTemplate = (JSONObject)new JSONParser().parse(Files.readString(PP.resolve("paths/Outpost Double Pass - Trench Harvest.path")));
-        double[] bestP = {3.45,5.85,.8,.2,.25,5.85,.8,.4,1.1,.65,.65,.8,.2};
+        double[] bestP = {3.4125,6.0,.45625,.44,.35,5.9625,1.0,.4,.7875,.45,.65,1.4875,.32,.3};
         Result best = evaluate(bestP);
         if (best == null) throw new IllegalStateException("Initial candidate fails clearance");
-        System.out.printf("Initial full route: %.3f s%n",10+best.seconds);
+        System.out.printf("Initial second shot begins: %.3f s%n",5+best.seconds);
         Random random = new Random(293);
         for (int seed = 0; seed < 6; seed++) {
             double[] currentP = bestP.clone();
@@ -212,7 +217,7 @@ public class OptimizeDoublePass {
                 }
             }
             if (current.seconds < best.seconds) { best=current;bestP=currentP; }
-            System.out.printf("Seed %d: best full route %.3f s, first leg %.3f s%n",seed,10+best.seconds,best.firstSeconds);
+            System.out.printf("Seed %d: best second shot begins %.3f s, first leg %.3f s%n",seed,5+best.seconds,best.firstSeconds);
         }
         for (String side : List.of("Outpost","Depot")) {
             Files.writeString(PP.resolve("paths/"+side+" Double Pass - Bump Return.path"),
@@ -220,8 +225,11 @@ public class OptimizeDoublePass {
             Files.writeString(PP.resolve("paths/"+side+" Double Pass - Trench Harvest.path"),
                     (side.equals("Outpost")?best.second:reflect(best.second)).toJSONString()+"\n");
         }
+        double secondShotBegins = 5+best.seconds;
         JSONObject report = obj("evaluatedCandidates",evaluations,"parameters",Arrays.toString(bestP),
                 "firstPathSeconds",best.firstSeconds,"secondPathSeconds",best.seconds-best.firstSeconds,
+                "secondShotBeginsSeconds",secondShotBegins,
+                "secondShotAvailableSeconds",Math.max(0,Math.min(5,20-secondShotBegins)),
                 "fullRouteSeconds",10+best.seconds,"pathDistanceMeters",best.distance,
                 "constraints",fullConstraints(),"method","Coordinate descent over Bezier handles and transit anchors; fixed pickup sweeps and shooting windows. Best of six deterministic coordinate searches within the route family, using the configured dynamics.");
         Files.writeString(Path.of("docs/autos/double-pass-optimization.json"),report.toJSONString()+"\n");

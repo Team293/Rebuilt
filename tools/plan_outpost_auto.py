@@ -15,7 +15,7 @@ BALL_RADIUS = 5.91 * 0.0254 / 2
 PEN_DEPTH, PEN_WIDTH, DIVIDER = 72 * 0.0254, 206 * 0.0254, 2 * 0.0254
 MAX_SPEED, PICKUP_FRACTION = 3.70, 0.40
 TRANSIT_SPEED, TRANSIT_ACCEL = 3.0, 8.0
-PRELOADS, CAPACITY, FIRE_RATE, SPIN_UP = 8, 20, 4.0, 2.5
+PRELOADS, CAPACITY, FIRE_RATE = 8, 20, 4.0
 MAX_PLANNED_LOAD = 25  # User's approximate 20–25-ball collection allowance.
 CONTACT_TARGET = 32  # Extra exposure for scattering; contacts are not captured balls.
 AUTO_SECONDS = 20.0
@@ -115,33 +115,39 @@ def generate():
                    waypoint((start_x, lane_y), (start_x + .8, lane_y))]
             rots.append((4., 0.))
         else:
-            # GoalEndState already supplies the terminal rotation.
-            rots = [(p, r) for p, r in rots if p < len(wp) - 1]
+            bump_y = FIELD_WIDTH / 2 - (47 + 73) * 0.0254 / 2
+            wp[-1]["nextControl"] = point(x, end_y + .3)
+            wp += [waypoint((5.95, bump_y), (6.95, bump_y), (5.15, bump_y)),
+                   waypoint((3.4125, bump_y), (4.2125, bump_y))]
+            rots.append((4., 0.))
         markers = [dict(name="Begin pickup", waypointRelativePos=1.8,
                         endWaypointRelativePos=None, command=named("enableIntake"))]
-        if not terminal:
-            markers.append(dict(name="Batch collected", waypointRelativePos=3.1,
-                                endWaypointRelativePos=None, command=named("disableIntake")))
+        markers.append(dict(name="Batch collected", waypointRelativePos=3.0 if terminal else 3.1,
+                            endWaypointRelativePos=None, command=named("disableIntake")))
+        zones = [dict(name="40% pickup speed", minWaypointRelativePos=1.7,
+                      maxWaypointRelativePos=3.05 if terminal else 3.4,
+                      constraints=constraints(MAX_SPEED * PICKUP_FRACTION, 1.0))]
+        if terminal:
+            zones.append(dict(name="Bump crossing", minWaypointRelativePos=4.05,
+                              maxWaypointRelativePos=5.0, constraints=constraints(1.5, 1.5)))
         write_json(PP / "paths" / f"{name}.path", dict(
             version="2025.0", waypoints=wp,
             rotationTargets=[dict(waypointRelativePos=p, rotationDegrees=r) for p, r in rots],
-            constraintZones=[dict(name="40% pickup speed", minWaypointRelativePos=1.7,
-                                  maxWaypointRelativePos=3.0 if terminal else 3.4,
-                                  constraints=constraints(MAX_SPEED * PICKUP_FRACTION, 1.0))],
+            constraintZones=zones,
             pointTowardsZones=[], eventMarkers=markers,
             globalConstraints=constraints(TRANSIT_SPEED, TRANSIT_ACCEL),
-            goalEndState=dict(velocity=0, rotation=90 if terminal else 0),
+            goalEndState=dict(velocity=0, rotation=0),
             reversed=False, folder=None, idealStartingState=dict(velocity=0, rotation=0),
             useDefaultConstraints=False))
 
     # A fixed 20-second deadline includes all stages, followed by cleanup.
-    # The final harvest stays in midfield; it does not start a doomed return trip.
+    # Both collection passes return before shooting; the deadline can truncate the second shot.
     sequence = group("sequential", named("targetHub"),
-        group("parallel", named("deployIntake"), dict(type="wait", data=dict(waitTime=SPIN_UP))),
-        named("requestShooting2_5S"),
-        dict(type="path", data=dict(pathName="Outpost Preload - Middle Loop")),
-        named("requestShooting5S"), named("stopFlywheel"),
+        group("parallel", named("deployIntake"),
+              dict(type="path", data=dict(pathName="Outpost Preload - Middle Loop"))),
+        named("requestShooting5S"),
         dict(type="path", data=dict(pathName="Outpost Preload - Final Harvest")),
+        named("requestShooting5S"), named("stopFlywheel"),
         named("holdAutoPosition"))
     auto = dict(version="2025.0", command=group("sequential", group("deadline",
         dict(type="wait", data=dict(waitTime=AUTO_SECONDS)), sequence,
@@ -156,14 +162,16 @@ def generate():
     loop_bound = (2 * math.sqrt(length / TRANSIT_ACCEL)
                   if length < TRANSIT_SPEED ** 2 / TRANSIT_ACCEL
                   else length / TRANSIT_SPEED + TRANSIT_SPEED / TRANSIT_ACCEL)
-    fastest_two = SPIN_UP + PRELOADS / 5 + 2 * (loop_bound + CAPACITY / 5)
-    conservative_two = SPIN_UP + PRELOADS / FIRE_RATE + 2 * (loop_bound + CAPACITY / FIRE_RATE)
+    fastest_two = PRELOADS / 5 + 2 * (loop_bound + CAPACITY / 5)
+    conservative_two = PRELOADS / FIRE_RATE + 2 * (loop_bound + CAPACITY / FIRE_RATE)
     report = dict(
         assumptions=dict(preloads=PRELOADS, targetBatch=CAPACITY, safeFiringRate=FIRE_RATE,
-                         spinUpSeconds=SPIN_UP, autoSeconds=AUTO_SECONDS,
+                         startupWaitSeconds=0, deployWhileDriving=True, autoSeconds=AUTO_SECONDS,
                          fullSpeedMPS=MAX_SPEED, pickupSpeedMPS=MAX_SPEED * PICKUP_FRACTION,
                          intakeWidthMeters=hw * 2, ballDiameterMeters=BALL_RADIUS * 2,
-                         preloadShootingSeconds=2.5, returnShootingSeconds=5.0,
+                         preloadShootingSeconds=0.0, returnShootingSeconds=5.0,
+                         secondReturnShootingSeconds=5.0,
+                         shootPreloadsOnFirstReturn=True,
                          targetBallContacts=CONTACT_TARGET,
                          captureEfficiency=None,
                          representativeFuelCounts=[len(p) for p in layouts]),

@@ -11,6 +11,14 @@
     {
       "waypointRelativePos": 3.0,
       "rotationDegrees": 90.0
+    },
+    {
+      "waypointRelativePos": 4.0,
+      "rotationDegrees": 90.0
+    },
+    {
+      "waypointRelativePos": 5.0,
+      "rotationDegrees": 0.0
     }
   ],
   "pointTowardsZones": [],
@@ -30,10 +38,21 @@
         },
         "type": "named"
       }
+    },
+    {
+      "endWaypointRelativePos": null,
+      "waypointRelativePos": 4.0,
+      "name": "Second batch collected",
+      "command": {
+        "data": {
+          "name": "disableIntake"
+        },
+        "type": "named"
+      }
     }
   ],
   "goalEndState": {
-    "rotation": 90,
+    "rotation": 0,
     "velocity": 0
   },
   "globalConstraints": {
@@ -48,11 +67,11 @@
   "waypoints": [
     {
       "nextControl": {
-        "x": 3.0125,
-        "y": 1.7230000000000008
+        "x": 3.08093637855902,
+        "y": 1.9192697777871375
       },
       "anchor": {
-        "x": 3.4125,
+        "x": 3.4428350867467725,
         "y": 2.510500000000001
       },
       "prevControl": null,
@@ -61,7 +80,7 @@
     },
     {
       "nextControl": {
-        "x": 4.2,
+        "x": 3.75,
         "y": 0.639318
       },
       "anchor": {
@@ -69,7 +88,7 @@
         "y": 0.639318
       },
       "prevControl": {
-        "x": 3.0999999999999996,
+        "x": 2.976774342872548,
         "y": 0.639318
       },
       "isLocked": false,
@@ -77,15 +96,15 @@
     },
     {
       "nextControl": {
-        "x": 7.4875,
+        "x": 7.6875,
         "y": 0.639318
       },
       "anchor": {
-        "x": 6.0,
+        "x": 5.8875,
         "y": 0.639318
       },
       "prevControl": {
-        "x": 5.2,
+        "x": 5.0875,
         "y": 0.639318
       },
       "isLocked": false,
@@ -102,13 +121,16 @@
       },
       "prevControl": {
         "x": 8.15,
-        "y": 0.5800000000000001
+        "y": 0.6372002975982942
       },
       "isLocked": false,
       "linkedName": null
     },
     {
-      "nextControl": null,
+      "nextControl": {
+        "x": 8.15,
+        "y": 3.6811902856534013
+      },
       "anchor": {
         "x": 8.15,
         "y": 3.12
@@ -116,6 +138,35 @@
       "prevControl": {
         "x": 8.15,
         "y": 2.87
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": {
+        "x": 5.156498883892842,
+        "y": 2.510500000000001
+      },
+      "anchor": {
+        "x": 5.956498883892841,
+        "y": 2.510500000000001
+      },
+      "prevControl": {
+        "x": 7.216867368968895,
+        "y": 2.510500000000001
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": null,
+      "anchor": {
+        "x": 3.4428350867467725,
+        "y": 2.510500000000001
+      },
+      "prevControl": {
+        "x": 4.242835086746773,
+        "y": 2.510500000000001
       },
       "isLocked": false,
       "linkedName": null
@@ -127,7 +178,7 @@
     {
       "minWaypointRelativePos": 2.75,
       "name": "40% pickup speed",
-      "maxWaypointRelativePos": 4.0,
+      "maxWaypointRelativePos": 4.05,
       "constraints": {
         "nominalVoltage": 12.0,
         "maxAngularVelocity": 180.0,
@@ -135,6 +186,19 @@
         "maxAngularAcceleration": 360.0,
         "maxVelocity": 1.48,
         "maxAcceleration": 1.0
+      }
+    },
+    {
+      "minWaypointRelativePos": 5.105406872151889,
+      "name": "Bump crossing",
+      "maxWaypointRelativePos": 5.967990423001993,
+      "constraints": {
+        "nominalVoltage": 12.0,
+        "maxAngularVelocity": 180.0,
+        "unlimited": false,
+        "maxAngularAcceleration": 360.0,
+        "maxVelocity": 1.5,
+        "maxAcceleration": 1.5
       }
     }
   ]

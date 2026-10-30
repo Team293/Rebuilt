@@ -55,6 +55,38 @@
         "x": 8.15,
         "y": 2.87
       },
+      "nextControl": {
+        "x": 8.15,
+        "y": 3.42
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 5.95,
+        "y": 2.5105000000000004
+      },
+      "prevControl": {
+        "x": 6.95,
+        "y": 2.5105000000000004
+      },
+      "nextControl": {
+        "x": 5.15,
+        "y": 2.5105000000000004
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 3.4125,
+        "y": 2.5105000000000004
+      },
+      "prevControl": {
+        "x": 4.2125,
+        "y": 2.5105000000000004
+      },
       "nextControl": null,
       "isLocked": false,
       "linkedName": null
@@ -68,16 +100,37 @@
     {
       "waypointRelativePos": 2.0,
       "rotationDegrees": 90.0
+    },
+    {
+      "waypointRelativePos": 3.0,
+      "rotationDegrees": 90.0
+    },
+    {
+      "waypointRelativePos": 4.0,
+      "rotationDegrees": 0.0
     }
   ],
   "constraintZones": [
     {
       "name": "40% pickup speed",
       "minWaypointRelativePos": 1.7,
-      "maxWaypointRelativePos": 3.0,
+      "maxWaypointRelativePos": 3.05,
       "constraints": {
         "maxVelocity": 1.4800000000000002,
         "maxAcceleration": 1.0,
+        "maxAngularVelocity": 180.0,
+        "maxAngularAcceleration": 360.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    },
+    {
+      "name": "Bump crossing",
+      "minWaypointRelativePos": 4.05,
+      "maxWaypointRelativePos": 5.0,
+      "constraints": {
+        "maxVelocity": 1.5,
+        "maxAcceleration": 1.5,
         "maxAngularVelocity": 180.0,
         "maxAngularAcceleration": 360.0,
         "nominalVoltage": 12.0,
@@ -97,6 +150,17 @@
           "name": "enableIntake"
         }
       }
+    },
+    {
+      "name": "Batch collected",
+      "waypointRelativePos": 3.0,
+      "endWaypointRelativePos": null,
+      "command": {
+        "type": "named",
+        "data": {
+          "name": "disableIntake"
+        }
+      }
     }
   ],
   "globalConstraints": {
@@ -109,7 +173,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 90
+    "rotation": 0
   },
   "reversed": false,
   "folder": null,

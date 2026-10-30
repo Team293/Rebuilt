@@ -3,43 +3,47 @@
     "preloads": 8,
     "targetBatch": 20,
     "safeFiringRate": 4.0,
-    "spinUpSeconds": 2.5,
+    "startupWaitSeconds": 0,
+    "deployWhileDriving": true,
     "autoSeconds": 20.0,
     "fullSpeedMPS": 3.7,
     "pickupSpeedMPS": 1.4800000000000002,
     "intakeWidthMeters": 0.8255,
     "ballDiameterMeters": 0.150114,
-    "returnShootingSeconds": 6.25,
+    "preloadShootingSeconds": 0.0,
+    "returnShootingSeconds": 5.0,
+    "shootPreloadsOnFirstReturn": true,
     "targetBallContacts": 32,
     "captureEfficiency": null,
     "representativeFuelCounts": [
       360,
       432
-    ]
+    ],
+    "secondReturnShootingSeconds": 5.0
   },
   "firstSweep": {
     "x": 7.85,
     "startY": 0.9,
-    "endY": 1.8900000000000001,
+    "endY": 2.34,
     "potentialContacts": [
-      36,
-      42
+      48,
+      60
     ]
   },
   "finalSweep": {
     "x": 8.15,
     "startY": 0.9,
-    "endY": 2.67,
+    "endY": 3.12,
     "potentialFreshContacts": [
-      36,
-      38
+      46,
+      50
     ],
     "previouslyDisturbedIgnored": [
-      24,
-      28
+      32,
+      40
     ]
   },
-  "optimisticTwoFullCyclesLowerBoundAt5BPS": 18.21761993617401,
-  "conservativeTwoFullCyclesMinSeconds": 20.61761993617401,
+  "optimisticTwoFullCyclesLowerBoundAt5BPS": 14.467619936174009,
+  "conservativeTwoFullCyclesMinSeconds": 16.86761993617401,
   "limitation": "Contacts are pickup opportunities, not captured balls. Previously touched fuel is excluded as captured or scattered. Capture efficiency is unknown; no hopper sensor is present."
 }

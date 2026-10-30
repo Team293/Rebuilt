@@ -35,9 +35,9 @@
                             }
                           },
                           {
-                            "type": "wait",
+                            "type": "path",
                             "data": {
-                              "waitTime": 2.5
+                              "pathName": "Depot Preload - Middle Loop"
                             }
                           }
                         ]
@@ -46,13 +46,13 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "requestShooting2_5S"
+                        "name": "requestShooting5S"
                       }
                     },
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "Depot Preload - Middle Loop"
+                        "pathName": "Depot Preload - Final Harvest"
                       }
                     },
                     {
@@ -65,12 +65,6 @@
                       "type": "named",
                       "data": {
                         "name": "stopFlywheel"
-                      }
-                    },
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Depot Preload - Final Harvest"
                       }
                     },
                     {
