@@ -5,16 +5,23 @@ import frc.lib.subsystem.BaseInputClass;
 import frc.lib.subsystem.IORefresher;
 
 public class DataUtils {
-    public static <I extends BaseInputClass, T extends BaseIO<I> & IORefresher> void createDataLogger(
+    /** Refresh hardware on a worker, then capture inputs once per main-thread loop. */
+    public static <I extends BaseInputClass, T extends BaseIO<I> & IORefresher> Runnable createAsyncDataRefresher(
             I inputs, T baseIO
     ) {
+        Object refreshLock = new Object();
         SubsystemDataProcessor.createAndStartSubsystemDataProcessor(
+                () -> {},
                 () -> {
-                    synchronized (inputs) {
-                        baseIO.updateInputs(inputs);
+                    synchronized (refreshLock) {
+                        baseIO.refreshData();
                     }
-                },
-                baseIO
+                }
         );
+        return () -> {
+            synchronized (refreshLock) {
+                baseIO.updateInputs(inputs);
+            }
+        };
     }
 }

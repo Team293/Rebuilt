@@ -8,6 +8,7 @@ import org.littletonrobotics.junction.inputs.LoggableInputs;
 
 public abstract class SpikeSystem<I extends BaseInputClass> extends SubsystemBase {
     private final Runnable dataRefreshTask;
+    // Owned by the main thread; frozen between dataRefreshTask and the next periodic().
     protected final I io;
     
     public SpikeSystem(String name, I io) {
@@ -21,12 +22,11 @@ public abstract class SpikeSystem<I extends BaseInputClass> extends SubsystemBas
     protected <T extends BaseIO<I> & IORefresher> Runnable useAsyncDataRefresher(
         T baseIO
     ) {
-        DataUtils.createDataLogger(io, baseIO);
+        Runnable captureInputs = DataUtils.createAsyncDataRefresher(io, baseIO);
         return () -> {
+            captureInputs.run();
             if (io instanceof LoggableInputs loggable) {
-                synchronized (io) {
-                    Logger.processInputs(getName(), loggable);
-                }
+                Logger.processInputs(getName(), loggable);
             }
         };
     }

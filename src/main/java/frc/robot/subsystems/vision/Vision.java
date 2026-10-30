@@ -1,15 +1,13 @@
 package frc.robot.subsystems.vision;
 
+import frc.lib.SubsystemDataProcessor;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 
-import org.photonvision.EstimatedRobotPose;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.RobotBase;
-import java.util.List;
 
 public class Vision extends SpikeSystem<VisionIOInputs> {
     private static final double AMBIGUITY_THRESHOLD = 0.2;
@@ -25,33 +23,17 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     public void onPeriodic() {
+        // Legacy logs contain poses without the timestamps and quality needed for fusion.
+        int count = io.estimatedRobotPoses.length;
+        if (io.timestampsSeconds.length != count || io.tagCounts.length != count
+                || io.averageTagDistancesMeters.length != count || io.maxTagAmbiguities.length != count) return;
+
         // update drive with vision measurements
-        for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
-            if (pose == null) continue;
-
-            double avgDist = 0.0;
-            boolean usePose = true;
-            int numTags = pose.targetsUsed.size();
-
+        for (int i = 0; i < count; i++) {
+            int numTags = io.tagCounts[i];
             if (numTags == 0) continue;
-
-            double totalDist = 0.0;
-
-            for (var target : pose.targetsUsed) {
-                // Reject high ambiguity targets
-                if (target.poseAmbiguity > AMBIGUITY_THRESHOLD) {
-                    usePose = false;
-                    break;
-                }
-
-                totalDist += target.getBestCameraToTarget()
-                                .getTranslation()
-                                .getNorm();
-            }
-
-            if (!usePose) continue;
-
-            avgDist = totalDist / numTags;
+            if (io.maxTagAmbiguities[i] > AMBIGUITY_THRESHOLD) continue;
+            double avgDist = io.averageTagDistancesMeters[i];
 
             // Optional hard rejection (VERY useful in matches)
             if (avgDist > 5.0) continue;
@@ -68,8 +50,8 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
             var stdDevs = CommandSwerveDrivetrain.kDefaultVisionStdDevs.times(scale);
 
             drive.addVisionMeasurement(
-                pose.estimatedPose.toPose2d(),
-                pose.timestampSeconds,
+                io.estimatedRobotPoses[i].toPose2d(),
+                io.timestampsSeconds[i],
                 stdDevs
             );
         }    
@@ -84,28 +66,17 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
                 @Override
                 public void refreshData() {}
-
-                @Override
-                public List<EstimatedRobotPose> getEstimatedRobotPoses() {
-                    return List.of();
-                }
             };
             return useDataRefresher(visionIO);
         }
         this.visionIO = new VisionIOPhotonCamera(() -> RobotContainer.getDrive().getPose());
-        return useAsyncDataRefresher(visionIO);
+        // Vision publishes immutable batches itself; never wait for camera processing
+        // under the generic hardware refresh lock on the main thread.
+        SubsystemDataProcessor.createAndStartSubsystemDataProcessor(() -> {}, visionIO);
+        return useDataRefresher(visionIO);
     }
 
     public Pose2d getEstimatedPositionFromCameras() {
-        if (visionIO.getEstimatedRobotPoses().isEmpty()) {
-            return null;
-        }
-
-        for (EstimatedRobotPose pose : visionIO.getEstimatedRobotPoses()) {
-            if (pose != null) {
-                return pose.estimatedPose.toPose2d();
-            }
-        }
-        return null;
+        return io.estimatedRobotPoses.length == 0 ? null : io.estimatedRobotPoses[0].toPose2d();
     }
 }
