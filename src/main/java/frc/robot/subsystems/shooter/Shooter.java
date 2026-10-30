@@ -1,9 +1,10 @@
 package frc.robot.subsystems.shooter;
 
+import java.util.function.Supplier;
+
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -12,7 +13,7 @@ import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.targeting.FieldTargeting;
 import frc.robot.subsystems.targeting.ShotData;
-import frc.robot.subsystems.targeting.Targeting;
+import frc.robot.subsystems.targeting.TargetingSolution;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private static final double SHOOTER_READY_THRESHOLD_RPS = 6.0; // RPS threshold to consider the shooter ready
@@ -27,11 +28,13 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
     private boolean overrideShootingLimiter = false;
     private double tempTrim = 0.0;
 
+    private final Supplier<TargetingSolution> targetingSolution;
     private CommandXboxController controller;
 
-    public Shooter(CommandXboxController controller) {
+    public Shooter(CommandXboxController controller, Supplier<TargetingSolution> targetingSolution) {
         super("Shooter", new ShooterIOInputsAutoLogged());
         this.controller = controller;
+        this.targetingSolution = targetingSolution;
         SmartDashboard.putNumber("TargetRPM", 0);
         SmartDashboard.putNumber("TargetHoodAngle", 0);
         SmartDashboard.putBoolean("ReadFromData", true);
@@ -146,9 +149,7 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      * @return
      */
     public double getDistanceToTarget() {
-        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-        Logger.recordOutput("Targeting/DistanceToTarget", toGoal.getNorm());
-        return toGoal.getNorm() + io.distanceTrimMeters; // add distance trim to adjust the distance based on operator controller input
+        return targetingSolution.get().rangeMeters() + io.distanceTrimMeters;
     }
 
     /**

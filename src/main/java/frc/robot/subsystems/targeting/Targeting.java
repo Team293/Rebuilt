@@ -2,25 +2,21 @@ package frc.robot.subsystems.targeting;
 
 import org.littletonrobotics.junction.Logger;
 
-import edu.wpi.first.math.filter.LinearFilter;
-import edu.wpi.first.math.filter.MedianFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.FieldConstants;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.turret.Turret;
 
 public class Targeting extends SubsystemBase {
     private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
 
-    private static Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
+    private Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
     private static final double FIELD_WIDTH = FieldConstants.APRIL_TAG_LAYOUT.getFieldWidth(); // meters
     private static final double FIELD_LENGTH = FieldConstants.APRIL_TAG_LAYOUT.getFieldLength(); // meters
@@ -28,11 +24,7 @@ public class Targeting extends SubsystemBase {
     private static final double shuttlingXOffset = 2.0;
     private static final double shuttlingYOffset = 2.5;
 
-    private static final MedianFilter distMedian = new MedianFilter(5);
-    private static final LinearFilter distIIR = LinearFilter.singlePoleIIR(0.06, 0.02);
-
-    private static final LinearFilter toGoalXFilter = LinearFilter.singlePoleIIR(0.04, 0.02);
-    private static final LinearFilter toGoalYFilter = LinearFilter.singlePoleIIR(0.04, 0.02);
+    private final TargetingCalculator calculator = new TargetingCalculator();
 
     public static enum Target {
         AUTO,
@@ -56,72 +48,20 @@ public class Targeting extends SubsystemBase {
         SmartDashboard.putBoolean("OverrideRedAlliance", overrideRedAlliance);
     }
 
-    public static Translation2d differenceBetweenRobotAndTarget() {
-        // calculate field-relative angle of the turret based on the turret motor position and the robot's heading
-        // get pose of robo
-        Pose2d robotPose = RobotContainer.getDrive().getPose();
-        Translation2d robotPos = robotPose.getTranslation();
-
-        Translation2d goalPose = targetPos;
-
-        Translation2d turretPivotNow = Turret.TURRET_OFFSET_FROM_CENTER
-                .rotateBy(robotPose.getRotation())
-                .plus(robotPose.getTranslation());
-
-        double staticDistance = distIIR.calculate(distMedian.calculate(goalPose.getDistance(turretPivotNow)));
-        double tof = ShotData.distanceToTOFConstant.get(staticDistance);
-        Logger.recordOutput("Targeting/TOF", tof);
-        // translate robot-center pose to the turret pivot location on the field
-
-        ChassisSpeeds robotRelSpeeds = RobotContainer.getDrive().getState().Speeds;
-
-        ChassisSpeeds speeds =
-            ChassisSpeeds.fromRobotRelativeSpeeds(
-                robotRelSpeeds.vxMetersPerSecond,
-                robotRelSpeeds.vyMetersPerSecond,
-                robotRelSpeeds.omegaRadiansPerSecond,
-                robotPose.getRotation()
-            );
-
-        double vx = speeds.vxMetersPerSecond;
-        double vy = speeds.vyMetersPerSecond;
-
-        Translation2d predictedRobotPos = robotPos.plus(
-            new Translation2d(vx * tof, vy * tof)
-        );
-
-        Rotation2d predictedHeading =
-            robotPose.getRotation().plus(
-                Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * tof)
-            );
-
-        Translation2d predictedTurretPivot = Turret.TURRET_OFFSET_FROM_CENTER
-            .rotateBy(predictedHeading)
-            .plus(predictedRobotPos);
-
-        Translation2d toGoalComp = goalPose.minus(predictedTurretPivot);
-
-        Logger.recordOutput("Targeting/StaticDistance", staticDistance);
-        Logger.recordOutput("Targeting/PredictedRobotPos", new Pose2d(predictedRobotPos, predictedHeading));
-        Logger.recordOutput("Targeting/PredictedTurretPivot", new Pose2d(predictedTurretPivot, predictedHeading));
-        Logger.recordOutput("Targeting/ToGoalCompensation", toGoalComp);
-        Logger.recordOutput("Targeting/TimeOfFlight", tof);
-
-        return new Translation2d(
-            toGoalXFilter.calculate(toGoalComp.getX()),
-            toGoalYFilter.calculate(toGoalComp.getY())
-        );
+    public TargetingSolution getSolution() {
+        return calculator.getSolution();
     }
 
     /**
-     * Periodically calculate the shot data given the target position and robot movement
+     * Called once before CommandScheduler.run(), so every consumer sees the same solution.
      */
-    @Override
-    public void periodic() {
+    public void update() {
+        var drive = RobotContainer.getDrive();
+        var state = drive.getStateCopy();
         overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
         overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
         currentTarget = requestedTarget == Target.AUTO
-                ? FieldTargeting.selectTarget(RobotContainer.getDrive().getPose(), isRedAlliance(), currentTarget)
+                ? FieldTargeting.selectTarget(state.Pose, isRedAlliance(), currentTarget)
                 : requestedTarget;
         RobotContainer.getLEDController().switchPreset(currentTarget == Target.HUB ? "hub" : "shuttle");
         if (currentTarget == Target.HUB) {
@@ -131,6 +71,16 @@ public class Targeting extends SubsystemBase {
         } else if (currentTarget == Target.SHUTTLE_LEFT) {
             setPoseTargetingShuttleLeft();
         }
+        calculator.update(state.Pose, state.Speeds, targetPos, drive.getOdometryResetRevision());
+        TargetingSolution solution = getSolution();
+        Logger.recordOutput("Targeting/StaticDistance", solution.staticDistanceMeters());
+        Logger.recordOutput("Targeting/PredictedRobotPos", solution.predictedRobotPose());
+        Logger.recordOutput("Targeting/PredictedTurretPivot", solution.predictedTurretPivot());
+        Logger.recordOutput("Targeting/ToGoalCompensation",
+                targetPos.minus(solution.predictedTurretPivot().getTranslation()));
+        Logger.recordOutput("Targeting/TimeOfFlight", solution.timeOfFlightSeconds());
+        Logger.recordOutput("Targeting/DistanceToTarget", solution.rangeMeters());
+        Logger.recordOutput("Targeting/AngleToTargetDeg", solution.fieldRelativeDirection().getDegrees());
         Logger.recordOutput("Targeting/RequestedTarget", requestedTarget.toString());
         Logger.recordOutput("Targeting/SelectedTarget", currentTarget.toString());
         Logger.recordOutput("Targeting/TargetPosition", targetPos);

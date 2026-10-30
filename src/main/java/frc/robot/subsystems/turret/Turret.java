@@ -1,9 +1,10 @@
 package frc.robot.subsystems.turret;
 
+import java.util.function.Supplier;
 
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.targeting.Targeting;
+import frc.robot.subsystems.targeting.TargetingSolution;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
@@ -36,12 +37,14 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
 
     private boolean overrideAutomaticAiming = false;
 
+    private final Supplier<TargetingSolution> targetingSolution;
     private TurretIO turretIO;
     private CommandXboxController controller;
 
-    public Turret(CommandXboxController controller) {
+    public Turret(CommandXboxController controller, Supplier<TargetingSolution> targetingSolution) {
         super("Turret", new TurretIOInputsAutoLogged());
         this.controller = controller;
+        this.targetingSolution = targetingSolution;
     }
 
     @Override
@@ -63,11 +66,7 @@ public class Turret extends SpikeSystem<TurretIO.TurretIOInputs> {
     }
 
     public double getTurretAngleDegreesFieldRelative() {
-        Translation2d toGoal = Targeting.differenceBetweenRobotAndTarget();
-
-        double angleToTarget = toGoal.getAngle().getDegrees();
-        Logger.recordOutput("Targeting/AngleToTargetDeg", angleToTarget);
-        return angleToTarget;
+        return targetingSolution.get().fieldRelativeDirection().getDegrees();
     }
 
 

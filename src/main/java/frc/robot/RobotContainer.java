@@ -81,10 +81,10 @@ public class RobotContainer {
         drive = TunerConstants.createDrivetrain();
         ledController = new LEDController(1);
         this.targeting = new Targeting();
-        this.turret = new Turret(operatorController);
+        this.turret = new Turret(operatorController, targeting::getSolution);
         this.vision = new Vision(drive);
         this.intake = new Intake();
-        this.shooter = new Shooter(operatorController);
+        this.shooter = new Shooter(operatorController, targeting::getSolution);
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
         
@@ -299,6 +299,10 @@ public class RobotContainer {
             if (!path.isBlank()) return drive.createPathCommand(path);
         }
         return autoChooser.getSelected();
+    }
+
+    public void updateTargeting() {
+        targeting.update();
     }
 
     public void logAutoState() {

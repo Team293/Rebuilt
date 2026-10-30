@@ -169,6 +169,8 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     double startTime = Timer.getFPGATimestamp();
+    // Publish one targeting snapshot before any subsystem or command consumes it.
+    robotContainer.updateTargeting();
     // Runs the Scheduler. This is responsible for polling buttons, adding
     // newly-scheduled commands, running already-scheduled commands, removing
     // finished or interrupted commands, and running subsystem periodic() methods.
