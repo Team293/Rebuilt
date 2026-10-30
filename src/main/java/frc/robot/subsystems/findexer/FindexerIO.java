@@ -9,6 +9,11 @@ public interface FindexerIO extends BaseIO<FindexerIO.FindexerIOInputs>, IORefre
     @AutoLog
     public static class FindexerIOInputs extends BaseInputClass {
         public double motorRps = 0.0; // Motor rotations per second
+        public double statorCurrentAmps = 0.0;
+        public double supplyCurrentAmps = 0.0;
+        public double motorVoltage = 0.0;
+        public boolean motorConnected = false;
+        public double sampleTimestampSeconds = Double.NaN;
     }
 
     void setSpeed(double rps);

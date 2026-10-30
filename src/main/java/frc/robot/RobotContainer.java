@@ -265,6 +265,16 @@ public class RobotContainer {
                 .onTrue(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(true, true)))
                 .onFalse(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(false, false)));
 
+        var operatorFeedHeld = operatorController.leftTrigger().or(operatorController.leftBumper());
+        // Latch the warning until release, even if shooter readiness changes after the jam.
+        operatorFeedHeld.and(findexer::isJamLockedOut).and(DriverStation::isTeleopEnabled)
+                .onTrue(Commands.startEnd(
+                        () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 1.0),
+                        () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0.0))
+                        .until(() -> !operatorFeedHeld.getAsBoolean() || !DriverStation.isTeleopEnabled())
+                        .ignoringDisable(true)
+                        .withName("Findexer jam warning"));
+
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
         operatorController.rightBumper().onTrue(turret.runOnce(turret::toggleAimingOverride));

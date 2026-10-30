@@ -1,13 +1,16 @@
 package frc.robot.subsystems.findexer;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import frc.lib.subsystem.SpikeSystem;
 import frc.robot.subsystems.trigger.Trigger;
+import org.littletonrobotics.junction.Logger;
 
 public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
-    // multiplied by the gear ratio of the findexer (36:1)
-    private static final double FEEDING_RPS = -30*4; // feeding velocity in rotations per second
+    private static final double MAX_TELEMETRY_AGE_SECONDS = 0.10;
 
     private final Trigger trigger;
+    private final FindexerJamRecovery jamRecovery = new FindexerJamRecovery();
 
     private FindexerIO findexerIO;
 
@@ -18,20 +21,33 @@ public class Findexer extends SpikeSystem<FindexerIO.FindexerIOInputs> {
     }
 
     /**
-     * Run the findexer if the indexer needs feeding (doesn't have a ball), otherwise stop it.
+     * Feed while requested, briefly reversing if the findexer remains stalled under load.
      */
     @Override
     public void onPeriodic() {
-        // run the findexer if the indexer needs feeding (doesn't have a ball), otherwise stop it
-        if (trigger.needsFeeding()) {
-            if (this.trigger.getReverseTrigger()) {
-                findexerIO.setSpeed(-FEEDING_RPS);
-            } else {
-                findexerIO.setSpeed(FEEDING_RPS);
-            }
-        } else {
-            findexerIO.setSpeed(0.0);
+        boolean feedingRequested = DriverStation.isEnabled() && trigger.needsFeeding();
+        boolean manualReverse = DriverStation.isEnabled() && trigger.getReverseTrigger();
+        double targetRps;
+        // The input processor updates these fields on another thread.
+        synchronized (io) {
+            double now = Timer.getFPGATimestamp();
+            double age = now - io.sampleTimestampSeconds;
+            boolean telemetryValid = io.motorConnected && age >= 0.0
+                    && age <= MAX_TELEMETRY_AGE_SECONDS;
+            targetRps = jamRecovery.calculate(now, feedingRequested, manualReverse,
+                    telemetryValid, io.motorRps, io.statorCurrentAmps);
+            Logger.recordOutput("Findexer/TelemetryValid", telemetryValid);
         }
+        findexerIO.setSpeed(targetRps);
+        Logger.recordOutput("Findexer/TargetRps", targetRps);
+        Logger.recordOutput("Findexer/FeedingRequested", feedingRequested);
+        Logger.recordOutput("Findexer/JamRecoveryState", jamRecovery.getState().name());
+        Logger.recordOutput("Findexer/JamRecoveryAttempts", jamRecovery.getAttempts());
+    }
+
+    /** True when repeated clearing attempts have failed and feeding has been stopped. */
+    public boolean isJamLockedOut() {
+        return jamRecovery.getState() == FindexerJamRecovery.State.LOCKED_OUT;
     }
 
     /**
