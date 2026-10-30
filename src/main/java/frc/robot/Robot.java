@@ -14,6 +14,9 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.simulation.DriverStationSim;
+import edu.wpi.first.hal.AllianceStationID;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -53,6 +56,7 @@ public class Robot extends LoggedRobot {
                   1000000000; // 1 GB
 
   private double lastPeriodicTime = Timer.getFPGATimestamp();
+  private double simulationAutoStart = -1;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -64,7 +68,9 @@ public class Robot extends LoggedRobot {
     SignalLogger.enableAutoLogging(false);
 
     // Setup log directory and free up space if needed
-    SetupLog();
+    if (Constants.currentMode == Constants.Mode.REAL) {
+      SetupLog();
+    }
     //Pathfinding.setPathfinder(new LocalADStarAK());
 
     // Record metadata
@@ -94,7 +100,10 @@ public class Robot extends LoggedRobot {
         break;
 
       case SIM:
-        // Running a physics simulator, log to NT
+        DriverStation.silenceJoystickConnectionWarning(true);
+        // Publish live to AdvantageScope and retain desktop runs for playback.
+        new File("logs/sim").mkdirs();
+        Logger.addDataReceiver(new WPILOGWriter("logs/sim"));
         Logger.addDataReceiver(new NT4Publisher());
         break;
 
@@ -199,12 +208,15 @@ public class Robot extends LoggedRobot {
     autonomousCommand = robotContainer.getAutonomousCommand();
     boolean flipped = SmartDashboard.getBoolean("Auto/PathFlipped", false);
 
-    if (flipped) {
-      PathPlannerAuto auto = new PathPlannerAuto(autonomousCommand.getName());
-      PathPlannerAuto flippedAuto = new PathPlannerAuto(auto.getName(), true);
-      CommandScheduler.getInstance().schedule(flippedAuto);
-    } else if (autonomousCommand != null) {
+    if (autonomousCommand != null) {
+      if (flipped && autonomousCommand instanceof PathPlannerAuto) {
+        autonomousCommand = new PathPlannerAuto(autonomousCommand.getName(), true);
+      }
+      autonomousCommand = autonomousCommand.finallyDo(robotContainer::stopAutoOutputs);
       CommandScheduler.getInstance().schedule(autonomousCommand);
+      if (Constants.currentMode == Constants.Mode.SIM && hasSimulationSelection()) {
+        simulationAutoStart = Timer.getFPGATimestamp();
+      }
     }
   }
 
@@ -222,6 +234,7 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
+    robotContainer.enableAutomaticTargeting();
   }
 
   /** This function is called periodically during operator control. */
@@ -241,9 +254,21 @@ public class Robot extends LoggedRobot {
 
   /** This function is called once when the robot is first started up. */
   @Override
-  public void simulationInit() {}
+  public void simulationInit() {
+    if (hasSimulationSelection()) {
+      DriverStationSim.setDsAttached(true);
+      DriverStationSim.setAllianceStationId(AllianceStationID.Blue1);
+      DriverStationSim.setAutonomous(true);
+      DriverStationSim.setEnabled(true);
+      DriverStationSim.notifyNewData();
+    }
+  }
 
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
+
+  private boolean hasSimulationSelection() {
+    return !System.getProperty("simAuto", "").isBlank() || !System.getProperty("simPath", "").isBlank();
+  }
 }

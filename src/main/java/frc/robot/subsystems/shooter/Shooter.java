@@ -1,6 +1,7 @@
 package frc.robot.subsystems.shooter;
 
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -8,6 +9,8 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.subsystem.SpikeSystem;
+import frc.robot.RobotContainer;
+import frc.robot.subsystems.targeting.FieldTargeting;
 import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.Targeting;
 
@@ -104,12 +107,13 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         if (io.isZeroing) {
             shooterIO.runZeroingHood();
         } else {
-            if (overrideStopShooting || !actuateHoodAndLaunch) {
+            if (overrideStopShooting || !actuateHoodAndLaunch || requiresTrenchClearance()) {
                 shooterIO.setHoodAngle(0);
             } else {
                 shooterIO.setHoodAngle(hoodAngle);
             }
         }
+        Logger.recordOutput("Shooter/TrenchClearance", requiresTrenchClearance());
 
         // Readiness must use this cycle's command, especially when stopping
         // removes movement compensation and lowers the requested flywheel speed.
@@ -183,6 +187,16 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
 
     public boolean isActuatingHoodAndLaunching() {
         return this.actuateHoodAndLaunch;
+    }
+
+    /** Clearance always takes priority, including when the operator overrides shot readiness. */
+    public boolean canFeedBalls() {
+        return actuateHoodAndLaunch && !overrideStopShooting && !io.isZeroing && !requiresTrenchClearance();
+    }
+
+    private boolean requiresTrenchClearance() {
+        var drive = RobotContainer.getDrive();
+        return FieldTargeting.requiresHoodRetraction(drive.getPose(), drive.getState().Speeds);
     }
 
     public boolean isOverridingShootingLimiter() {

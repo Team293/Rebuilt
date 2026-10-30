@@ -23,7 +23,7 @@ public class Targeting extends SubsystemBase {
     private static ShotCompensation.AdjustedShot shotData = new ShotCompensation.AdjustedShot(0.0, 0.0, 0.0, 0.0, 0.0);
     private static Translation2d compensatedToGoal = new Translation2d();
 
-    private static Translation2d targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
+    private static Translation2d targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
 
     private static final double FIELD_WIDTH = FieldConstants.APRIL_TAG_LAYOUT.getFieldWidth(); // meters
     private static final double FIELD_LENGTH = FieldConstants.APRIL_TAG_LAYOUT.getFieldLength(); // meters
@@ -32,12 +32,14 @@ public class Targeting extends SubsystemBase {
     private static final double shuttlingYOffset = 2.5;
 
     public static enum Target {
+        AUTO,
         HUB,
         SHUTTLE_RIGHT,
         SHUTTLE_LEFT
     }
 
     private Target currentTarget = Target.HUB;
+    private Target requestedTarget = Target.AUTO;
 
     private boolean overrideRedAlliance = false;
     private boolean overrideBlueAlliance = false;
@@ -90,6 +92,16 @@ public class Targeting extends SubsystemBase {
      */
     @Override
     public void periodic() {
+        var driveState = driveStateSupplier.get();
+        overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
+        overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
+        currentTarget = requestedTarget == Target.AUTO
+                ? FieldTargeting.selectTarget(driveState.Pose, isRedAlliance(), currentTarget)
+                : requestedTarget;
+        var ledController = RobotContainer.getLEDController();
+        if (ledController != null) {
+            ledController.switchPreset(currentTarget == Target.HUB ? "hub" : "shuttle");
+        }
         if (currentTarget == Target.HUB) {
             setPoseTargetingHub();
         } else if (currentTarget == Target.SHUTTLE_RIGHT) {
@@ -97,7 +109,6 @@ public class Targeting extends SubsystemBase {
         } else if (currentTarget == Target.SHUTTLE_LEFT) {
             setPoseTargetingShuttleLeft();
         }
-        var driveState = driveStateSupplier.get();
         updateShotSolution(driveState.Pose, driveState.Speeds);
     }
 
@@ -105,49 +116,28 @@ public class Targeting extends SubsystemBase {
      * Set the target of the targeting subsystem. This will change the target position
      */
     public void setTarget(Target target) {
-        if (target == Target.HUB) {
-            RobotContainer.getLEDController().switchPreset("hub");
-        } else if (target == Target.SHUTTLE_LEFT  || target == Target.SHUTTLE_RIGHT) {
-            RobotContainer.getLEDController().switchPreset("shuttle");
-        }
+        requestedTarget = target;
+    }
 
-        currentTarget = target;
+    private boolean isRedAlliance() {
+        if (overrideRedAlliance) return true;
+        if (overrideBlueAlliance) return false;
+        return DriverStation.getAlliance().orElse(DriverStation.Alliance.Blue) == DriverStation.Alliance.Red;
     }
 
     /**
      * Set the target location to center of the hub 
      */
     private void setPoseTargetingHub() {
-
-        overrideBlueAlliance = SmartDashboard.getBoolean("OverrideBlueAlliance", overrideBlueAlliance);
-        overrideRedAlliance = SmartDashboard.getBoolean("OverrideRedAlliance", overrideRedAlliance);
-
-        if (overrideRedAlliance) {
-            targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-            return;
-        }
-
-        if (overrideBlueAlliance) {
-            targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
-            return;
-        }
-
-
-        if (DriverStation.getAlliance().isPresent()) {
-            if (DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
-                targetPos = FieldConstants.Hub.oppTopCenterPoint.toTranslation2d();
-            }
-            if (DriverStation.getAlliance().get().equals(DriverStation.Alliance.Blue)) {
-                targetPos = FieldConstants.Hub.innerCenterPoint.toTranslation2d();
-            }
-        }
+        targetPos = isRedAlliance() ? FieldConstants.Hub.oppTopCenterPoint.toTranslation2d()
+                : FieldConstants.Hub.innerCenterPoint.toTranslation2d();
     }
 
     /**
      * Set the target location to 0, 0
      */
     private void setPoseTargetingShuttleRight() {
-        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
+        if (isRedAlliance()) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);
         } else {
             targetPos = new Translation2d(0 + shuttlingXOffset, 0 + shuttlingYOffset);
@@ -155,7 +145,7 @@ public class Targeting extends SubsystemBase {
     }
 
     private void setPoseTargetingShuttleLeft() {
-        if (DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get().equals(DriverStation.Alliance.Red)) {
+        if (isRedAlliance()) {
             targetPos = new Translation2d(FIELD_LENGTH - shuttlingXOffset, 0 + shuttlingYOffset);
         } else {
             targetPos = new Translation2d(0 + shuttlingXOffset, FIELD_WIDTH - shuttlingYOffset);

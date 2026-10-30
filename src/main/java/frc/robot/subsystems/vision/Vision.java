@@ -9,7 +9,9 @@ import org.photonvision.EstimatedRobotPose;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
+import java.util.List;
 import java.util.Optional;
 
 public class Vision extends SpikeSystem<VisionIOInputs> {
@@ -87,6 +89,21 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
+        if (RobotBase.isSimulation()) {
+            this.visionIO = new VisionIO() {
+                @Override
+                public void updateInputs(VisionIOInputs inputs) {}
+
+                @Override
+                public void refreshData() {}
+
+                @Override
+                public List<EstimatedRobotPose> getEstimatedRobotPoses() {
+                    return List.of();
+                }
+            };
+            return useDataRefresher(visionIO);
+        }
         this.visionIO = new VisionIOPhotonCamera(() -> RobotContainer.getDrive().getPose());
         return useAsyncDataRefresher(visionIO);
     }

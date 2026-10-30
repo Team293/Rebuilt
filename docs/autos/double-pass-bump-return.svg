@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="850" viewBox="0 0 960 850">
+  <rect width="960" height="850" fill="#101923" />
+  <g font-family="sans-serif" fill="#eaf2f8">
+    <text x="65" y="35" font-size="23">Double pass · bump return</text>
+    <text x="65" y="62" font-size="14">Green: first collection and bump return   ·   Amber: second trench departure</text>
+    <text x="65" y="84" font-size="14">2.5 s preload shot → collect → 5 s return shot → collect until the 20 s deadline</text>
+    <rect x="65.00" y="120.00" width="795.40" height="661.66" fill="#192b37" stroke="#718096" />
+    <path d="M 147 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 229 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 311 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 393 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 475 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 557 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 639 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 721 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 803 781.658 V 120.0" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 699.658 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 617.6580000000001 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 535.6580000000001 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 453.6580000000001 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 371.6580000000001 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 289.6580000000001 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 207.65800000000007 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <path d="M 65 125.65800000000007 H 860.4" stroke="#2a3f4d" stroke-width="1" />
+    <rect x="394.79" y="676.81" width="97.89" height="104.85" fill="#263e58" stroke="#718096" />
+    <text x="443.74" y="729.23" font-size="13" text-anchor="middle" dominant-baseline="middle">Trench</text>
+    <rect x="394.79" y="499.77" width="97.89" height="152.04" fill="#6b552b" stroke="#718096" />
+    <text x="443.74" y="575.80" font-size="13" text-anchor="middle" dominant-baseline="middle">Bump</text>
+    <rect x="394.79" y="401.88" width="97.89" height="97.89" fill="#644044" stroke="#718096" />
+    <text x="443.74" y="450.83" font-size="13" text-anchor="middle" dominant-baseline="middle">Hub</text>
+    <rect x="394.79" y="249.84" width="97.89" height="152.04" fill="#6b552b" stroke="#718096" />
+    <text x="443.74" y="325.86" font-size="13" text-anchor="middle" dominant-baseline="middle">Bump</text>
+    <rect x="394.79" y="120.00" width="97.89" height="104.85" fill="#263e58" stroke="#718096" />
+    <text x="443.74" y="172.42" font-size="13" text-anchor="middle" dominant-baseline="middle">Trench</text>
+    <path d="M 360.95 729.23 C 426.55,729.23 491.40,729.23 557.00,729.23 C 594.41,729.23 708.70,743.94 708.70,707.86 C 708.70,687.36 708.70,610.28 708.70,589.78 C 708.70,561.08 635.93,575.80 553.92,575.80 C 488.33,575.80 410.43,575.80 344.82,575.80" fill="none" stroke="#67e8a5" stroke-width="4" />
+    <circle cx="360.94713479999996" cy="729.233924" r="6" fill="#fda4af" />
+    <text x="348.94713479999996" y="717.233924" text-anchor="end" font-size="13">Start · 2.5 s</text>
+    <circle cx="344.825" cy="575.797" r="6" fill="#fda4af" />
+    <text x="332.825" y="563.797" text-anchor="end" font-size="13">Return · 5 s</text>
+    <path d="M 344.82 575.80 C 312.02,640.37 319.20,729.23 356.10,729.23 C 409.40,729.23 491.40,729.23 557.00,729.23 C 678.98,729.23 733.30,734.10 733.30,707.86 C 733.30,687.36 733.30,546.32 733.30,525.82" fill="none" stroke="#ffcb65" stroke-width="4" stroke-dasharray="8 5" />
+    <text x="81.4" y="765.258" font-size="16">Outpost</text>
+    <path d="M 360.95 172.42 C 426.55,172.42 491.40,172.42 557.00,172.42 C 594.41,172.42 708.70,157.72 708.70,193.80 C 708.70,214.30 708.70,291.38 708.70,311.88 C 708.70,340.58 635.93,325.86 553.92,325.86 C 488.33,325.86 410.43,325.86 344.82,325.86" fill="none" stroke="#67e8a5" stroke-width="4" />
+    <circle cx="360.94713479999996" cy="172.424076" r="6" fill="#fda4af" />
+    <text x="348.94713479999996" y="160.424076" text-anchor="end" font-size="13">Start · 2.5 s</text>
+    <circle cx="344.825" cy="325.86100000000005" r="6" fill="#fda4af" />
+    <text x="332.825" y="313.86100000000005" text-anchor="end" font-size="13">Return · 5 s</text>
+    <path d="M 344.82 325.86 C 312.02,261.29 319.20,172.42 356.10,172.42 C 409.40,172.42 491.40,172.42 557.00,172.42 C 678.98,172.42 733.30,167.56 733.30,193.80 C 733.30,214.30 733.30,355.34 733.30,375.84" fill="none" stroke="#ffcb65" stroke-width="4" stroke-dasharray="8 5" />
+    <text x="81.4" y="144.6" font-size="16">Depot</text>
+    <text x="65" y="825" font-size="13">Blue origin shown; red uses the field flip. Full modeled routine: 19.84 s; cutoff: 20 s.</text>
+  </g>
+</svg>

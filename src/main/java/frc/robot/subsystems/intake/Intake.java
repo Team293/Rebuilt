@@ -48,6 +48,10 @@ public class Intake extends SpikeSystem<IntakeIO.IntakeIOInputs> {
         running = true;
     }
 
+    public boolean isRunning() {
+        return running;
+    }
+
     public void switchDirection() {
         forward = !forward;
     }
