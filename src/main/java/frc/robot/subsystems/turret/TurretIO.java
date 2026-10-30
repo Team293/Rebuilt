@@ -26,10 +26,13 @@ public interface TurretIO extends IORefresher, BaseIO<TurretIO.TurretIOInputs> {
     }
 
     /**
-     * Set the angle of the turret, field-relative, in degrees. 0 degrees is facing straight forward, positive angles are clockwise, and negative angles are counterclockwise. [-180, 180]
-     * @param fieldRelativeAngleDegrees field-relative angle to set the turret to, in degrees. 0 degrees is facing straight forward, positive angles are clockwise, and negative angles are counterclockwise. [-180, 180]
+     * Set the field-relative angle in degrees, CCW positive (WPILib convention).
      */
     void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees);
+
+    /** Field-relative position with a ROBOT-relative tracking rate, degrees/sec CCW. */
+    void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees,
+                                           double robotRelativeVelocityDegPerSec);
 
     /**
      * Set the angle of the turret relative to the robot.

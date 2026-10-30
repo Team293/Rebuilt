@@ -34,6 +34,7 @@ import org.littletonrobotics.junction.networktables.NT4Publisher;
 import org.littletonrobotics.junction.wpilog.WPILOGReader;
 import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.util.FlippingUtil;
 
@@ -63,6 +64,9 @@ public class Robot extends LoggedRobot {
    */
   @Override
   public void robotInit() {
+    // Use AdvantageKit logging; prevent Phoenix from repeatedly trying to start hoot logs.
+    SignalLogger.enableAutoLogging(false);
+
     // Setup log directory and free up space if needed
     if (Constants.currentMode == Constants.Mode.REAL) {
       SetupLog();
@@ -169,15 +173,13 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotPeriodic() {
     double startTime = Timer.getFPGATimestamp();
-    // Publish one targeting snapshot before any subsystem or command consumes it.
-    robotContainer.updateTargeting();
     // Runs the Scheduler. This is responsible for polling buttons, adding
     // newly-scheduled commands, running already-scheduled commands, removing
     // finished or interrupted commands, and running subsystem periodic() methods.
     // This must be called from the robot's periodic block in order for anything in
     // the Command-based framework to work.
     CommandScheduler.getInstance().run();
-    robotContainer.logAutoState();
+    robotContainer.updateDriverFeedback();
     double endTime = Timer.getFPGATimestamp();
 
     double execMs = (endTime - startTime) * 1000.0;
@@ -264,13 +266,7 @@ public class Robot extends LoggedRobot {
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {
-    if (simulationAutoStart >= 0 && Timer.getFPGATimestamp() - simulationAutoStart >= 20) {
-      DriverStationSim.setEnabled(false);
-      DriverStationSim.notifyNewData();
-      simulationAutoStart = -1;
-    }
-  }
+  public void simulationPeriodic() {}
 
   private boolean hasSimulationSelection() {
     return !System.getProperty("simAuto", "").isBlank() || !System.getProperty("simPath", "").isBlank();

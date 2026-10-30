@@ -16,7 +16,9 @@ import frc.robot.subsystems.targeting.ShotData;
 import frc.robot.subsystems.targeting.TargetingSolution;
 
 public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
-    private static final double SHOOTER_READY_THRESHOLD_RPS = 6.0; // RPS threshold to consider the shooter ready
+    private static final double SHOOTER_READY_UNDERSPEED_RPS = 5.0;
+    private static final double SHOOTER_READY_OVERSPEED_RPS = 1.5;
+    private double commandedFlywheelRps = 0.0;
 
     private boolean readFromData = true;
     private boolean useAllianceSpecificTrims = false;
@@ -116,14 +118,10 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
         }
         Logger.recordOutput("Shooter/TrenchClearance", requiresTrenchClearance());
 
-        // put to recovery mode if the driver is requesting to shoot
-        // more direct control rather than smooth trajectory generation
-        if (spinUpFlywheel) {
-            // check if RPM change is greater than 50 to prevent minor fluctuations from causing the shooter to go into recovery mode
-            shooterIO.setFlywheelVelocity(targetRPM / 60.0); // convert RPM to RPS
-        } else {
-            shooterIO.setFlywheelVelocity(0);
-        }
+        // Readiness must use this cycle's command, especially when stopping
+        // removes movement compensation and lowers the requested flywheel speed.
+        commandedFlywheelRps = spinUpFlywheel ? targetRPM / 60.0 : 0.0;
+        shooterIO.setFlywheelVelocity(commandedFlywheelRps);
     }
 
     /**
@@ -141,7 +139,14 @@ public class Shooter extends SpikeSystem<ShooterIO.ShooterIOInputs> {
      */
     @AutoLogOutput(key="Shooter/IsAtTargetRPS")
     public boolean isAtTargetRPS() {
-        return Math.abs((super.io.flywheelVelocityRPS - 1) - io.flywheelSetPointRPS) < SHOOTER_READY_THRESHOLD_RPS;
+        return isFlywheelReady(commandedFlywheelRps, io.flywheelVelocityRPS);
+    }
+
+    static boolean isFlywheelReady(double targetRps, double measuredRps) {
+        double errorRps = measuredRps - targetRps;
+        return targetRps > 0.0
+                && errorRps > -SHOOTER_READY_UNDERSPEED_RPS
+                && errorRps < SHOOTER_READY_OVERSPEED_RPS;
     }
 
     /**

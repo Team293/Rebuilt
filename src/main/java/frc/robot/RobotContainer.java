@@ -12,14 +12,13 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
-import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -80,9 +79,11 @@ public class RobotContainer {
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         ledController = new LEDController(1);
+        this.vision = new Vision(drive);
+        // Subsystem periodic methods run in registration order: apply vision first,
+        // then publish one targeting solution before either aiming subsystem reads it.
         this.targeting = new Targeting();
         this.turret = new Turret(operatorController, targeting::getSolution);
-        this.vision = new Vision(drive);
         this.intake = new Intake();
         this.shooter = new Shooter(operatorController, targeting::getSolution);
         this.trigger = new Trigger(shooter, turret);
@@ -178,8 +179,7 @@ public class RobotContainer {
         drive.setDefaultCommand(
             drive.applyRequest(() -> {
 
-                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.2 : 1.0;
-                // double speedMultiplier = tr0.2ue;
+                double speedMultiplier = driverController.rightBumper().getAsBoolean() ? 0.30 : 1.0;
 
                 double vx = -driverController.getLeftY() * MaxSpeed * speedMultiplier;
                 double vy = -driverController.getLeftX() * MaxSpeed * speedMultiplier;
@@ -223,6 +223,8 @@ public class RobotContainer {
 
         );
         driverController.povLeft().onTrue(drive.runOnce(drive::resetAllianceHeadingToAllianceForward));
+        driverController.povDown().onTrue(drive.runOnce(() ->
+            drive.resetRotation(vision.getAprilTagHeading().orElseGet(drive::getRotation))));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
@@ -301,33 +303,16 @@ public class RobotContainer {
         return autoChooser.getSelected();
     }
 
-    public void updateTargeting() {
-        targeting.update();
-    }
-
-    public void logAutoState() {
-        Logger.recordOutput("Auto/IntakeRunning", intake.isRunning());
-        Logger.recordOutput("Auto/ShootingRequested", shooter.isActuatingHoodAndLaunching());
-        Logger.recordOutput("Auto/FlywheelRequested", shooter.isSpinUpFlywheel());
-        Command selected = autoChooser.getSelected();
-        String selection = selected == null ? "None" : selected.getName();
-        if (Constants.currentMode == Constants.Mode.SIM) {
-            selection = System.getProperty("simAuto", System.getProperty("simPath", selection));
-        }
-        Logger.recordOutput("Auto/Selected", selection);
-        var speeds = drive.getState().Speeds;
-        String phase = !DriverStation.isAutonomousEnabled() ? "Disabled / teleop"
-                : shooter.isActuatingHoodAndLaunching() ? "Shooting"
-                : intake.isRunning() ? "Collecting"
-                : Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) > 0.05 ? "Driving"
-                : shooter.isSpinUpFlywheel() ? "Spinning up / waiting" : "Stopped";
-        Logger.recordOutput("Auto/Phase", phase);
-    }
-
     public void stopAutoOutputs() {
         intake.disable();
         shooter.setActuateHoodAndLaunch(false);
         shooter.setDriverSpinUpFlywheel(false);
         drive.setControl(brake);
+    }
+
+    public void updateDriverFeedback() {
+        double rumble = DriverStation.isTeleopEnabled() ? turret.getDirectionalWraparoundRumble() : 0.0;
+        driverController.getHID().setRumble(RumbleType.kLeftRumble, Math.max(0.0, rumble));
+        driverController.getHID().setRumble(RumbleType.kRightRumble, Math.max(0.0, -rumble));
     }
 }

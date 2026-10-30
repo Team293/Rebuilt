@@ -13,6 +13,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.wpilibj.Servo;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 
 public class IntakeIOTalonFX implements IntakeIO {
     // TalonFX Motors
@@ -68,6 +69,7 @@ public class IntakeIOTalonFX implements IntakeIO {
 
     public static TalonFXConfiguration getIntakeMotorConfig() {
         var intakeConfig = new TalonFXConfiguration();
+        intakeConfig.CurrentLimits = MotorCurrentLimits.intake();
 
         // Set Intake motor to Coast when not on
         intakeConfig.MotorOutput.NeutralMode = NeutralModeValue.Coast;

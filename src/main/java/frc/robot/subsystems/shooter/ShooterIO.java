@@ -9,6 +9,11 @@ public interface ShooterIO extends BaseIO<ShooterIO.ShooterIOInputs>, IORefreshe
     @AutoLog
     public static class ShooterIOInputs extends BaseInputClass {
         public double flywheelVelocityRPS = 0.0; // measured flywheel speed, in rotations per second
+        public double flywheelStatorCurrentAmps = 0.0;
+        public double flywheelSupplyCurrentAmps = 0.0;
+        public double flywheelMotorVoltage = 0.0;
+        public boolean flywheelRecovering = false;
+        public int flywheelControlSlot = 0;
         public double hoodAngleDeg = 15.0; // measured hood angle, in degrees [15, 45]
         public double flywheelSetPointRPS = 0.0; // commanded flywheel speed setpoint, in rotations per second
         public double hoodAngleSetPointDeg = 0.0; // commanded hood angle setpoint, in degrees [15, 45]

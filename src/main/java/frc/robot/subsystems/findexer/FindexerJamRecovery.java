@@ -3,7 +3,7 @@ package frc.robot.subsystems.findexer;
 /** Timed jam clearing, independent of hardware so ball impacts and retries can be tested. */
 final class FindexerJamRecovery {
     // Motor-shaft RPS, matching the existing findexer velocity request.
-    static final double FEEDING_RPS = -60.0;
+    static final double FEEDING_RPS = -120.0;
     static final double CLEARING_RPS = 30.0;
 
     // Initial tuning values: distinguish a sustained near-stall from a normal ball impact.

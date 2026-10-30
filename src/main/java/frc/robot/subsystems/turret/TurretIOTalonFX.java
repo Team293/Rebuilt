@@ -15,6 +15,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 import frc.robot.subsystems.drive.CommandSwerveDrivetrain;
 
 public class TurretIOTalonFX implements TurretIO {
@@ -69,6 +70,7 @@ public class TurretIOTalonFX implements TurretIO {
         this.turretMotor.getConfigurator().apply(turretMotorConfig.getSecond());
         this.turretMotor.getConfigurator().apply(turretMotorFeedbackConfig);
         this.turretMotor.getConfigurator().apply(turretSoftwareLimitConfig);
+        this.turretMotor.getConfigurator().apply(MotorCurrentLimits.turret());
         // invert motor
         this.turretMotor.getConfigurator().apply(new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 
@@ -92,20 +94,28 @@ public class TurretIOTalonFX implements TurretIO {
 
     @Override
     public void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees) {
+        setTurretAngleFieldRelativeDegrees(fieldRelativeAngleDegrees,
+                -Math.toDegrees(drive.getState().Speeds.omegaRadiansPerSecond));
+    }
+
+    @Override
+    public void setTurretAngleFieldRelativeDegrees(double fieldRelativeAngleDegrees,
+                                                  double robotRelativeVelocityDegPerSec) {
         double currentRobotHeading = this.drive.getPose().getRotation().getDegrees();
 
         // absolute robot-relative target, in motor rotations
         double targetRobotRelativeDeg = fieldRelativeAngleDegrees - currentRobotHeading;
         this.processedTargetTurretDegreesFieldRelative = wrap180(targetRobotRelativeDeg);
 
-        setTurretAngleRobotRelativeDegrees(targetRobotRelativeDeg);
+        setTurretAngleTurretRelativeDegrees(targetRobotRelativeDeg + Turret.TURRET_ROBOT_OFFSET_DEG,
+                robotRelativeVelocityDegPerSec);
     }
 
     public void setTurretAngleRobotRelativeDegrees(double robotRelativeAngleDegrees) {
-        setTurretAngleTurretRelativeDegrees(robotRelativeAngleDegrees + Turret.TURRET_ROBOT_OFFSET_DEG);
+        setTurretAngleTurretRelativeDegrees(robotRelativeAngleDegrees + Turret.TURRET_ROBOT_OFFSET_DEG, 0.0);
     }
 
-    private void setTurretAngleTurretRelativeDegrees(double angleDegrees) {
+    private void setTurretAngleTurretRelativeDegrees(double angleDegrees, double velocityDegPerSec) {
         angleDegrees += turretTrimDegrees;
         angleDegrees = wrap180(angleDegrees);
 
@@ -115,8 +125,11 @@ public class TurretIOTalonFX implements TurretIO {
         
         
         mmRequest.Position = targetMotorRotations;
+        // Feedback scaling is TWO mechanism rotations per turret revolution.
+        // Phoenix Velocity is mechanism rotations/sec; FeedForward is AMPERES.
+        mmRequest.Velocity = velocityDegPerSec / 180.0;
         this.turretMotor.setControl(
-            mmRequest // .withFeedForward(drive.getState().Speeds.omegaRadiansPerSecond)
+            mmRequest
         );
     }
 

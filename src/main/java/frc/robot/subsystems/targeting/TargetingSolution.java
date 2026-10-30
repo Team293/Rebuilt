@@ -1,6 +1,5 @@
 package frc.robot.subsystems.targeting;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
@@ -9,8 +8,9 @@ public record TargetingSolution(
         Translation2d toGoal,
         double staticDistanceMeters,
         double timeOfFlightSeconds,
-        Pose2d predictedRobotPose,
-        Pose2d predictedTurretPivot) {
+        Translation2d turretPivot,
+        Translation2d turretPivotVelocity,
+        ShotCompensation.AdjustedShot shot) {
     public double rangeMeters() {
         return toGoal.getNorm();
     }

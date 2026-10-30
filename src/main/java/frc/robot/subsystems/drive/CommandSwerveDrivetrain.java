@@ -25,7 +25,6 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -58,7 +57,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private double m_lastSimTime;
     private Notifier m_simNotifier;
-    private long odometryResetRevision;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -380,41 +378,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     public double getRobotOmegaDegPerSec() {
         return robotOmegaDegPerSec;
-    }
-
-    /** Changes whenever the odometry coordinate frame is explicitly reset. */
-    public long getOdometryResetRevision() {
-        return odometryResetRevision;
-    }
-
-    @Override
-    public void resetPose(Pose2d pose) {
-        super.resetPose(pose);
-        odometryResetRevision++;
-    }
-
-    @Override
-    public void resetTranslation(Translation2d translation) {
-        super.resetTranslation(translation);
-        odometryResetRevision++;
-    }
-
-    @Override
-    public void resetRotation(Rotation2d rotation) {
-        super.resetRotation(rotation);
-        odometryResetRevision++;
-    }
-
-    @Override
-    public void tareEverything() {
-        super.tareEverything();
-        odometryResetRevision++;
-    }
-
-    @Override
-    public void seedFieldCentric(Rotation2d rotation) {
-        super.seedFieldCentric(rotation);
-        odometryResetRevision++;
     }
 
     public void resetAllianceHeadingToAllianceForward() {

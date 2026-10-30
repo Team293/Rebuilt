@@ -11,6 +11,7 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.CanID;
+import frc.robot.MotorCurrentLimits;
 
 public class FindexerIOTalonFX implements FindexerIO {
     private final TalonFX motor;
@@ -29,12 +30,7 @@ public class FindexerIOTalonFX implements FindexerIO {
         this.motorVoltage = motor.getMotorVoltage();
         TalonFXConfiguration config = new TalonFXConfiguration();
         
-        config.CurrentLimits.StatorCurrentLimit = 40;
-        config.CurrentLimits.StatorCurrentLimitEnable = true;
-        config.CurrentLimits.SupplyCurrentLimit = 50;
-        config.CurrentLimits.SupplyCurrentLowerLimit = 30.0;
-        config.CurrentLimits.SupplyCurrentLowerTime = 0.5;
-        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+        config.CurrentLimits = MotorCurrentLimits.findexer();
 
         Slot0Configs slot0 = config.Slot0;
 
