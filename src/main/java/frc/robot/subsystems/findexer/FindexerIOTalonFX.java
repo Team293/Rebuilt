@@ -5,9 +5,11 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.CanID;
 
 public class FindexerIOTalonFX implements FindexerIO {
@@ -15,10 +17,16 @@ public class FindexerIOTalonFX implements FindexerIO {
 
     private final VelocityTorqueCurrentFOC velocityControl = new VelocityTorqueCurrentFOC(0.0);
     private final StatusSignal<AngularVelocity> motorRps; // Rotations per second
+    private final StatusSignal<Current> statorCurrent;
+    private final StatusSignal<Current> supplyCurrent;
+    private final StatusSignal<Voltage> motorVoltage;
 
     public FindexerIOTalonFX() {
         this.motor = new TalonFX(CanID.FINDEXER_MOTOR.getID());
         this.motorRps = motor.getVelocity();
+        this.statorCurrent = motor.getStatorCurrent();
+        this.supplyCurrent = motor.getSupplyCurrent();
+        this.motorVoltage = motor.getMotorVoltage();
         TalonFXConfiguration config = new TalonFXConfiguration();
         
         config.CurrentLimits.StatorCurrentLimit = 40;
@@ -40,6 +48,8 @@ public class FindexerIOTalonFX implements FindexerIO {
 
         this.motor.getConfigurator().apply(config);
 
+        BaseStatusSignal.setUpdateFrequencyForAll(50.0,
+                motorRps, statorCurrent, supplyCurrent, motorVoltage);
         this.motor.optimizeBusUtilization();
     }
 
@@ -58,7 +68,7 @@ public class FindexerIOTalonFX implements FindexerIO {
      */
     @Override
     public void refreshData() {
-        BaseStatusSignal.refreshAll(motorRps);
+        BaseStatusSignal.refreshAll(motorRps, statorCurrent, supplyCurrent, motorVoltage);
     }
 
     /**
@@ -68,5 +78,12 @@ public class FindexerIOTalonFX implements FindexerIO {
     @Override
     public void updateInputs(FindexerIOInputs inputs) {
         inputs.motorRps = motorRps.getValueAsDouble();
+        inputs.statorCurrentAmps = statorCurrent.getValueAsDouble();
+        inputs.supplyCurrentAmps = supplyCurrent.getValueAsDouble();
+        inputs.motorVoltage = motorVoltage.getValueAsDouble();
+        inputs.motorConnected = BaseStatusSignal.isAllGood(motorRps, statorCurrent)
+                && motorRps.getTimestamp().isValid() && statorCurrent.getTimestamp().isValid();
+        inputs.sampleTimestampSeconds = Timer.getFPGATimestamp()
+                - Math.max(motorRps.getTimestamp().getLatency(), statorCurrent.getTimestamp().getLatency());
     }
 }

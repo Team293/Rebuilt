@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import org.littletonrobotics.junction.Logger;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -261,6 +262,16 @@ public class RobotContainer {
         operatorController.leftBumper()
                 .onTrue(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(true, true)))
                 .onFalse(shooter.runOnce(() -> shooter.setActuateHoodAndLaunch(false, false)));
+
+        var operatorFeedHeld = operatorController.leftTrigger().or(operatorController.leftBumper());
+        // Latch the warning until release, even if shooter readiness changes after the jam.
+        operatorFeedHeld.and(findexer::isJamLockedOut).and(DriverStation::isTeleopEnabled)
+                .onTrue(Commands.startEnd(
+                        () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 1.0),
+                        () -> operatorController.getHID().setRumble(RumbleType.kBothRumble, 0.0))
+                        .until(() -> !operatorFeedHeld.getAsBoolean() || !DriverStation.isTeleopEnabled())
+                        .ignoringDisable(true)
+                        .withName("Findexer jam warning"));
 
         operatorController.rightStick().onTrue(shooter.runOnce(() -> shooter.zeroHood()));
 
