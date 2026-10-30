@@ -3,7 +3,9 @@ package frc.robot.subsystems.drive;
 import static edu.wpi.first.units.Units.*;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.nio.file.Files;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
@@ -16,6 +18,7 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.pathfinding.Pathfinding;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.PathPlannerLogging;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -26,12 +29,14 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
@@ -51,6 +56,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     private static final double kSimLoopPeriod = 0.005; // 5 ms
     private double m_lastSimTime;
+    private Notifier m_simNotifier;
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
     private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
@@ -229,23 +235,30 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
         this.field.setRobotPose(getPose());
         SmartDashboard.putData(field);
+        Logger.recordOutput("Robot/Pose", getPose());
     }
 
     private void startSimThread() {
         m_lastSimTime = Utils.getCurrentTimeSeconds();
 
-        try (/* Run simulation at a faster rate so PID gains behave more reasonably */
-                /* use the measured time delta, get battery voltage from WPILib */
-        Notifier m_simNotifier = new Notifier(() -> {
+        // Keep the notifier alive for the lifetime of the drivetrain.
+        m_simNotifier = new Notifier(() -> {
             final double currentTime = Utils.getCurrentTimeSeconds();
             double deltaTime = currentTime - m_lastSimTime;
             m_lastSimTime = currentTime;
 
             /* use the measured time delta, get battery voltage from WPILib */
             updateSimState(deltaTime, RobotController.getBatteryVoltage());
-        })) {
-            m_simNotifier.startPeriodic(kSimLoopPeriod);
+        });
+        m_simNotifier.startPeriodic(kSimLoopPeriod);
+    }
+
+    @Override
+    public void close() {
+        if (m_simNotifier != null) {
+            m_simNotifier.close();
         }
+        super.close();
     }
 
     /**
@@ -312,6 +325,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
             PathPlannerLogging.setLogActivePathCallback(
                     (activePath) -> {
+                        field.getObject("Trajectory").setPoses(activePath);
                         Logger.recordOutput(
                                 "Odometry/Trajectory", activePath.toArray(new Pose2d[0]));
                     });
@@ -334,7 +348,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     public SendableChooser<Command> getAutoChooser() {
-        return AutoBuilder.buildAutoChooser();
+        SendableChooser<Command> chooser = AutoBuilder.buildAutoChooser();
+        var directory = Filesystem.getDeployDirectory().toPath().resolve("pathplanner/paths");
+        try (var files = Files.list(directory)) {
+            files.filter(path -> path.toString().endsWith(".path")).sorted().forEach(file -> {
+                String filename = file.getFileName().toString();
+                String name = filename.substring(0, filename.length() - 5);
+                chooser.addOption("Path: " + name, createPathCommand(name));
+            });
+        } catch (Exception e) {
+            DriverStation.reportError("Could not list PathPlanner paths", e.getStackTrace());
+        }
+        return chooser;
+    }
+
+    public Command createPathCommand(String name) {
+        return Commands.defer(() -> {
+            try {
+                PathPlannerPath path = PathPlannerPath.fromPathFile(name);
+                return Commands.sequence(
+                        AutoBuilder.resetOdom(path.getStartingHolonomicPose().orElseThrow()),
+                        AutoBuilder.followPath(path));
+            } catch (Exception e) {
+                DriverStation.reportError("Could not load path " + name, e.getStackTrace());
+                return Commands.none();
+            }
+        }, Set.of(this)).withName("Path: " + name);
     }
 
     public double getRobotOmegaDegPerSec() {

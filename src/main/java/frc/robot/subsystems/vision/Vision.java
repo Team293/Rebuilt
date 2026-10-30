@@ -8,6 +8,8 @@ import frc.robot.subsystems.vision.VisionIO.VisionIOInputs;
 import org.photonvision.EstimatedRobotPose;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.RobotBase;
+import java.util.List;
 
 public class Vision extends SpikeSystem<VisionIOInputs> {
     private static final double AMBIGUITY_THRESHOLD = 0.2;
@@ -75,6 +77,21 @@ public class Vision extends SpikeSystem<VisionIOInputs> {
 
     @Override
     protected Runnable setupDataRefresher() {
+        if (RobotBase.isSimulation()) {
+            this.visionIO = new VisionIO() {
+                @Override
+                public void updateInputs(VisionIOInputs inputs) {}
+
+                @Override
+                public void refreshData() {}
+
+                @Override
+                public List<EstimatedRobotPose> getEstimatedRobotPoses() {
+                    return List.of();
+                }
+            };
+            return useDataRefresher(visionIO);
+        }
         this.visionIO = new VisionIOPhotonCamera(() -> RobotContainer.getDrive().getPose());
         return useAsyncDataRefresher(visionIO);
     }

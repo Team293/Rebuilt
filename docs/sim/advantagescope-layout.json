@@ -1,0 +1,72 @@
+{
+  "hubs": [
+    {
+      "x": 185,
+      "y": 153,
+      "width": 1100,
+      "height": 650,
+      "state": {
+        "sidebar": {
+          "width": 310,
+          "expanded": [
+            "/RealOutputs",
+            "/RealOutputs/Robot",
+            "/RealOutputs/Auto",
+            "/RealOutputs/Odometry"
+          ]
+        },
+        "tabs": {
+          "selected": 0,
+          "tabs": [
+            {
+              "type": 3,
+              "title": "Robot Simulation",
+              "controller": {
+                "sources": [
+                  {
+                    "type": "robot",
+                    "logKey": "/RealOutputs/Robot/Pose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "model": "KitBot"
+                    }
+                  },
+                  {
+                    "type": "trajectory",
+                    "logKey": "/RealOutputs/Odometry/Trajectory",
+                    "logType": "Pose2d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00a0ff",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "game": "FRC:2026 Field"
+              },
+              "controllerUUID": "rebuilt-maplesim-field",
+              "renderer": {
+                "cameraIndex": -1,
+                "orbitFov": 50,
+                "cameraPosition": [
+                  -8.803900607918834,
+                  5.950770243400756,
+                  5.242217507005945
+                ],
+                "cameraTarget": [
+                  -5.075109147251518,
+                  2.660407813388658,
+                  1.2150058939224455
+                ]
+              },
+              "controlsHeight": 210
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "satellites": [],
+  "version": "26.0.2"
+}

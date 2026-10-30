@@ -32,5 +32,11 @@ public class DeployIntake extends Command {
         }
         return false;
     }
+
+    @Override
+    public void end(boolean interrupted) {
+        intake.setDeployServo(0.0);
+        timer.stop();
+    }
     
 }

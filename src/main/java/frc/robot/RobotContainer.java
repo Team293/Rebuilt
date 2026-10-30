@@ -8,12 +8,18 @@ import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj.DriverStation;
+import org.littletonrobotics.junction.Logger;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -97,6 +103,33 @@ public class RobotContainer {
         NamedCommands.registerCommand("requestShooting20S", new RequestShootingForSeconds(shooter, true, 20.0));
         NamedCommands.registerCommand("stopShooting", new RequestShootingForSeconds(shooter, false, 0.0));
         NamedCommands.registerCommand("deployIntake", new DeployIntake(intake));
+        NamedCommands.registerCommand("targetHub", targeting.runOnce(() -> targeting.setTarget(Target.HUB)));
+        NamedCommands.registerCommand("requestShooting3S", new RequestShootingForSeconds(shooter, true, 3.0));
+        NamedCommands.registerCommand("requestShooting4S", new RequestShootingForSeconds(shooter, true, 4.0));
+        NamedCommands.registerCommand("requestShooting2S", new RequestShootingForSeconds(shooter, true, 2.0));
+        NamedCommands.registerCommand("requestShooting2_5S", new RequestShootingForSeconds(shooter, true, 2.5));
+        NamedCommands.registerCommand("requestShooting6_25S", new RequestShootingForSeconds(shooter, true, 6.25));
+        NamedCommands.registerCommand("collectFuel", Commands.startEnd(
+                intake::enable, intake::disable, intake));
+        NamedCommands.registerCommand("autoFlywheel", Commands.startEnd(
+                () -> shooter.setDriverSpinUpFlywheel(true),
+                () -> shooter.setDriverSpinUpFlywheel(false), shooter));
+        NamedCommands.registerCommand("autoIntakeCleanup", Commands.startEnd(
+                intake::disable, intake::disable, intake));
+        NamedCommands.registerCommand("holdAutoPosition", drive.applyRequest(() -> brake));
+        // The path sequence owns drive; this parallel cleanup brakes if the deadline interrupts it.
+        NamedCommands.registerCommand("autoDriveCleanup", Commands.startEnd(
+                () -> {}, () -> drive.setControl(brake)));
+
+        // These stationary autos have no path from which PathPlanner can infer a start pose.
+        // The configured 32.5-inch robot starts with its front bumper on the line.
+        double startingX = FieldConstants.LinesVertical.starting - Inches.of(16.25).in(Meters);
+        NamedCommands.registerCommand("resetLeftBumpStart", AutoBuilder.resetOdom(new Pose2d(
+                startingX, FieldConstants.LinesHorizontal.leftBumpEnd + FieldConstants.LeftBump.width / 2,
+                Rotation2d.kZero)));
+        NamedCommands.registerCommand("resetRightBumpStart", AutoBuilder.resetOdom(new Pose2d(
+                startingX, FieldConstants.LinesHorizontal.rightBumpStart - FieldConstants.RightBump.width / 2,
+                Rotation2d.kZero)));
 
         autoChooser = drive.getAutoChooser();
         SmartDashboard.putData("Auto Path", autoChooser);
@@ -243,6 +276,38 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
+        if (Constants.currentMode == Constants.Mode.SIM) {
+            String auto = System.getProperty("simAuto", "");
+            String path = System.getProperty("simPath", "");
+            if (!auto.isBlank()) return new PathPlannerAuto(auto);
+            if (!path.isBlank()) return drive.createPathCommand(path);
+        }
         return autoChooser.getSelected();
+    }
+
+    public void logAutoState() {
+        Logger.recordOutput("Auto/IntakeRunning", intake.isRunning());
+        Logger.recordOutput("Auto/ShootingRequested", shooter.isActuatingHoodAndLaunching());
+        Logger.recordOutput("Auto/FlywheelRequested", shooter.isSpinUpFlywheel());
+        Command selected = autoChooser.getSelected();
+        String selection = selected == null ? "None" : selected.getName();
+        if (Constants.currentMode == Constants.Mode.SIM) {
+            selection = System.getProperty("simAuto", System.getProperty("simPath", selection));
+        }
+        Logger.recordOutput("Auto/Selected", selection);
+        var speeds = drive.getState().Speeds;
+        String phase = !DriverStation.isAutonomousEnabled() ? "Disabled / teleop"
+                : shooter.isActuatingHoodAndLaunching() ? "Shooting"
+                : intake.isRunning() ? "Collecting"
+                : Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond) > 0.05 ? "Driving"
+                : shooter.isSpinUpFlywheel() ? "Spinning up / waiting" : "Stopped";
+        Logger.recordOutput("Auto/Phase", phase);
+    }
+
+    public void stopAutoOutputs() {
+        intake.disable();
+        shooter.setActuateHoodAndLaunch(false);
+        shooter.setDriverSpinUpFlywheel(false);
+        drive.setControl(brake);
     }
 }

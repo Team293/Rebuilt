@@ -89,11 +89,12 @@ dependencies {
 
 test {
     useJUnitPlatform()
+    inputs.dir('src/main/deploy/pathplanner')
     systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
 }
 
 // Simulation configuration (e.g. environment variables).
-wpi.sim.addGui().defaultEnabled = true
+wpi.sim.addGui().defaultEnabled = !project.hasProperty("headless")
 wpi.sim.addDriverstation()
 
 // Setting up my Jar File. In this case, adding all libraries into the main jar ('fat jar')
@@ -110,6 +111,18 @@ jar {
 deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
+
+// Optional auto-start for visual review; normal simulateJava keeps the DS controls.
+[wpi.java.simulationTaskDebug, wpi.java.simulationTaskRelease].each { simulationTask ->
+    simulationTask.configure {
+        def selection = project.gradle.startParameter.projectProperties
+        if (selection.containsKey("auto") && selection.containsKey("path")) {
+            throw new GradleException("Choose either -Pauto or -Ppath")
+        }
+        if (selection.containsKey("auto")) systemProperty "simAuto", selection.get("auto")
+        if (selection.containsKey("path")) systemProperty "simPath", selection.get("path")
+    }
+}
 
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
