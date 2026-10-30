@@ -1,0 +1,185 @@
+{
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.0,
+      "rotationDegrees": -0.0
+    },
+    {
+      "waypointRelativePos": 2.0,
+      "rotationDegrees": -90.0
+    },
+    {
+      "waypointRelativePos": 3.0,
+      "rotationDegrees": -90.0
+    },
+    {
+      "waypointRelativePos": 4.0,
+      "rotationDegrees": -0.0
+    }
+  ],
+  "pointTowardsZones": [],
+  "idealStartingState": {
+    "rotation": -0.0,
+    "velocity": 0
+  },
+  "folder": null,
+  "eventMarkers": [
+    {
+      "endWaypointRelativePos": null,
+      "waypointRelativePos": 1.8,
+      "name": "Begin pickup",
+      "command": {
+        "data": {
+          "name": "enableIntake"
+        },
+        "type": "named"
+      }
+    },
+    {
+      "endWaypointRelativePos": null,
+      "waypointRelativePos": 3.0,
+      "name": "Batch collected",
+      "command": {
+        "data": {
+          "name": "disableIntake"
+        },
+        "type": "named"
+      }
+    }
+  ],
+  "goalEndState": {
+    "rotation": -0.0,
+    "velocity": 0
+  },
+  "globalConstraints": {
+    "nominalVoltage": 12.0,
+    "maxAngularVelocity": 549.0940169969164,
+    "unlimited": false,
+    "maxAngularAcceleration": 2800.1268156628266,
+    "maxVelocity": 3.7,
+    "maxAcceleration": 11.760000000000002
+  },
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "nextControl": {
+        "x": 4.4091114,
+        "y": 7.429682000000001
+      },
+      "anchor": {
+        "x": 3.6091113999999997,
+        "y": 7.429682000000001
+      },
+      "prevControl": null,
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": {
+        "x": 6.45625,
+        "y": 7.429682000000001
+      },
+      "anchor": {
+        "x": 6.0,
+        "y": 7.429682000000001
+      },
+      "prevControl": {
+        "x": 5.2,
+        "y": 7.429682000000001
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": {
+        "x": 7.85,
+        "y": 6.9190000000000005
+      },
+      "anchor": {
+        "x": 7.85,
+        "y": 7.1690000000000005
+      },
+      "prevControl": {
+        "x": 7.85,
+        "y": 7.609000000000001
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": {
+        "x": 7.85,
+        "y": 5.379000000000001
+      },
+      "anchor": {
+        "x": 7.85,
+        "y": 5.729000000000001
+      },
+      "prevControl": {
+        "x": 7.85,
+        "y": 5.979000000000001
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": {
+        "x": 5.1625000000000005,
+        "y": 5.5585
+      },
+      "anchor": {
+        "x": 5.9625,
+        "y": 5.5585
+      },
+      "prevControl": {
+        "x": 6.9625,
+        "y": 5.5585
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "nextControl": null,
+      "anchor": {
+        "x": 3.4125,
+        "y": 5.5585
+      },
+      "prevControl": {
+        "x": 4.2125,
+        "y": 5.5585
+      },
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "reversed": false,
+  "useDefaultConstraints": false,
+  "constraintZones": [
+    {
+      "minWaypointRelativePos": 1.75,
+      "name": "40% pickup speed",
+      "maxWaypointRelativePos": 3.05,
+      "constraints": {
+        "nominalVoltage": 12.0,
+        "maxAngularVelocity": 180.0,
+        "unlimited": false,
+        "maxAngularAcceleration": 360.0,
+        "maxVelocity": 1.48,
+        "maxAcceleration": 1.0
+      }
+    },
+    {
+      "minWaypointRelativePos": 4.107368228666473,
+      "name": "Bump crossing",
+      "maxWaypointRelativePos": 4.955567538945161,
+      "constraints": {
+        "nominalVoltage": 12.0,
+        "maxAngularVelocity": 180.0,
+        "unlimited": false,
+        "maxAngularAcceleration": 360.0,
+        "maxVelocity": 1.5,
+        "maxAcceleration": 1.5
+      }
+    }
+  ]
+}

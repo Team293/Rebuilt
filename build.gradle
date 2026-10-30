@@ -133,3 +133,11 @@ task(replayWatch, type: JavaExec) {
     mainClass = "org.littletonrobotics.junction.ReplayWatch"
     classpath = sourceSets.main.runtimeClasspath
 }
+
+// Offline route search using the same dynamics model as the trajectory tests.
+tasks.register('optimizeDoublePass', JavaExec) {
+    dependsOn testClasses, extractReleaseNative
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'tools/OptimizeDoublePass.java'
+    jvmArgs "-Djava.library.path=${layout.buildDirectory.dir('jni/release').get().asFile}"
+}

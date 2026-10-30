@@ -1,0 +1,17 @@
+{
+  "firstPathSeconds": 5.161699449648372,
+  "method": "Coordinate descent over Bezier handles and transit anchors; fixed pickup sweeps and shooting windows. Best of six deterministic coordinate searches within the route family, using the configured dynamics.",
+  "pathDistanceMeters": 19.36140384707297,
+  "evaluatedCandidates": 1463,
+  "fullRouteSeconds": 19.84037179873166,
+  "secondPathSeconds": 4.678672349083287,
+  "parameters": "[3.4125, 6.0, 0.45625000000000004, 0.44, 0.35, 5.9625, 1.0, 0.4, 0.7875000000000001, 0.45, 0.6500000000000001, 1.4875, 0.31999999999999995]",
+  "constraints": {
+    "nominalVoltage": 12.0,
+    "maxAngularVelocity": 549.0940169969164,
+    "unlimited": false,
+    "maxAngularAcceleration": 2800.1268156628266,
+    "maxVelocity": 3.7,
+    "maxAcceleration": 11.760000000000002
+  }
+}

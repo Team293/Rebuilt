@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.lib.FieldConstants;
 import frc.robot.subsystems.targeting.Targeting.Target;
@@ -91,8 +92,30 @@ class FieldTargetingTest {
     void keepsHoodRetractedUntilTheEntireRobotClearsTheTrench() {
         double edge = FieldConstants.LinesVertical.hubCenter + FieldConstants.RightTrench.depth / 2;
         double padding = FieldTargeting.ROBOT_RADIUS_METERS + FieldTargeting.TRENCH_MARGIN_METERS;
-        assertTrue(FieldTargeting.requiresHoodRetraction(pose(edge + padding - 0.01, 0.6), new ChassisSpeeds()));
-        assertFalse(FieldTargeting.requiresHoodRetraction(pose(edge + padding + 0.01, 0.6), new ChassisSpeeds()));
+        assertTrue(FieldTargeting.requiresHoodRetraction(pose(edge + padding - 0.01, 0.6), new ChassisSpeeds(1, 0, 0)));
+        assertFalse(FieldTargeting.requiresHoodRetraction(pose(edge + padding + 0.01, 0.6), new ChassisSpeeds(1, 0, 0)));
+        double halfLength = FieldTargeting.ROBOT_HALF_LENGTH_METERS;
+        assertTrue(FieldTargeting.requiresHoodRetraction(pose(edge + halfLength - 0.01, 0.6), new ChassisSpeeds()));
+        assertFalse(FieldTargeting.requiresHoodRetraction(pose(edge + halfLength + 0.01, 0.6), new ChassisSpeeds()));
+    }
+
+    @Test
+    void allowsStationaryLineShotsButRetractsForEntryOrRotationOnBothAlliances() {
+        double x = FieldConstants.LinesVertical.starting - FieldTargeting.ROBOT_HALF_LENGTH_METERS;
+        for (boolean red : new boolean[] {false, true}) {
+            for (double y : new double[] {0.639318, FieldConstants.fieldWidth - 0.639318}) {
+                Pose2d blue = pose(x, y);
+                Pose2d start = red ? new Pose2d(FieldConstants.fieldLength - x,
+                        FieldConstants.fieldWidth - y, Rotation2d.k180deg) : blue;
+                assertFalse(FieldTargeting.requiresHoodRetraction(start, new ChassisSpeeds()));
+                assertFalse(FieldTargeting.requiresHoodRetraction(start, new ChassisSpeeds(.005, 0, 0)));
+                assertTrue(FieldTargeting.requiresHoodRetraction(start, new ChassisSpeeds(.1, 0, 0)));
+                assertTrue(FieldTargeting.requiresHoodRetraction(start, new ChassisSpeeds(0, 0, .1)));
+                Pose2d intruding = new Pose2d(start.getTranslation().plus(
+                        new Translation2d(.02, 0).rotateBy(start.getRotation())), start.getRotation());
+                assertTrue(FieldTargeting.requiresHoodRetraction(intruding, new ChassisSpeeds()));
+            }
+        }
     }
 
     @Test

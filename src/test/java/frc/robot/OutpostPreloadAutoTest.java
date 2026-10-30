@@ -157,6 +157,16 @@ class OutpostPreloadAutoTest {
 
     @Test
     void commandTreeShootsPreloadsForTwoPointFiveSecondsAndReturnForFiveSeconds() {
+        verifyCommandTree("Outpost Preload Collect Return", false);
+    }
+
+    @Test
+    void optimizedBumpVariantsCompleteBothFullSweepsAndShotsBeforeDeadline() {
+        verifyCommandTree("Outpost Double Pass Bump Return", true);
+        verifyCommandTree("Depot Double Pass Bump Return", true);
+    }
+
+    private void verifyCommandTree(String name, boolean requireCompleteSweep) {
         SimHooks.pauseTiming();
         try {
             for (boolean cancelAtPickup : new boolean[] {false, true}) {
@@ -221,7 +231,10 @@ class OutpostPreloadAutoTest {
                                 state.shooting = false;
                             }));
                 }
-                var auto = new PathPlannerAuto("Outpost Preload Collect Return");
+                NamedCommands.registerCommand("enableIntake", Commands.runOnce(() -> state.intake = true));
+                NamedCommands.registerCommand("disableIntake", Commands.runOnce(() -> state.intake = false));
+                PathPlannerPath.clearCache();
+                var auto = new PathPlannerAuto(name);
                 auto.initialize();
                 int ticks = 0;
                 while (!auto.isFinished() && ticks < 1005) {
@@ -240,6 +253,9 @@ class OutpostPreloadAutoTest {
                     assertEquals(2, state.shots);
                     assertEquals(2, state.legs);
                     assertEquals(2, state.shotsCompleted, "Both shooting windows must finish");
+                    if (requireCompleteSweep) {
+                        assertTrue(state.held, name + " must complete the full second path before the deadline");
+                    }
                 }
                 auto.end(cancelAtPickup);
                 assertFalse(state.flywheel);

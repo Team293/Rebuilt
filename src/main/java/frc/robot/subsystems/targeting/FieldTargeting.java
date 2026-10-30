@@ -12,6 +12,7 @@ public final class FieldTargeting {
     public static final double TARGET_HYSTERESIS_METERS = 0.20;
     // Conservative footprint at any heading, including bumpers (32.5-inch square).
     public static final double ROBOT_RADIUS_METERS = Units.inchesToMeters(32.5) / Math.sqrt(2);
+    public static final double ROBOT_HALF_LENGTH_METERS = Units.inchesToMeters(32.5) / 2;
     public static final double TRENCH_MARGIN_METERS = 0.15;
     // Tune against measured hood retraction time before driving at full speed.
     public static final double HOOD_RETRACTION_LOOKAHEAD_SECONDS = 0.50;
@@ -44,7 +45,15 @@ public final class FieldTargeting {
         Translation2d end = start.plus(new Translation2d(
                 fieldSpeeds.vxMetersPerSecond * HOOD_RETRACTION_LOOKAHEAD_SECONDS,
                 fieldSpeeds.vyMetersPerSecond * HOOD_RETRACTION_LOOKAHEAD_SECONDS));
-        double padding = ROBOT_RADIUS_METERS + TRENCH_MARGIN_METERS;
+        // A stationary robot can shoot with its front bumper touching the starting line.
+        // The approach buffer applies as soon as it moves or turns; it must not turn
+        // a nearby, physically clear shooting pose into a permanent hood lockout.
+        boolean moving = Math.hypot(fieldSpeeds.vxMetersPerSecond, fieldSpeeds.vyMetersPerSecond) > 0.01
+                || Math.abs(fieldSpeeds.omegaRadiansPerSecond) > 0.01;
+        if (!moving) end = start;
+        double padding = moving ? ROBOT_RADIUS_METERS + TRENCH_MARGIN_METERS
+                : ROBOT_HALF_LENGTH_METERS * (Math.abs(pose.getRotation().getCos())
+                        + Math.abs(pose.getRotation().getSin())) - 1e-6;
         for (double x : new double[] {
                 FieldConstants.LinesVertical.hubCenter, FieldConstants.LinesVertical.oppHubCenter}) {
             if (intersects(start, end, x - FieldConstants.RightTrench.depth / 2 - padding,
