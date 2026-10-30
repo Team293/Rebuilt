@@ -51,7 +51,7 @@ public class Trigger extends SpikeSystem<TriggerIO.TriggerIOInputs> {
      * @return true if the shooter is at target RPS, the turret is at target angle, and the driver is requesting to shoot, false otherwise
      */
     private boolean mechanismReadyForBalls() {
-        if (shooter.isActuatingHoodAndLaunching()) {
+        if (shooter.canFeedBalls()) {
             // check if turret is at target angle 
             boolean turretReady = turret.isAtTargetAngle() && shooter.isAtTargetRPS();
 

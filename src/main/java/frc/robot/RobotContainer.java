@@ -79,11 +79,11 @@ public class RobotContainer {
     public RobotContainer() {
         drive = TunerConstants.createDrivetrain();
         ledController = new LEDController(1);
+        this.targeting = new Targeting();
         this.turret = new Turret(operatorController);
         this.vision = new Vision(drive);
         this.intake = new Intake();
         this.shooter = new Shooter(operatorController);
-        this.targeting = new Targeting();
         this.trigger = new Trigger(shooter, turret);
         this.findexer = new Findexer(trigger);
         
@@ -239,9 +239,14 @@ public class RobotContainer {
     }
 
     private void setupTargetingBindings() {
+        operatorController.start().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.AUTO)));
         operatorController.y().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.HUB)));
         operatorController.x().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.SHUTTLE_LEFT)));
         operatorController.b().onTrue(targeting.runOnce(() -> targeting.setTarget(Target.SHUTTLE_RIGHT)));
+    }
+
+    public void enableAutomaticTargeting() {
+        targeting.setTarget(Target.AUTO);
     }
 
     private void setupShooterBindings() {
